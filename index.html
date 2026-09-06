@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Bolsillo | Finanzas Personales Colombia</title>
+    <meta name="description" content="App de finanzas personales para Colombia. Controla tu plata, tus billeteras y tu plan para salir de deudas." />
+    <meta property="og:title" content="Bolsillo | Finanzas Personales Colombia" />
+    <meta property="og:description" content="Control de saldo, deudas y metas de libertad financiera en Colombia." />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#0E1B1E" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Bolsillo" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Anti-FOUC: Sincronización inmediata de tema antes de renderizar React -->
+    <script>
+      (function() {
+        try {
+          var tema = localStorage.getItem('bolsillo:tema') || 'medianoche';
+          document.documentElement.setAttribute('data-theme', tema);
+          if (tema === 'papel') {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          } else {
+            document.documentElement.classList.remove('light');
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Google Fonts: Bricolage Grotesque (títulos y cifras) + Hanken Grotesk (texto) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-[var(--fondo)] text-[var(--texto)] antialiased selection:bg-[var(--acento)]/30">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

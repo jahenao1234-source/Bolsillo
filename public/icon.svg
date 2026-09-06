@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#121A2C" />
+      <stop offset="50%" stop-color="#0B1120" />
+      <stop offset="100%" stop-color="#080D18" />
+    </linearGradient>
+    <linearGradient id="platinum" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F1F4FA" />
+      <stop offset="50%" stop-color="#C4CCDB" />
+      <stop offset="100%" stop-color="#A9B4C7" />
+    </linearGradient>
+    <linearGradient id="blueGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6B93FF" />
+      <stop offset="100%" stop-color="#3FDDC9" />
+    </linearGradient>
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="12" flood-color="#6B93FF" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect width="508" height="508" x="2" y="2" rx="110" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2" />
+
+  <!-- Subtle Top Aurora -->
+  <ellipse cx="256" cy="70" rx="160" ry="70" fill="#6B93FF" opacity="0.12" />
+
+  <!-- Main Symbol: Geometric Bolsillo Vault / Platinum B -->
+  <g filter="url(#subtleGlow)" transform="translate(106, 106)">
+    <!-- Outer Shield Frame -->
+    <path d="M40 30 C 130 18, 170 18, 260 30 C 270 140, 240 230, 150 280 C 60 230, 30 140, 40 30 Z" 
+          fill="none" stroke="url(#platinum)" stroke-width="8" stroke-linejoin="round" />
+
+    <!-- Stylized B / Pocket fold -->
+    <path d="M90 75 L 210 75 C 220 75, 228 83, 225 93 L 205 180 C 190 220, 150 240, 150 240 C 150 240, 110 220, 95 180 L 75 93 C 72 83, 80 75, 90 75 Z" 
+          fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3" />
+
+    <!-- Center Platinum Coin / Emblem -->
+    <circle cx="150" cy="140" r="38" fill="url(#platinum)" />
+    <!-- Coin Inner Accent -->
+    <circle cx="150" cy="140" r="28" fill="#0E1626" />
+    <path d="M142 125 L 158 125 C 165 125, 168 130, 168 135 C 168 140, 163 143, 156 143 L 142 143 L 142 125 Z M142 143 L 160 143 C 167 143, 170 148, 170 154 C 170 160, 164 165, 157 165 L 142 165 L 142 143 Z" fill="url(#platinum)" />
+    <!-- Emerald / Aqua Sparkle Accent -->
+    <circle cx="210" cy="85" r="5" fill="#3FDDC9" />
+  </g>
+</svg>

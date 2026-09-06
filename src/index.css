@@ -1,0 +1,216 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Bricolage Grotesque", "Hanken Grotesk", sans-serif;
+  --font-body: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-superficie-2: var(--superficie-2);
+  --color-elevada: var(--elevada);
+  --color-linea: var(--linea);
+  --color-hairline: var(--hairline);
+
+  --color-texto: var(--texto);
+  --color-texto-2: var(--texto-2);
+  --color-texto-3: var(--texto-3);
+
+  --color-acento: var(--acento);
+  --color-accion: var(--accion);
+  --color-positivo: var(--positivo);
+  --color-advertencia: var(--advertencia);
+  --color-alerta: var(--alerta);
+  --color-on-acento: var(--on-acento);
+  --color-on-accion: var(--on-accion);
+}
+
+/* ============================================================= */
+/* SISTEMA "TEAL + NARANJA"                                        */
+/* Identidad = teal · Acción = naranja · Positivo = menta          */
+/* Oscuro (default) y Claro comparten los mismos tokens semánticos */
+/* ============================================================= */
+
+:root,
+[data-theme="medianoche"] {
+  /* TEMA OSCURO (DEFAULT) */
+  --fondo: #0E1B1E;
+  --base: #0A1618;
+  --superficie: #152A2D;
+  --superficie-2: #102124;
+  --elevada: #1B3438;
+  --linea: #20393C;
+  --hairline: rgba(205, 255, 248, 0.08);
+
+  --texto: #EAF6F4;
+  --texto-2: #93B6B4;
+  --texto-3: #5F8180;
+
+  --acento: #25C9BE;      /* teal — identidad */
+  --acento-2: #5BEBDF;    /* teal claro (degradados de marca) */
+  --accion: #FF7A3D;      /* naranja — acción */
+  --accion-2: #FF9A63;    /* naranja claro (degradado de botón) */
+  --positivo: #5FE0A8;    /* menta — ganancias / progreso */
+  --advertencia: var(--texto-2); /* sin ámbar: neutral atenuado */
+  --alerta: var(--texto);        /* sin rojo: deuda y negativos en neutral */
+  --on-acento: #04211F;   /* texto sobre teal */
+  --on-accion: #2A1206;   /* texto sobre naranja */
+
+  color-scheme: dark;
+}
+
+[data-theme="papel"] {
+  /* TEMA CLARO */
+  --fondo: #F1F5F4;
+  --base: #E7EEEC;
+  --superficie: #FFFFFF;
+  --superficie-2: #E8F0EE;
+  --elevada: #FFFFFF;
+  --linea: rgba(16, 42, 40, 0.13);
+  --hairline: rgba(16, 42, 40, 0.07);
+
+  --texto: #112320;
+  --texto-2: #5A706C;
+  --texto-3: #8AA09B;
+
+  --acento: #0C8C7E;      /* teal profundo (contraste sobre claro) */
+  --acento-2: #12A897;
+  --accion: #EC6A28;      /* naranja (algo más profundo para claro) */
+  --accion-2: #FB8340;
+  --positivo: #0E9E77;
+  --advertencia: var(--texto-2);
+  --alerta: var(--texto);
+  --on-acento: #FFFFFF;
+  --on-accion: #2A1206;
+
+  color-scheme: light;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--base);
+  color: var(--texto);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tipografía de títulos y cifras */
+.font-display,
+h1, h2, h3, h4, .stat-value {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* Cifras bancarias siempre tabulares */
+.tabular-nums,
+.stat-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================= */
+/* GRADIENTES DE MARCA (teal) Y DE ACCIÓN (naranja)               */
+/* Nota: las clases *-platinum-gradient se conservan por nombre    */
+/* pero ahora renderizan el TEAL de marca (logo, wordmark).        */
+/* ============================================================= */
+
+.bg-platinum-gradient {
+  background: linear-gradient(150deg, var(--acento-2) 0%, var(--acento) 100%);
+  color: var(--on-acento);
+}
+
+.text-platinum-gradient {
+  background: linear-gradient(150deg, var(--acento-2) 0%, var(--acento) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* En claro, la marca va en teal sólido (mejor contraste que un degradado claro) */
+[data-theme="papel"] .text-platinum-gradient {
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: var(--acento);
+  color: var(--acento);
+}
+
+[data-theme="papel"] .bg-platinum-gradient {
+  background: var(--acento);
+  color: var(--on-acento);
+}
+
+/* Botón / acento de ACCIÓN en naranja */
+.bg-accion-gradient {
+  background: linear-gradient(150deg, var(--accion-2) 0%, var(--accion) 100%);
+  color: var(--on-accion);
+}
+
+/* Tarjeta con hairline border */
+.card-surface {
+  background-color: var(--superficie);
+  border: 1px solid var(--linea);
+}
+
+.card-surface-elevated {
+  background-color: var(--elevada);
+  border: 1px solid var(--linea);
+}
+
+/* Hairlines adaptados a temas */
+.hairline-b { border-bottom: 1px solid var(--hairline); }
+.hairline-t { border-top: 1px solid var(--hairline); }
+.hairline-border { border: 1px solid var(--hairline); }
+
+/* Aurora superior sutil (teal) */
+.aurora-top {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 680px;
+  height: 240px;
+  background: radial-gradient(50% 50% at 50% 0%, rgba(37, 201, 190, 0.10) 0%, rgba(14, 27, 30, 0) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="papel"] .aurora-top {
+  background: radial-gradient(50% 50% at 50% 0%, rgba(12, 140, 126, 0.08) 0%, rgba(241, 245, 244, 0) 100%);
+}
+
+/* Ruido sutil para evitar banding */
+.bg-noise {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+[data-theme="papel"] .bg-noise {
+  background-image: radial-gradient(rgba(16, 42, 40, 0.02) 1px, transparent 0);
+}
+
+/* Transición suave al cambiar de pantalla */
+@keyframes screenFadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-screen-enter {
+  animation: screenFadeSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Safe area padding para móviles con notch / home indicator */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+.pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+
+/* Respeto estricto a prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
