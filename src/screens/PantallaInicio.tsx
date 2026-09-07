@@ -172,7 +172,7 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
               Disponible
             </span>
           </div>
-          <div className="font-display text-xl md:text-2xl font-bold tabular-nums text-[color:var(--acento)] tracking-tight">
+          <div className={`font-display text-xl md:text-2xl font-bold tabular-nums tracking-tight ${resumen.saldoDisponible >= 0 ? 'text-[color:var(--acento)]' : 'text-[color:var(--alerta)]'}`}>
             <CountUp valor={resumen.saldoDisponible} />
           </div>
           <p className="text-[11px] text-[color:var(--texto-3)] mt-1 truncate">
@@ -186,12 +186,12 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
           className="text-left p-4 md:p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--hairline)] hover:border-[var(--acento)]/40 transition-all cursor-pointer"
         >
           <div className="flex items-center gap-1.5 mb-2">
-            <CreditCard className="w-4 h-4 text-[color:var(--texto-2)]" />
+            <CreditCard className="w-4 h-4 text-[color:var(--alerta)]" />
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[color:var(--texto-2)]">
               Deuda total
             </span>
           </div>
-          <div className="font-display text-xl md:text-2xl font-bold tabular-nums text-[color:var(--texto)] tracking-tight">
+          <div className="font-display text-xl md:text-2xl font-bold tabular-nums text-[color:var(--alerta)] tracking-tight">
             <CountUp valor={resumen.deudaTotal} />
           </div>
           <div className="mt-2 flex items-center gap-2">
