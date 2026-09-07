@@ -1,10 +1,10 @@
 import React from 'react';
-import { Home, Wallet, CreditCard, User, Sparkles } from 'lucide-react';
+import { Home, Wallet, CreditCard, User, Sparkles, Sprout } from 'lucide-react';
 import { PWAInstallButton } from '../ui/PWAInstallButton';
 import { NivelAcceso } from '../../types';
 import { useTema } from '../../utils/theme';
 
-export type SeccionApp = 'inicio' | 'billeteras' | 'deudas' | 'perfil' | 'pro' | 'termometro' | 'activar_codigo';
+export type SeccionApp = 'inicio' | 'billeteras' | 'deudas' | 'crecer' | 'perfil' | 'pro' | 'termometro' | 'activar_codigo';
 
 interface BarraNavegacionProps {
   seccionActiva: SeccionApp;
@@ -19,11 +19,12 @@ interface ItemNav {
   icono: React.ComponentType<{ className?: string }>;
 }
 
-// 4 ítems limpios, TODOS accesibles, SIN candados
+// Ítems limpios, TODOS accesibles, SIN candados. "Crecer" es la puerta a Pro.
 const ITEMS_NAV: ItemNav[] = [
   { id: 'inicio', etiqueta: 'Inicio', icono: Home },
   { id: 'billeteras', etiqueta: 'Billeteras', icono: Wallet },
   { id: 'deudas', etiqueta: 'Deudas', icono: CreditCard },
+  { id: 'crecer', etiqueta: 'Crecer', icono: Sprout },
   { id: 'perfil', etiqueta: 'Perfil', icono: User },
 ];
 
@@ -32,6 +33,7 @@ const ITEMS_NAV_MOVIL: ItemNav[] = [
   { id: 'billeteras', etiqueta: 'Billeteras', icono: Wallet },
   { id: 'inicio', etiqueta: 'Inicio', icono: Home },
   { id: 'deudas', etiqueta: 'Deudas', icono: CreditCard },
+  { id: 'crecer', etiqueta: 'Crecer', icono: Sprout },
   { id: 'perfil', etiqueta: 'Perfil', icono: User },
 ];
 
@@ -153,7 +155,7 @@ export const BarraNavegacion: React.FC<BarraNavegacionProps> = ({
       {/* NAVEGACIÓN MÓVIL: BARRA INFERIOR FIJA (BOTTOM NAV BAR)   */}
       {/* ========================================================= */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--fondo)]/95 backdrop-blur-md border-t border-[var(--linea)] pb-[env(safe-area-inset-bottom,8px)]">
-        <div className="grid grid-cols-4 h-16 max-w-lg mx-auto px-2">
+        <div className="grid grid-cols-5 h-16 max-w-lg mx-auto px-1">
           {ITEMS_NAV_MOVIL.map((item) => {
             const Icono = item.icono;
             const esActivo = seccionActiva === item.id;

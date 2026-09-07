@@ -22,9 +22,27 @@ import {
   getNombreUsuario,
   setNombreUsuario,
   reordenarDeudas,
+  getPresupuestos,
+  guardarPresupuesto,
+  eliminarPresupuesto,
+  getGastoPorCategoria,
+  getSobres,
+  guardarSobre,
+  eliminarSobre,
+  getTotalApartadoSobres,
   suscribirStore,
 } from '../data/store';
-import { ResumenFinanciero, Billetera, Deuda, Movimiento, FlujoMes, NivelAcceso, DatosTermometro } from '../types';
+import {
+  ResumenFinanciero,
+  Billetera,
+  Deuda,
+  Movimiento,
+  FlujoMes,
+  NivelAcceso,
+  DatosTermometro,
+  Presupuesto,
+  Sobre,
+} from '../types';
 
 export function useBolsilloData() {
   const [nombreUsuario, setNombreUsuarioState] = useState<string>(getNombreUsuario);
@@ -37,6 +55,12 @@ export function useBolsilloData() {
   const [flujoMes, setFlujoMesState] = useState<FlujoMes>(() => getFlujoMes('sep'));
   const [nivelAcceso, setNivelAccesoState] = useState<NivelAcceso>(getNivelAcceso);
   const [datosTermometro, setDatosTermometroState] = useState<DatosTermometro | null>(getDatosTermometro);
+  const [presupuestos, setPresupuestosState] = useState<Presupuesto[]>(getPresupuestos);
+  const [gastoPorCategoria, setGastoPorCategoriaState] = useState<Record<string, number>>(() =>
+    getGastoPorCategoria('sep')
+  );
+  const [sobres, setSobresState] = useState<Sobre[]>(getSobres);
+  const [totalApartado, setTotalApartadoState] = useState<number>(getTotalApartadoSobres);
 
   useEffect(() => {
     const desuscribir = suscribirStore(() => {
@@ -50,6 +74,10 @@ export function useBolsilloData() {
       setFlujoMesState(getFlujoMes('sep'));
       setNivelAccesoState(getNivelAcceso());
       setDatosTermometroState(getDatosTermometro());
+      setPresupuestosState(getPresupuestos());
+      setGastoPorCategoriaState(getGastoPorCategoria('sep'));
+      setSobresState(getSobres());
+      setTotalApartadoState(getTotalApartadoSobres());
     });
     return desuscribir;
   }, []);
@@ -77,5 +105,14 @@ export function useBolsilloData() {
     marcarSaldada,
     reordenarDeudas,
     setDisponibleMensual,
+    // Módulos Pro (Crecer)
+    presupuestos,
+    gastoPorCategoria,
+    guardarPresupuesto,
+    eliminarPresupuesto,
+    sobres,
+    totalApartado,
+    guardarSobre,
+    eliminarSobre,
   };
 }

@@ -138,3 +138,23 @@ export interface DatosTermometro {
   tasaMensual: number;
   fechaRegistro?: string;
 }
+
+// ==========================================
+// MÓDULOS PRO (pestaña "Crecer")
+// ==========================================
+
+/** Presupuesto: tope de gasto mensual por categoría. */
+export interface Presupuesto {
+  categoria: string;
+  tope: number;
+}
+
+/** Sobre digital: dinero apartado (virtual) hacia una meta. */
+export interface Sobre {
+  id: string;
+  nombre: string;
+  meta?: number;
+  apartado: number;
+  color?: string;
+  creadoEn: string;
+}

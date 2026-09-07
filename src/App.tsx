@@ -11,6 +11,7 @@ import { PantallaBilleteras } from './screens/PantallaBilleteras';
 import { PantallaDeudas } from './screens/PantallaDeudas';
 import { PantallaPerfil } from './screens/PantallaPerfil';
 import { PantallaPro } from './screens/PantallaPro';
+import { PantallaCrecer } from './screens/PantallaCrecer';
 import { PantallaTermometro } from './screens/PantallaTermometro';
 import { PantallaActivarCodigo } from './screens/PantallaActivarCodigo';
 import { PWAInstallButton } from './components/ui/PWAInstallButton';
@@ -24,6 +25,8 @@ export default function App() {
       : 'inicio'
   );
   const { esPapel } = useTema();
+  // Se incrementa en cada navegación; permite a "Crecer" volver a su hub al re-seleccionarlo.
+  const [navTick, setNavTick] = useState(0);
 
   // Asegurar que el tema esté cargado desde localStorage
   useEffect(() => {
@@ -43,10 +46,19 @@ export default function App() {
     eliminarBilletera,
     registrarMovimiento,
     abonarDeudaDesdeBilletera,
+    presupuestos,
+    gastoPorCategoria,
+    guardarPresupuesto,
+    eliminarPresupuesto,
+    sobres,
+    totalApartado,
+    guardarSobre,
+    eliminarSobre,
   } = useBolsilloData();
 
   const handleNavegar = (seccion: SeccionApp) => {
     setSeccionActiva(seccion);
+    setNavTick((t) => t + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -188,6 +200,32 @@ export default function App() {
                   onNavegar={handleNavegar}
                   onAbonarDeuda={abonarDeudaDesdeBilletera}
                 />
+              </div>
+            )}
+
+            {/* Pantalla: Crecer (módulos Pro). En entrada muestra la vitrina; en Pro, el hub. */}
+            {!mostrarTermometro && seccionActiva === 'crecer' && (
+              <div key="crecer" className="animate-screen-enter">
+                {nivelAcceso === 'pro' ? (
+                  <PantallaCrecer
+                    resetToken={navTick}
+                    usuario={resumen.usuario}
+                    presupuestos={presupuestos}
+                    gastoPorCategoria={gastoPorCategoria}
+                    onGuardarPresupuesto={guardarPresupuesto}
+                    onEliminarPresupuesto={eliminarPresupuesto}
+                    sobres={sobres}
+                    totalApartado={totalApartado}
+                    saldoTotal={saldoTotal}
+                    onGuardarSobre={guardarSobre}
+                    onEliminarSobre={eliminarSobre}
+                  />
+                ) : (
+                  <PantallaPro
+                    onVolver={() => setSeccionActiva('inicio')}
+                    onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
+                  />
+                )}
               </div>
             )}
 

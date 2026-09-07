@@ -15,6 +15,8 @@ import {
   FlujoMes,
   NivelAcceso,
   DatosTermometro,
+  Presupuesto,
+  Sobre,
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
 
@@ -28,6 +30,8 @@ const STORAGE_KEYS = {
   NIVEL_ACCESO: 'bolsillo_data_nivel_acceso_v3',
   DATOS_TERMOMETRO: 'bolsillo_data_termometro_v3',
   NOMBRE_USUARIO: 'bolsillo_data_nombre_v3',
+  PRESUPUESTOS: 'bolsillo_data_presupuestos_v3',
+  SOBRES: 'bolsillo_data_sobres_v3',
 };
 
 // ==========================================
@@ -183,6 +187,21 @@ export const CATEGORIAS_GASTOS_DEFECTO = [
   'Ocio',
   'Deudas',
   'Otro',
+];
+
+// Semilla Pro: topes de presupuesto por categoría (mensual)
+const MOCK_PRESUPUESTOS_INICIAL: Presupuesto[] = [
+  { categoria: 'Comida', tope: 600000 },
+  { categoria: 'Transporte', tope: 200000 },
+  { categoria: 'Servicios', tope: 250000 },
+  { categoria: 'Ocio', tope: 150000 },
+];
+
+// Semilla Pro: sobres digitales (dinero apartado hacia metas)
+const MOCK_SOBRES_INICIAL: Sobre[] = [
+  { id: 'sobre-emergencia', nombre: 'Fondo de emergencia', meta: 1000000, apartado: 300000, color: '#5FE0A8', creadoEn: '2026-08-01' },
+  { id: 'sobre-arriendo', nombre: 'Arriendo', meta: 800000, apartado: 500000, color: '#25C9BE', creadoEn: '2026-08-01' },
+  { id: 'sobre-moto', nombre: 'Cuota moto', meta: 2000000, apartado: 150000, color: '#FF7A3D', creadoEn: '2026-08-01' },
 ];
 
 // Mecanismo de eventos para reactividad en componentes
@@ -824,8 +843,122 @@ export function restablecerDatosEjemplo(): void {
     );
     localStorage.setItem(STORAGE_KEYS.INICIALIZADO, 'true');
     localStorage.setItem(STORAGE_KEYS.NIVEL_ACCESO, JSON.stringify('demo'));
+    localStorage.removeItem(STORAGE_KEYS.PRESUPUESTOS);
+    localStorage.removeItem(STORAGE_KEYS.SOBRES);
     notificarCambio();
   } catch (err) {
     console.error('Error al restablecer datos de ejemplo:', err);
   }
+}
+
+// ==========================================
+// PRESUPUESTOS (Pro · Crecer)
+// ==========================================
+
+export function getPresupuestos(): Presupuesto[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.PRESUPUESTOS);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error al leer presupuestos:', err);
+  }
+  return MOCK_PRESUPUESTOS_INICIAL;
+}
+
+export function setPresupuestos(items: Presupuesto[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.PRESUPUESTOS, JSON.stringify(items));
+    notificarCambio();
+  } catch (err) {
+    console.error('Error al guardar presupuestos:', err);
+  }
+}
+
+export function guardarPresupuesto(categoria: string, tope: number): void {
+  const cat = (categoria || '').trim();
+  if (!cat) return;
+  const items = getPresupuestos();
+  const idx = items.findIndex((p) => p.categoria.toLowerCase() === cat.toLowerCase());
+  const valor = Math.max(0, Math.round(tope));
+  let nuevos: Presupuesto[];
+  if (idx >= 0) {
+    nuevos = [...items];
+    nuevos[idx] = { categoria: items[idx].categoria, tope: valor };
+  } else {
+    nuevos = [...items, { categoria: cat, tope: valor }];
+  }
+  setPresupuestos(nuevos);
+}
+
+export function eliminarPresupuesto(categoria: string): void {
+  const items = getPresupuestos().filter(
+    (p) => p.categoria.toLowerCase() !== (categoria || '').toLowerCase()
+  );
+  setPresupuestos(items);
+}
+
+/**
+ * Suma de gastos por categoría en un mes dado (por defecto 'sep').
+ */
+export function getGastoPorCategoria(mes: string = 'sep'): Record<string, number> {
+  const movimientos = getMovimientos();
+  const mesBuscado = (mes || '').toLowerCase();
+  const acc: Record<string, number> = {};
+  for (const m of movimientos) {
+    if (m.tipo !== 'gasto') continue;
+    if (mesBuscado && !(m.fecha || '').toLowerCase().includes(mesBuscado)) continue;
+    const cat = m.categoria || 'Otro';
+    acc[cat] = (acc[cat] || 0) + Math.abs(Number(m.monto) || 0);
+  }
+  return acc;
+}
+
+// ==========================================
+// SOBRES (Pro · Crecer)
+// ==========================================
+
+export function getSobres(): Sobre[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SOBRES);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error al leer sobres:', err);
+  }
+  return MOCK_SOBRES_INICIAL;
+}
+
+export function setSobres(items: Sobre[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SOBRES, JSON.stringify(items));
+    notificarCambio();
+  } catch (err) {
+    console.error('Error al guardar sobres:', err);
+  }
+}
+
+export function guardarSobre(sobre: Sobre): void {
+  const items = getSobres();
+  const idx = items.findIndex((s) => s.id === sobre.id);
+  const normal: Sobre = {
+    ...sobre,
+    apartado: Math.max(0, Math.round(sobre.apartado || 0)),
+    meta: sobre.meta != null ? Math.max(0, Math.round(sobre.meta)) : undefined,
+    creadoEn: sobre.creadoEn || new Date().toISOString(),
+  };
+  let nuevos: Sobre[];
+  if (idx >= 0) {
+    nuevos = [...items];
+    nuevos[idx] = normal;
+  } else {
+    nuevos = [...items, normal];
+  }
+  setSobres(nuevos);
+}
+
+export function eliminarSobre(id: string): void {
+  setSobres(getSobres().filter((s) => s.id !== id));
+}
+
+export function getTotalApartadoSobres(): number {
+  return getSobres().reduce((sum, s) => sum + (Number(s.apartado) || 0), 0);
 }
