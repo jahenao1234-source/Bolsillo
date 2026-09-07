@@ -395,6 +395,10 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
     ? Math.min(prioridad.saldo ?? prioridad.saldoTotal ?? 0, (prioridad.pagoMinimo || 0) + extraMensual)
     : 0;
 
+  // Pestañas SOLO en móvil; en desktop todo se ve (2 columnas).
+  const [tabMovil, setTabMovil] = useState<'plan' | 'estrategia' | 'crono'>('plan');
+  const tabCls = (t: 'plan' | 'estrategia' | 'crono') => (tabMovil === t ? '' : 'hidden md:block');
+
   // Manejador para marcar como saldada con celebración y registro de victoria
   const handleMarcarSaldada = (deuda: Deuda) => {
     marcarSaldada(deuda.id, true);
@@ -655,9 +659,18 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         )}
       </Tarjeta>
 
+      {/* Segmentos — solo en móvil */}
+      <div className="md:hidden grid grid-cols-3 gap-1 p-1 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)]">
+        <button type="button" onClick={() => setTabMovil('plan')} className={`py-2 rounded-lg text-xs font-bold cursor-pointer transition-colors ${tabMovil === 'plan' ? 'bg-[var(--superficie)] text-[color:var(--texto)] shadow-xs' : 'text-[color:var(--texto-2)]'}`}>Mi plan</button>
+        <button type="button" onClick={() => setTabMovil('estrategia')} className={`py-2 rounded-lg text-xs font-bold cursor-pointer transition-colors ${tabMovil === 'estrategia' ? 'bg-[var(--superficie)] text-[color:var(--texto)] shadow-xs' : 'text-[color:var(--texto-2)]'}`}>Estrategia</button>
+        <button type="button" onClick={() => setTabMovil('crono')} className={`py-2 rounded-lg text-xs font-bold cursor-pointer transition-colors ${tabMovil === 'crono' ? 'bg-[var(--superficie)] text-[color:var(--texto)] shadow-xs' : 'text-[color:var(--texto-2)]'}`}>Cronograma</button>
+      </div>
+
+      {/* Módulos: 2 columnas en desktop, controlados por pestañas en móvil */}
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
       {/* Elige tu estrategia — comparativa */}
       {deudasActivas.length > 0 && (
-        <div className="space-y-3">
+        <div className={`space-y-3 ${tabCls('estrategia')}`}>
           <div className="px-1">
             <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Elige tu estrategia</h2>
             <p className="text-xs text-[color:var(--texto-2)] mt-0.5">Las dos pagan todo; cambian el orden y el resultado.</p>
@@ -729,7 +742,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
 
       {/* Tu pago de este mes (abono guiado) */}
       {prioridad && (
-        <Tarjeta padding="lg">
+        <Tarjeta padding="lg" className={tabCls('plan')}>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
               <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tu pago de este mes</h2>
@@ -797,7 +810,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
 
       {/* Tu camino a estar libre (línea de tiempo) */}
       {plan.ordenSaldado.length > 0 && (
-        <div className="space-y-3">
+        <div className={`space-y-3 ${tabCls('crono')}`}>
           <div className="px-1">
             <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tu camino a estar libre</h2>
             <p className="text-xs text-[color:var(--texto-2)] mt-0.5">Cuándo se libera cada deuda con tu plan.</p>
@@ -832,30 +845,21 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         </div>
       )}
 
-      {/* Aviso Contextual Pro Just-in-Time */}
-      {onNavegar && (
-        <AvisoContextualPro
-          id="aviso-deudas-sobres"
-          texto="Aparta lo intocable en Sobres antes de gastarlo."
-          onAbrirPro={() => onNavegar('pro')}
+      {/* Simulador (pestaña Estrategia en móvil) */}
+      <div className={tabCls('estrategia')}>
+        <SimuladorAbonoExtra
+          deudas={deudasActivas}
+          disponibleMensual={disponibleMensual}
+          estrategia={estrategia}
         />
-      )}
-
-      {/* (La estrategia se elige arriba en la comparativa; la plata/mes se ajusta en "Tu pago de este mes".) */}
-
-      {/* ========================================================= */}
-      {/* SIMULADOR DE ABONO EXTRA EN TIEMPO REAL                   */}
-      {/* ========================================================= */}
-      <SimuladorAbonoExtra
-        deudas={deudasActivas}
-        disponibleMensual={disponibleMensual}
-        estrategia={estrategia}
-      />
+      </div>
+      </div>
+      {/* fin grilla de módulos */}
 
       {/* ========================================================= */}
       {/* LISTA DE DEUDAS ORDENADAS POR ESTRATEGIA                  */}
       {/* ========================================================= */}
-      <div className="space-y-3">
+      <div className={`space-y-3 ${tabCls('plan')}`}>
         <div className="flex items-center justify-between px-1">
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-[color:var(--texto-2)]">
@@ -939,7 +943,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
 
       {/* Detalle mes a mes (desplegable) */}
       {tabla.filas.length > 0 && (
-        <div className="space-y-3">
+        <div className={`space-y-3 ${tabCls('crono')}`}>
           <div className="px-1">
             <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Detalle mes a mes</h2>
             <p className="text-xs text-[color:var(--texto-2)] mt-0.5">El saldo de cada deuda, mes por mes.</p>
@@ -995,6 +999,15 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
             )}
           </Tarjeta>
         </div>
+      )}
+
+      {/* Aviso Contextual Pro */}
+      {onNavegar && (
+        <AvisoContextualPro
+          id="aviso-deudas-sobres"
+          texto="Aparta lo intocable en Sobres antes de gastarlo."
+          onAbrirPro={() => onNavegar('pro')}
+        />
       )}
 
       {/* ========================================================= */}
