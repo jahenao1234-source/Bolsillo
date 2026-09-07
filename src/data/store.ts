@@ -1027,7 +1027,7 @@ export function eliminarReto(id: string): void {
 /** Aporte que corresponde a la semana pendiente de un reto. */
 export function aporteSemanaDe(reto: RetoAhorro): number {
   if (reto.completado) return 0;
-  return reto.tipo === '52_semanas' ? reto.aporteBase * reto.semanaActual : reto.aporteBase;
+  return reto.tipo === 'escalado' ? reto.aporteBase * reto.semanaActual : reto.aporteBase;
 }
 
 /**
@@ -1044,7 +1044,7 @@ export function aportarSemanaReto(
   const r = { ...retos[idx] };
   if (r.completado) return { exito: false, aporte: 0, completado: true, acumulado: r.acumulado };
 
-  const aporte = r.tipo === '52_semanas' ? r.aporteBase * r.semanaActual : r.aporteBase;
+  const aporte = r.tipo === 'escalado' ? r.aporteBase * r.semanaActual : r.aporteBase;
   r.acumulado += aporte;
   r.semanaActual += 1;
   r.racha += 1;

@@ -159,14 +159,14 @@ export interface Sobre {
   creadoEn: string;
 }
 
-export type TipoReto = '52_semanas' | 'semanal_fijo';
+export type TipoReto = 'escalado' | 'semanal_fijo';
 
 /** Reto de ahorro guiado con aporte semanal y racha. */
 export interface RetoAhorro {
   id: string;
   nombre: string;
   tipo: TipoReto;
-  aporteBase: number;      // 52_semanas: incremento por semana; semanal_fijo: aporte fijo
+  aporteBase: number;      // escalado: incremento por semana; semanal_fijo: aporte fijo
   metaTotal: number;
   semanasTotales: number;
   semanaActual: number;    // próxima semana a aportar (1-based); cumplidas = semanaActual - 1

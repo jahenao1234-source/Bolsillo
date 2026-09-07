@@ -5,6 +5,7 @@ import {
   Trophy,
   Flame,
   Trash2,
+  Pencil,
   X,
   Check,
   Target,
@@ -29,7 +30,8 @@ interface PantallaRetosProps {
 }
 
 const COLORES_RETO = ['#5FE0A8', '#25C9BE', '#FF7A3D', '#8AA9FF', '#F2C879'];
-const SUMA_52 = 1378; // 1+2+…+52
+const PRESETS_SEMANAS = [12, 26, 52];
+const sumaHasta = (n: number) => (n * (n + 1)) / 2;
 
 export const PantallaRetos: React.FC<PantallaRetosProps> = ({
   retos,
@@ -38,7 +40,7 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
   onAportarReto,
   onVolver,
 }) => {
-  const [plantilla, setPlantilla] = useState<TipoReto | null>(null);
+  const [modal, setModal] = useState<{ tipo: TipoReto; editando: RetoAhorro | null } | null>(null);
   const [confeti, setConfeti] = useState<{ activo: boolean; mensaje: string }>({ activo: false, mensaje: '' });
 
   const activos = retos.filter((r) => !r.completado);
@@ -105,8 +107,8 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
                   <div className="min-w-0">
                     <h2 className="font-display font-bold text-lg text-[color:var(--texto)] truncate">{reto.nombre}</h2>
                     <p className="text-xs text-[color:var(--texto-2)] flex items-center gap-1.5">
-                      {reto.tipo === '52_semanas' ? (
-                        <><TrendingUp className="w-3 h-3" /> Reto 52 semanas</>
+                      {reto.tipo === 'escalado' ? (
+                        <><TrendingUp className="w-3 h-3" /> Sube cada semana</>
                       ) : (
                         <><CalendarDays className="w-3 h-3" /> Aporte semanal fijo</>
                       )}
@@ -117,6 +119,13 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-[color:var(--accion)] bg-[var(--accion)]/12 border border-[var(--accion)]/25">
                     <Flame className="w-3.5 h-3.5" /> {reto.racha}
                   </span>
+                  <button
+                    onClick={() => setModal({ tipo: reto.tipo, editando: reto })}
+                    className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
+                    aria-label={`Editar ${reto.nombre}`}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={() => onEliminarReto(reto.id)}
                     className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--alerta)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
@@ -174,21 +183,21 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <button
-            onClick={() => setPlantilla('52_semanas')}
+            onClick={() => setModal({ tipo: 'escalado', editando: null })}
             className="text-left flex items-start gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
           >
             <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
               <TrendingUp className="w-5 h-5 text-[color:var(--acento)]" />
             </span>
             <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Reto de las 52 semanas</h3>
+              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Reto escalado</h3>
               <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
-                Empieza con poco y sube un poquito cada semana. El clásico para juntar sin sentirlo.
+                Empieza con poco y sube cada semana. El clásico de las 52 semanas, al ritmo que tú elijas.
               </p>
             </div>
           </button>
           <button
-            onClick={() => setPlantilla('semanal_fijo')}
+            onClick={() => setModal({ tipo: 'semanal_fijo', editando: null })}
             className="text-left flex items-start gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
           >
             <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
@@ -238,13 +247,14 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
         </div>
       )}
 
-      {plantilla && (
+      {modal && (
         <ModalReto
-          plantilla={plantilla}
-          onCerrar={() => setPlantilla(null)}
-          onCrear={(reto) => {
+          tipo={modal.tipo}
+          editando={modal.editando}
+          onCerrar={() => setModal(null)}
+          onGuardar={(reto) => {
             onGuardarReto(reto);
-            setPlantilla(null);
+            setModal(null);
           }}
         />
       )}
@@ -253,21 +263,31 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
 };
 
 // ============================================================
-// Modal para crear un reto desde una plantilla
+// Modal para crear o editar un reto
 // ============================================================
 interface ModalRetoProps {
-  plantilla: TipoReto;
+  tipo: TipoReto;
+  editando: RetoAhorro | null;
   onCerrar: () => void;
-  onCrear: (reto: RetoAhorro) => void;
+  onGuardar: (reto: RetoAhorro) => void;
 }
 
-const ModalReto: React.FC<ModalRetoProps> = ({ plantilla, onCerrar, onCrear }) => {
-  const es52 = plantilla === '52_semanas';
-  const [nombre, setNombre] = useState(es52 ? 'Reto 52 semanas' : 'Mi meta de ahorro');
-  const [baseStr, setBaseStr] = useState(es52 ? formatearCOP(2000) : '');
-  const [aporteStr, setAporteStr] = useState(es52 ? '' : formatearCOP(50000));
-  const [metaStr, setMetaStr] = useState(es52 ? '' : formatearCOP(1000000));
-  const [color, setColor] = useState(COLORES_RETO[0]);
+const ModalReto: React.FC<ModalRetoProps> = ({ tipo, editando, onCerrar, onGuardar }) => {
+  const esEscalado = tipo === 'escalado';
+  const [nombre, setNombre] = useState(
+    editando?.nombre || (esEscalado ? 'Reto escalado' : 'Mi meta de ahorro')
+  );
+  const [baseStr, setBaseStr] = useState(
+    esEscalado ? formatearCOP(editando?.aporteBase ?? 2000) : ''
+  );
+  const [semanas, setSemanas] = useState<number>(esEscalado ? editando?.semanasTotales ?? 52 : 20);
+  const [aporteStr, setAporteStr] = useState(
+    !esEscalado ? formatearCOP(editando?.aporteBase ?? 50000) : ''
+  );
+  const [metaStr, setMetaStr] = useState(
+    !esEscalado ? formatearCOP(editando?.metaTotal ?? 1000000) : ''
+  );
+  const [color, setColor] = useState(editando?.color || COLORES_RETO[0]);
   const [error, setError] = useState('');
 
   const num = (s: string) => parseInt(s.replace(/[^\d]/g, ''), 10) || 0;
@@ -281,43 +301,61 @@ const ModalReto: React.FC<ModalRetoProps> = ({ plantilla, onCerrar, onCrear }) =
   const base = num(baseStr);
   const aporte = num(aporteStr);
   const meta = num(metaStr);
-  const metaCalculada = es52 ? base * SUMA_52 : meta;
-  const semanas = es52 ? 52 : aporte > 0 ? Math.max(1, Math.ceil(meta / aporte)) : 0;
+  const metaCalculada = esEscalado ? base * sumaHasta(semanas) : meta;
+  const semanasTotales = esEscalado ? semanas : aporte > 0 ? Math.max(1, Math.ceil(meta / aporte)) : 0;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre.trim()) { setError('Ponle un nombre al reto'); return; }
-    if (es52 && base <= 0) { setError('Elige un aporte base'); return; }
-    if (!es52 && (aporte <= 0 || meta <= 0)) { setError('Escribe el aporte y la meta'); return; }
+    if (esEscalado && (base <= 0 || semanas < 1)) { setError('Elige el aporte base y las semanas'); return; }
+    if (!esEscalado && (aporte <= 0 || meta <= 0)) { setError('Escribe el aporte y la meta'); return; }
 
-    const reto: RetoAhorro = {
+    const aporteBase = esEscalado ? base : aporte;
+
+    if (editando) {
+      // Conservar progreso; recalcular meta/semanas y estado
+      const semanaActual = Math.min(editando.semanaActual, semanasTotales + 1);
+      const completado = editando.acumulado >= metaCalculada || semanaActual > semanasTotales;
+      onGuardar({
+        ...editando,
+        nombre: nombre.trim(),
+        aporteBase,
+        metaTotal: metaCalculada,
+        semanasTotales,
+        semanaActual,
+        completado,
+        color,
+      });
+      return;
+    }
+
+    onGuardar({
       id: `reto-${Date.now()}`,
       nombre: nombre.trim(),
-      tipo: plantilla,
-      aporteBase: es52 ? base : aporte,
+      tipo,
+      aporteBase,
       metaTotal: metaCalculada,
-      semanasTotales: semanas,
+      semanasTotales,
       semanaActual: 1,
       acumulado: 0,
       racha: 0,
       completado: false,
       color,
       creadoEn: new Date().toISOString(),
-    };
-    onCrear(reto);
+    });
   };
+
+  const titulo = editando ? 'Editar reto' : esEscalado ? 'Reto escalado' : 'Ahorro semanal fijo';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--base)]/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-md bg-[var(--superficie)] border border-[var(--linea)] rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md bg-[var(--superficie)] border border-[var(--linea)] rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col" role="dialog" aria-modal="true">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--linea)] bg-[var(--superficie-2)]">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-[var(--acento)]/10 text-[color:var(--acento)] border border-[var(--acento)]/20">
               <Trophy className="w-4 h-4" />
             </div>
-            <h2 className="text-base font-bold text-[color:var(--texto)]">
-              {es52 ? 'Reto de las 52 semanas' : 'Ahorro semanal fijo'}
-            </h2>
+            <h2 className="text-base font-bold text-[color:var(--texto)]">{titulo}</h2>
           </div>
           <button
             onClick={onCerrar}
@@ -328,7 +366,7 @@ const ModalReto: React.FC<ModalRetoProps> = ({ plantilla, onCerrar, onCrear }) =
           </button>
         </div>
 
-        <form onSubmit={submit} className="p-5 space-y-4">
+        <form onSubmit={submit} className="p-5 space-y-4 overflow-y-auto">
           {error && (
             <div className="p-3 rounded-xl bg-[var(--alerta)]/15 border border-[var(--alerta)]/30 text-xs text-[color:var(--alerta)] flex items-center gap-2">
               <X className="w-4 h-4 flex-shrink-0" />
@@ -348,38 +386,75 @@ const ModalReto: React.FC<ModalRetoProps> = ({ plantilla, onCerrar, onCrear }) =
             />
           </div>
 
-          {es52 ? (
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--texto-2)] block">
-                Aporte base (semana 1)
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {[1000, 2000, 5000].map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setBaseStr(formatearCOP(v))}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-colors ${
-                      base === v
-                        ? 'bg-[var(--acento)]/12 border-[var(--acento)] text-[color:var(--acento)]'
-                        : 'bg-[var(--superficie-2)] border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)]'
-                    }`}
-                  >
-                    {formatearCOP(v)}
-                  </button>
-                ))}
+          {esEscalado ? (
+            <>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--texto-2)] block">
+                  ¿Cuántas semanas?
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {PRESETS_SEMANAS.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => { setSemanas(v); if (error) setError(''); }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-colors ${
+                        semanas === v
+                          ? 'bg-[var(--acento)]/12 border-[var(--acento)] text-[color:var(--acento)]'
+                          : 'bg-[var(--superficie-2)] border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)]'
+                      }`}
+                    >
+                      {v} sem
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min={1}
+                    max={104}
+                    value={semanas}
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value, 10);
+                      setSemanas(isNaN(n) ? 0 : Math.min(104, Math.max(0, n)));
+                      if (error) setError('');
+                    }}
+                    className="w-20 px-3 py-1.5 rounded-lg bg-[var(--superficie-2)] border border-[var(--linea)] text-xs font-semibold tabular-nums text-[color:var(--texto)] focus:outline-none focus:border-[var(--acento)] transition-colors"
+                    aria-label="Número de semanas personalizado"
+                  />
+                </div>
               </div>
-              <div className="relative mt-1">
-                <input
-                  type="text"
-                  value={baseStr}
-                  onChange={fmt(setBaseStr)}
-                  placeholder="$0"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] focus:outline-none focus:border-[var(--acento)] transition-colors"
-                />
-                <span className="absolute right-3.5 top-2.5 text-xs text-[color:var(--texto-2)] uppercase">COP</span>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--texto-2)] block">
+                  Aporte base (semana 1)
+                </label>
+                <div className="flex flex-wrap gap-1.5 mb-1">
+                  {[1000, 2000, 5000].map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setBaseStr(formatearCOP(v))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-colors ${
+                        base === v
+                          ? 'bg-[var(--acento)]/12 border-[var(--acento)] text-[color:var(--acento)]'
+                          : 'bg-[var(--superficie-2)] border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)]'
+                      }`}
+                    >
+                      {formatearCOP(v)}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={baseStr}
+                    onChange={fmt(setBaseStr)}
+                    placeholder="$0"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] focus:outline-none focus:border-[var(--acento)] transition-colors"
+                  />
+                  <span className="absolute right-3.5 top-2.5 text-xs text-[color:var(--texto-2)] uppercase">COP</span>
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -410,11 +485,11 @@ const ModalReto: React.FC<ModalRetoProps> = ({ plantilla, onCerrar, onCrear }) =
           )}
 
           {/* Preview */}
-          <div className="p-3 rounded-xl bg-[var(--acento)]/8 border border-[var(--acento)]/20 flex items-center gap-2.5" style={{ background: 'color-mix(in srgb, var(--acento) 8%, transparent)' }}>
+          <div className="p-3 rounded-xl border border-[var(--acento)]/20 flex items-center gap-2.5" style={{ background: 'color-mix(in srgb, var(--acento) 8%, transparent)' }}>
             <Target className="w-4 h-4 text-[color:var(--acento)] flex-shrink-0" />
             <p className="text-xs text-[color:var(--texto)]">
               Juntarás <strong className="text-[color:var(--acento)] tabular-nums">{formatearCOP(metaCalculada)}</strong>
-              {semanas > 0 && <> en <strong>{semanas}</strong> semana{semanas === 1 ? '' : 's'}</>}.
+              {semanasTotales > 0 && <> en <strong>{semanasTotales}</strong> semana{semanasTotales === 1 ? '' : 's'}</>}.
             </p>
           </div>
 
@@ -434,10 +509,16 @@ const ModalReto: React.FC<ModalRetoProps> = ({ plantilla, onCerrar, onCrear }) =
             </div>
           </div>
 
+          {editando && (
+            <p className="text-[11px] text-[color:var(--texto-3)] leading-relaxed">
+              Se conserva lo que ya llevas apartado ({formatearCOP(editando.acumulado)}) y tu racha.
+            </p>
+          )}
+
           <div className="pt-3 border-t border-[var(--linea)] flex items-center justify-end gap-2.5">
             <Boton variante="fantasma" tamano="md" onClick={onCerrar} type="button">Cancelar</Boton>
-            <Boton variante="primario" tamano="md" type="submit" iconoDerecha={<Plus className="w-4 h-4" />}>
-              Empezar reto
+            <Boton variante="primario" tamano="md" type="submit" iconoDerecha={editando ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}>
+              {editando ? 'Guardar cambios' : 'Empezar reto'}
             </Boton>
           </div>
         </form>
