@@ -54,6 +54,10 @@ export default function App() {
     totalApartado,
     guardarSobre,
     eliminarSobre,
+    retos,
+    guardarReto,
+    eliminarReto,
+    aportarSemanaReto,
   } = useBolsilloData();
 
   const handleNavegar = (seccion: SeccionApp) => {
@@ -219,6 +223,10 @@ export default function App() {
                     saldoTotal={saldoTotal}
                     onGuardarSobre={guardarSobre}
                     onEliminarSobre={eliminarSobre}
+                    retos={retos}
+                    onGuardarReto={guardarReto}
+                    onEliminarReto={eliminarReto}
+                    onAportarReto={aportarSemanaReto}
                   />
                 ) : (
                   <PantallaPro

@@ -17,6 +17,7 @@ import {
   DatosTermometro,
   Presupuesto,
   Sobre,
+  RetoAhorro,
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
 
@@ -32,6 +33,7 @@ const STORAGE_KEYS = {
   NOMBRE_USUARIO: 'bolsillo_data_nombre_v3',
   PRESUPUESTOS: 'bolsillo_data_presupuestos_v3',
   SOBRES: 'bolsillo_data_sobres_v3',
+  RETOS: 'bolsillo_data_retos_v3',
 };
 
 // ==========================================
@@ -202,6 +204,24 @@ const MOCK_SOBRES_INICIAL: Sobre[] = [
   { id: 'sobre-emergencia', nombre: 'Fondo de emergencia', meta: 1000000, apartado: 300000, color: '#5FE0A8', creadoEn: '2026-08-01' },
   { id: 'sobre-arriendo', nombre: 'Arriendo', meta: 800000, apartado: 500000, color: '#25C9BE', creadoEn: '2026-08-01' },
   { id: 'sobre-moto', nombre: 'Cuota moto', meta: 2000000, apartado: 150000, color: '#FF7A3D', creadoEn: '2026-08-01' },
+];
+
+// Semilla Pro: reto de ahorro en curso
+const MOCK_RETOS_INICIAL: RetoAhorro[] = [
+  {
+    id: 'reto-millon',
+    nombre: 'Mi primer millón',
+    tipo: 'semanal_fijo',
+    aporteBase: 50000,
+    metaTotal: 1000000,
+    semanasTotales: 20,
+    semanaActual: 9,
+    acumulado: 400000,
+    racha: 8,
+    completado: false,
+    color: '#5FE0A8',
+    creadoEn: '2026-07-01',
+  },
 ];
 
 // Mecanismo de eventos para reactividad en componentes
@@ -845,6 +865,7 @@ export function restablecerDatosEjemplo(): void {
     localStorage.setItem(STORAGE_KEYS.NIVEL_ACCESO, JSON.stringify('demo'));
     localStorage.removeItem(STORAGE_KEYS.PRESUPUESTOS);
     localStorage.removeItem(STORAGE_KEYS.SOBRES);
+    localStorage.removeItem(STORAGE_KEYS.RETOS);
     notificarCambio();
   } catch (err) {
     console.error('Error al restablecer datos de ejemplo:', err);
@@ -961,4 +982,77 @@ export function eliminarSobre(id: string): void {
 
 export function getTotalApartadoSobres(): number {
   return getSobres().reduce((sum, s) => sum + (Number(s.apartado) || 0), 0);
+}
+
+// ==========================================
+// RETOS DE AHORRO (Pro · Crecer)
+// ==========================================
+
+export function getRetos(): RetoAhorro[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.RETOS);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error al leer retos:', err);
+  }
+  return MOCK_RETOS_INICIAL;
+}
+
+export function setRetos(items: RetoAhorro[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.RETOS, JSON.stringify(items));
+    notificarCambio();
+  } catch (err) {
+    console.error('Error al guardar retos:', err);
+  }
+}
+
+export function guardarReto(reto: RetoAhorro): void {
+  const items = getRetos();
+  const idx = items.findIndex((r) => r.id === reto.id);
+  let nuevos: RetoAhorro[];
+  if (idx >= 0) {
+    nuevos = [...items];
+    nuevos[idx] = reto;
+  } else {
+    nuevos = [...items, reto];
+  }
+  setRetos(nuevos);
+}
+
+export function eliminarReto(id: string): void {
+  setRetos(getRetos().filter((r) => r.id !== id));
+}
+
+/** Aporte que corresponde a la semana pendiente de un reto. */
+export function aporteSemanaDe(reto: RetoAhorro): number {
+  if (reto.completado) return 0;
+  return reto.tipo === '52_semanas' ? reto.aporteBase * reto.semanaActual : reto.aporteBase;
+}
+
+/**
+ * Registra el aporte de la semana actual: suma al acumulado, avanza semana,
+ * incrementa la racha y marca completado si toca.
+ */
+export function aportarSemanaReto(
+  id: string
+): { exito: boolean; aporte: number; completado: boolean; acumulado: number } {
+  const retos = getRetos();
+  const idx = retos.findIndex((r) => r.id === id);
+  if (idx < 0) return { exito: false, aporte: 0, completado: false, acumulado: 0 };
+
+  const r = { ...retos[idx] };
+  if (r.completado) return { exito: false, aporte: 0, completado: true, acumulado: r.acumulado };
+
+  const aporte = r.tipo === '52_semanas' ? r.aporteBase * r.semanaActual : r.aporteBase;
+  r.acumulado += aporte;
+  r.semanaActual += 1;
+  r.racha += 1;
+  if (r.semanaActual > r.semanasTotales || r.acumulado >= r.metaTotal) {
+    r.completado = true;
+  }
+
+  retos[idx] = r;
+  setRetos(retos);
+  return { exito: true, aporte, completado: r.completado, acumulado: r.acumulado };
 }

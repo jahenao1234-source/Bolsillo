@@ -3,17 +3,19 @@ import {
   PieChart,
   Mail,
   Trophy,
+  Flame,
   CalendarDays,
   CreditCard,
   ArrowRight,
   Sparkles,
   Lock,
 } from 'lucide-react';
-import { Presupuesto, Sobre } from '../types';
+import { Presupuesto, Sobre, RetoAhorro } from '../types';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { formatearCOP } from '../utils/format';
 import { PantallaPresupuesto } from './PantallaPresupuesto';
 import { PantallaSobres } from './PantallaSobres';
+import { PantallaRetos } from './PantallaRetos';
 
 interface PantallaCrecerProps {
   resetToken?: number;
@@ -27,9 +29,13 @@ interface PantallaCrecerProps {
   saldoTotal: number;
   onGuardarSobre: (sobre: Sobre) => void;
   onEliminarSobre: (id: string) => void;
+  retos: RetoAhorro[];
+  onGuardarReto: (reto: RetoAhorro) => void;
+  onEliminarReto: (id: string) => void;
+  onAportarReto: (id: string) => { exito: boolean; aporte: number; completado: boolean; acumulado: number };
 }
 
-type Modulo = 'hub' | 'presupuesto' | 'sobres';
+type Modulo = 'hub' | 'presupuesto' | 'sobres' | 'retos';
 
 export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
   const {
@@ -43,6 +49,10 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     saldoTotal,
     onGuardarSobre,
     onEliminarSobre,
+    retos,
+    onGuardarReto,
+    onEliminarReto,
+    onAportarReto,
   } = props;
 
   const [modulo, setModulo] = useState<Modulo>('hub');
@@ -58,6 +68,13 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     const pct = totalTope > 0 ? Math.round((totalGastado / totalTope) * 100) : 0;
     return { totalTope, totalGastado, pct, n: presupuestos.length };
   }, [presupuestos, gastoPorCategoria]);
+
+  const resumenRetos = useMemo(() => {
+    const activos = retos.filter((r) => !r.completado).length;
+    const acumulado = retos.reduce((s, r) => s + r.acumulado, 0);
+    const mejorRacha = retos.reduce((m, r) => Math.max(m, r.racha), 0);
+    return { activos, acumulado, mejorRacha };
+  }, [retos]);
 
   if (modulo === 'presupuesto') {
     return (
@@ -79,6 +96,18 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
         saldoTotal={saldoTotal}
         onGuardarSobre={onGuardarSobre}
         onEliminarSobre={onEliminarSobre}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
+  if (modulo === 'retos') {
+    return (
+      <PantallaRetos
+        retos={retos}
+        onGuardarReto={onGuardarReto}
+        onEliminarReto={onEliminarReto}
+        onAportarReto={onAportarReto}
         onVolver={() => setModulo('hub')}
       />
     );
@@ -136,7 +165,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
       <div>
         <div className="flex items-baseline justify-between px-1 mb-3">
           <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tus herramientas</h2>
-          <span className="text-xs text-[color:var(--texto-3)]">2 activas · 3 en camino</span>
+          <span className="text-xs text-[color:var(--texto-3)]">3 activas · 2 en camino</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -182,9 +211,35 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
             </div>
           </button>
 
+          {/* Retos de ahorro (activo) */}
+          <button
+            onClick={() => setModulo('retos')}
+            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
+                <Trophy className="w-5 h-5 text-[color:var(--acento)]" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Retos de ahorro</h3>
+              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed flex items-center gap-1">
+                {resumenRetos.activos > 0 ? (
+                  <>
+                    {formatearCOP(resumenRetos.acumulado)} juntado ·
+                    <Flame className="w-3 h-3 text-[color:var(--accion)]" />
+                    <span className="text-[color:var(--accion)] font-semibold">{resumenRetos.mejorRacha}</span>
+                  </>
+                ) : (
+                  'Junta tu primer millón con retos guiados'
+                )}
+              </p>
+            </div>
+          </button>
+
           {/* Próximamente */}
           {[
-            { nombre: 'Retos de ahorro', icono: Trophy, desc: 'Junta tu primer millón con retos guiados.' },
             { nombre: 'Suscripciones', icono: CalendarDays, desc: 'Caza los cobros que se comen tu sueldo.' },
             { nombre: 'Tarjetas y corte', icono: CreditCard, desc: 'Sabe con cuál pagar para no pagar intereses.' },
           ].map((m) => {

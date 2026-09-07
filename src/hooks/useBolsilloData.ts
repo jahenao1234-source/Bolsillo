@@ -30,6 +30,10 @@ import {
   guardarSobre,
   eliminarSobre,
   getTotalApartadoSobres,
+  getRetos,
+  guardarReto,
+  eliminarReto,
+  aportarSemanaReto,
   suscribirStore,
 } from '../data/store';
 import {
@@ -42,6 +46,7 @@ import {
   DatosTermometro,
   Presupuesto,
   Sobre,
+  RetoAhorro,
 } from '../types';
 
 export function useBolsilloData() {
@@ -61,6 +66,7 @@ export function useBolsilloData() {
   );
   const [sobres, setSobresState] = useState<Sobre[]>(getSobres);
   const [totalApartado, setTotalApartadoState] = useState<number>(getTotalApartadoSobres);
+  const [retos, setRetosState] = useState<RetoAhorro[]>(getRetos);
 
   useEffect(() => {
     const desuscribir = suscribirStore(() => {
@@ -78,6 +84,7 @@ export function useBolsilloData() {
       setGastoPorCategoriaState(getGastoPorCategoria('sep'));
       setSobresState(getSobres());
       setTotalApartadoState(getTotalApartadoSobres());
+      setRetosState(getRetos());
     });
     return desuscribir;
   }, []);
@@ -114,5 +121,9 @@ export function useBolsilloData() {
     totalApartado,
     guardarSobre,
     eliminarSobre,
+    retos,
+    guardarReto,
+    eliminarReto,
+    aportarSemanaReto,
   };
 }
