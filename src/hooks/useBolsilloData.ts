@@ -34,6 +34,13 @@ import {
   guardarReto,
   eliminarReto,
   aportarSemanaReto,
+  getSuscripciones,
+  guardarSuscripcion,
+  eliminarSuscripcion,
+  getSangradoMensual,
+  getTarjetasCredito,
+  guardarTarjetaCredito,
+  eliminarTarjetaCredito,
   suscribirStore,
 } from '../data/store';
 import {
@@ -47,6 +54,8 @@ import {
   Presupuesto,
   Sobre,
   RetoAhorro,
+  Suscripcion,
+  TarjetaCredito,
 } from '../types';
 
 export function useBolsilloData() {
@@ -67,6 +76,9 @@ export function useBolsilloData() {
   const [sobres, setSobresState] = useState<Sobre[]>(getSobres);
   const [totalApartado, setTotalApartadoState] = useState<number>(getTotalApartadoSobres);
   const [retos, setRetosState] = useState<RetoAhorro[]>(getRetos);
+  const [suscripciones, setSuscripcionesState] = useState<Suscripcion[]>(getSuscripciones);
+  const [sangradoMensual, setSangradoState] = useState<number>(getSangradoMensual);
+  const [tarjetasCredito, setTarjetasCreditoState] = useState<TarjetaCredito[]>(getTarjetasCredito);
 
   useEffect(() => {
     const desuscribir = suscribirStore(() => {
@@ -85,6 +97,9 @@ export function useBolsilloData() {
       setSobresState(getSobres());
       setTotalApartadoState(getTotalApartadoSobres());
       setRetosState(getRetos());
+      setSuscripcionesState(getSuscripciones());
+      setSangradoState(getSangradoMensual());
+      setTarjetasCreditoState(getTarjetasCredito());
     });
     return desuscribir;
   }, []);
@@ -125,5 +140,12 @@ export function useBolsilloData() {
     guardarReto,
     eliminarReto,
     aportarSemanaReto,
+    suscripciones,
+    sangradoMensual,
+    guardarSuscripcion,
+    eliminarSuscripcion,
+    tarjetasCredito,
+    guardarTarjetaCredito,
+    eliminarTarjetaCredito,
   };
 }

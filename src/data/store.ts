@@ -18,6 +18,8 @@ import {
   Presupuesto,
   Sobre,
   RetoAhorro,
+  Suscripcion,
+  TarjetaCredito,
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
 
@@ -34,6 +36,8 @@ const STORAGE_KEYS = {
   PRESUPUESTOS: 'bolsillo_data_presupuestos_v3',
   SOBRES: 'bolsillo_data_sobres_v3',
   RETOS: 'bolsillo_data_retos_v3',
+  SUSCRIPCIONES: 'bolsillo_data_suscripciones_v3',
+  TARJETAS_CREDITO: 'bolsillo_data_tarjetas_credito_v3',
 };
 
 // ==========================================
@@ -222,6 +226,20 @@ const MOCK_RETOS_INICIAL: RetoAhorro[] = [
     color: '#5FE0A8',
     creadoEn: '2026-07-01',
   },
+];
+
+// Semilla Pro: suscripciones recurrentes
+const MOCK_SUSCRIPCIONES_INICIAL: Suscripcion[] = [
+  { id: 'sus-netflix', nombre: 'Netflix', monto: 44900, diaCobro: 15, categoria: 'Streaming', activa: true, color: '#E89385', creadoEn: '2026-08-01' },
+  { id: 'sus-spotify', nombre: 'Spotify', monto: 16900, diaCobro: 5, categoria: 'Música', activa: true, color: '#5FE0A8', creadoEn: '2026-08-01' },
+  { id: 'sus-gym', nombre: 'Gimnasio Smart Fit', monto: 89900, diaCobro: 1, categoria: 'Salud', activa: true, color: '#FF7A3D', creadoEn: '2026-08-01' },
+  { id: 'sus-disney', nombre: 'Disney+', monto: 29900, diaCobro: 20, categoria: 'Streaming', activa: true, color: '#8AA9FF', creadoEn: '2026-08-01' },
+];
+
+// Semilla Pro: tarjetas de crédito (días de corte y pago)
+const MOCK_TARJETAS_CREDITO_INICIAL: TarjetaCredito[] = [
+  { id: 'tc-exito', nombre: 'Tarjeta Éxito', diaCorte: 15, diaPago: 5, cupo: 3000000, color: '#FF7A3D', creadoEn: '2026-08-01' },
+  { id: 'tc-visa', nombre: 'Visa Bancolombia', diaCorte: 28, diaPago: 18, cupo: 5000000, color: '#25C9BE', creadoEn: '2026-08-01' },
 ];
 
 // Mecanismo de eventos para reactividad en componentes
@@ -866,6 +884,8 @@ export function restablecerDatosEjemplo(): void {
     localStorage.removeItem(STORAGE_KEYS.PRESUPUESTOS);
     localStorage.removeItem(STORAGE_KEYS.SOBRES);
     localStorage.removeItem(STORAGE_KEYS.RETOS);
+    localStorage.removeItem(STORAGE_KEYS.SUSCRIPCIONES);
+    localStorage.removeItem(STORAGE_KEYS.TARJETAS_CREDITO);
     notificarCambio();
   } catch (err) {
     console.error('Error al restablecer datos de ejemplo:', err);
@@ -1055,4 +1075,104 @@ export function aportarSemanaReto(
   retos[idx] = r;
   setRetos(retos);
   return { exito: true, aporte, completado: r.completado, acumulado: r.acumulado };
+}
+
+// ==========================================
+// SUSCRIPCIONES (Pro · Crecer)
+// ==========================================
+
+export function getSuscripciones(): Suscripcion[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SUSCRIPCIONES);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error al leer suscripciones:', err);
+  }
+  return MOCK_SUSCRIPCIONES_INICIAL;
+}
+
+export function setSuscripciones(items: Suscripcion[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SUSCRIPCIONES, JSON.stringify(items));
+    notificarCambio();
+  } catch (err) {
+    console.error('Error al guardar suscripciones:', err);
+  }
+}
+
+export function guardarSuscripcion(sus: Suscripcion): void {
+  const items = getSuscripciones();
+  const idx = items.findIndex((s) => s.id === sus.id);
+  const normal: Suscripcion = {
+    ...sus,
+    monto: Math.max(0, Math.round(sus.monto || 0)),
+    diaCobro: Math.min(31, Math.max(1, Math.round(sus.diaCobro || 1))),
+    creadoEn: sus.creadoEn || new Date().toISOString(),
+  };
+  let nuevos: Suscripcion[];
+  if (idx >= 0) {
+    nuevos = [...items];
+    nuevos[idx] = normal;
+  } else {
+    nuevos = [...items, normal];
+  }
+  setSuscripciones(nuevos);
+}
+
+export function eliminarSuscripcion(id: string): void {
+  setSuscripciones(getSuscripciones().filter((s) => s.id !== id));
+}
+
+/** Suma mensual de las suscripciones activas (el "sangrado"). */
+export function getSangradoMensual(): number {
+  return getSuscripciones()
+    .filter((s) => s.activa)
+    .reduce((sum, s) => sum + (Number(s.monto) || 0), 0);
+}
+
+// ==========================================
+// TARJETAS DE CRÉDITO (Pro · Crecer)
+// ==========================================
+
+export function getTarjetasCredito(): TarjetaCredito[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.TARJETAS_CREDITO);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error al leer tarjetas de crédito:', err);
+  }
+  return MOCK_TARJETAS_CREDITO_INICIAL;
+}
+
+export function setTarjetasCredito(items: TarjetaCredito[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.TARJETAS_CREDITO, JSON.stringify(items));
+    notificarCambio();
+  } catch (err) {
+    console.error('Error al guardar tarjetas de crédito:', err);
+  }
+}
+
+export function guardarTarjetaCredito(tc: TarjetaCredito): void {
+  const items = getTarjetasCredito();
+  const idx = items.findIndex((t) => t.id === tc.id);
+  const normal: TarjetaCredito = {
+    ...tc,
+    diaCorte: Math.min(31, Math.max(1, Math.round(tc.diaCorte || 1))),
+    diaPago: Math.min(31, Math.max(1, Math.round(tc.diaPago || 1))),
+    cupo: tc.cupo != null ? Math.max(0, Math.round(tc.cupo)) : undefined,
+    creadoEn: tc.creadoEn || new Date().toISOString(),
+  };
+  let nuevos: TarjetaCredito[];
+  if (idx >= 0) {
+    nuevos = [...items];
+    nuevos[idx] = normal;
+  } else {
+    nuevos = [...items, normal];
+  }
+  setTarjetasCredito(nuevos);
+}
+
+export function eliminarTarjetaCredito(id: string): void {
+  setTarjetasCredito(getTarjetasCredito().filter((t) => t.id !== id));
 }

@@ -4,18 +4,19 @@ import {
   Mail,
   Trophy,
   Flame,
-  CalendarDays,
+  Repeat,
   CreditCard,
   ArrowRight,
   Sparkles,
-  Lock,
 } from 'lucide-react';
-import { Presupuesto, Sobre, RetoAhorro } from '../types';
+import { Presupuesto, Sobre, RetoAhorro, Suscripcion, TarjetaCredito } from '../types';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { formatearCOP } from '../utils/format';
 import { PantallaPresupuesto } from './PantallaPresupuesto';
 import { PantallaSobres } from './PantallaSobres';
 import { PantallaRetos } from './PantallaRetos';
+import { PantallaSuscripciones } from './PantallaSuscripciones';
+import { PantallaTarjetas } from './PantallaTarjetas';
 
 interface PantallaCrecerProps {
   resetToken?: number;
@@ -33,9 +34,16 @@ interface PantallaCrecerProps {
   onGuardarReto: (reto: RetoAhorro) => void;
   onEliminarReto: (id: string) => void;
   onAportarReto: (id: string) => { exito: boolean; aporte: number; completado: boolean; acumulado: number };
+  suscripciones: Suscripcion[];
+  sangradoMensual: number;
+  onGuardarSuscripcion: (sus: Suscripcion) => void;
+  onEliminarSuscripcion: (id: string) => void;
+  tarjetas: TarjetaCredito[];
+  onGuardarTarjeta: (tc: TarjetaCredito) => void;
+  onEliminarTarjeta: (id: string) => void;
 }
 
-type Modulo = 'hub' | 'presupuesto' | 'sobres' | 'retos';
+type Modulo = 'hub' | 'presupuesto' | 'sobres' | 'retos' | 'suscripciones' | 'tarjetas';
 
 export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
   const {
@@ -53,6 +61,13 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     onGuardarReto,
     onEliminarReto,
     onAportarReto,
+    suscripciones,
+    sangradoMensual,
+    onGuardarSuscripcion,
+    onEliminarSuscripcion,
+    tarjetas,
+    onGuardarTarjeta,
+    onEliminarTarjeta,
   } = props;
 
   const [modulo, setModulo] = useState<Modulo>('hub');
@@ -113,6 +128,29 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     );
   }
 
+  if (modulo === 'suscripciones') {
+    return (
+      <PantallaSuscripciones
+        suscripciones={suscripciones}
+        sangradoMensual={sangradoMensual}
+        onGuardarSuscripcion={onGuardarSuscripcion}
+        onEliminarSuscripcion={onEliminarSuscripcion}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
+  if (modulo === 'tarjetas') {
+    return (
+      <PantallaTarjetas
+        tarjetas={tarjetas}
+        onGuardarTarjeta={onGuardarTarjeta}
+        onEliminarTarjeta={onEliminarTarjeta}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 pb-24 md:pb-12 max-w-5xl mx-auto animate-screen-enter">
       {/* Cabecera */}
@@ -165,7 +203,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
       <div>
         <div className="flex items-baseline justify-between px-1 mb-3">
           <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tus herramientas</h2>
-          <span className="text-xs text-[color:var(--texto-3)]">3 activas · 2 en camino</span>
+          <span className="text-xs text-[color:var(--texto-3)]">5 herramientas</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
@@ -238,32 +276,47 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
             </div>
           </button>
 
-          {/* Próximamente */}
-          {[
-            { nombre: 'Suscripciones', icono: CalendarDays, desc: 'Caza los cobros que se comen tu sueldo.' },
-            { nombre: 'Tarjetas y corte', icono: CreditCard, desc: 'Sabe con cuál pagar para no pagar intereses.' },
-          ].map((m) => {
-            const Icono = m.icono;
-            return (
-              <div
-                key={m.nombre}
-                className="flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie-2)] border border-dashed border-[var(--linea)] opacity-80"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-11 h-11 rounded-xl grid place-items-center bg-[var(--superficie)] border border-[var(--linea)] text-[color:var(--texto-3)]">
-                    <Icono className="w-5 h-5" />
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[color:var(--texto-3)] bg-[var(--superficie)] border border-[var(--linea)] rounded-full px-2 py-0.5">
-                    <Lock className="w-3 h-3" /> Pronto
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-display font-bold text-sm text-[color:var(--texto-2)]">{m.nombre}</h3>
-                  <p className="mt-1 text-xs text-[color:var(--texto-3)] leading-relaxed">{m.desc}</p>
-                </div>
+          {/* Suscripciones */}
+          <button
+            onClick={() => setModulo('suscripciones')}
+            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
+                <Repeat className="w-5 h-5 text-[color:var(--acento)]" />
               </div>
-            );
-          })}
+              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Suscripciones</h3>
+              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
+                {suscripciones.length > 0
+                  ? `${formatearCOP(sangradoMensual)}/mes · ${suscripciones.filter((s) => s.activa).length} activas`
+                  : 'Caza los cobros que se comen tu sueldo'}
+              </p>
+            </div>
+          </button>
+
+          {/* Tarjetas y corte */}
+          <button
+            onClick={() => setModulo('tarjetas')}
+            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
+                <CreditCard className="w-5 h-5 text-[color:var(--acento)]" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Tarjetas y corte</h3>
+              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
+                {tarjetas.length > 0
+                  ? `${tarjetas.length} tarjeta${tarjetas.length === 1 ? '' : 's'} · con cuál pagar hoy`
+                  : 'Sabe con cuál pagar para no pagar intereses'}
+              </p>
+            </div>
+          </button>
         </div>
       </div>
     </div>

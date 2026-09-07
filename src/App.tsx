@@ -58,6 +58,13 @@ export default function App() {
     guardarReto,
     eliminarReto,
     aportarSemanaReto,
+    suscripciones,
+    sangradoMensual,
+    guardarSuscripcion,
+    eliminarSuscripcion,
+    tarjetasCredito,
+    guardarTarjetaCredito,
+    eliminarTarjetaCredito,
   } = useBolsilloData();
 
   const handleNavegar = (seccion: SeccionApp) => {
@@ -227,6 +234,13 @@ export default function App() {
                     onGuardarReto={guardarReto}
                     onEliminarReto={eliminarReto}
                     onAportarReto={aportarSemanaReto}
+                    suscripciones={suscripciones}
+                    sangradoMensual={sangradoMensual}
+                    onGuardarSuscripcion={guardarSuscripcion}
+                    onEliminarSuscripcion={eliminarSuscripcion}
+                    tarjetas={tarjetasCredito}
+                    onGuardarTarjeta={guardarTarjetaCredito}
+                    onEliminarTarjeta={eliminarTarjetaCredito}
                   />
                 ) : (
                   <PantallaPro

@@ -176,3 +176,26 @@ export interface RetoAhorro {
   color?: string;
   creadoEn: string;
 }
+
+/** Suscripción recurrente (cobro mensual automático). */
+export interface Suscripcion {
+  id: string;
+  nombre: string;
+  monto: number;
+  diaCobro: number;        // día del mes (1-31)
+  categoria?: string;
+  activa: boolean;
+  color?: string;
+  creadoEn: string;
+}
+
+/** Tarjeta de crédito con días de corte y de pago. */
+export interface TarjetaCredito {
+  id: string;
+  nombre: string;
+  diaCorte: number;        // día del mes en que cierra el ciclo
+  diaPago: number;         // día del mes límite de pago
+  cupo?: number;
+  color?: string;
+  creadoEn: string;
+}
