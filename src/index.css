@@ -51,7 +51,7 @@
   --accion-2: #FF9A63;    /* naranja claro (degradado de botón) */
   --positivo: #5FE0A8;    /* menta — ganancias / progreso */
   --advertencia: var(--texto-2); /* sin ámbar: neutral atenuado */
-  --alerta: var(--texto);        /* sin rojo: deuda y negativos en neutral */
+  --alerta: #E89385;             /* coral suave: resalta sin gritar (negativos / grave) */
   --on-acento: #04211F;   /* texto sobre teal */
   --on-accion: #2A1206;   /* texto sobre naranja */
 
@@ -78,7 +78,7 @@
   --accion-2: #FB8340;
   --positivo: #0E9E77;
   --advertencia: var(--texto-2);
-  --alerta: var(--texto);
+  --alerta: #C0574A;
   --on-acento: #FFFFFF;
   --on-accion: #2A1206;
 
@@ -198,7 +198,7 @@ h1, h2, h3, h4, .stat-value {
 }
 
 .animate-screen-enter {
-  animation: screenFadeSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: screenFadeSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Safe area padding para móviles con notch / home indicator */

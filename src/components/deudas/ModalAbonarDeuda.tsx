@@ -15,6 +15,7 @@ interface ModalAbonarDeudaProps {
   abierto: boolean;
   deuda: Deuda | null;
   billeteras: Billetera[];
+  montoInicial?: number;
   onCerrar: () => void;
   onConfirmarAbono: (deudaId: string, billeteraId: string, monto: number) => void;
 }
@@ -23,6 +24,7 @@ export const ModalAbonarDeuda: React.FC<ModalAbonarDeudaProps> = ({
   abierto,
   deuda,
   billeteras,
+  montoInicial,
   onCerrar,
   onConfirmarAbono,
 }) => {
@@ -37,12 +39,13 @@ export const ModalAbonarDeuda: React.FC<ModalAbonarDeudaProps> = ({
       setBilleteraId(conSaldo.id);
     }
     if (deuda) {
-      // Sugerir el pago mínimo por defecto o el saldo si es menor
+      // Sugerir el monto del plan (mínimo + extra) si se pasa; si no, el pago mínimo.
       const saldoActual = deuda.saldo ?? deuda.saldoTotal ?? 0;
-      const sugerido = Math.min(saldoActual, deuda.pagoMinimo > 0 ? deuda.pagoMinimo : saldoActual);
+      const base = montoInicial && montoInicial > 0 ? montoInicial : deuda.pagoMinimo > 0 ? deuda.pagoMinimo : saldoActual;
+      const sugerido = Math.min(saldoActual, base);
       setMontoStr(sugerido > 0 ? formatearCOP(sugerido) : '');
     }
-  }, [deuda, billeteras]);
+  }, [deuda, billeteras, montoInicial]);
 
   if (!abierto || !deuda) return null;
 
@@ -159,7 +162,7 @@ export const ModalAbonarDeuda: React.FC<ModalAbonarDeudaProps> = ({
               <span>Billetera de origen (de donde sale el dinero)</span>
               {billeteraSeleccionada && (
                 <span className="text-[11px] text-[color:var(--texto-2)]">
-                  Disponible: <strong className="text-[color:var(--positivo)]">{formatearCOP(saldoBilletera)}</strong>
+                  Disponible: <strong className={saldoBilletera >= 0 ? 'text-[color:var(--positivo)]' : 'text-[color:var(--alerta)]'}>{formatearCOP(saldoBilletera)}</strong>
                 </span>
               )}
             </label>

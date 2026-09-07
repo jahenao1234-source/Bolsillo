@@ -46,7 +46,7 @@ import { Boton } from '../components/ui/Boton';
 import { EstadoVacio } from '../components/ui/EstadoVacio';
 import { formatearCOP } from '../utils/format';
 import { Deuda, TipoDeuda, EstrategiaPago, Billetera } from '../types';
-import { calcularPlan, ordenarDeudasSegunEstrategia, calcularSerieSaldoDeuda } from '../logic/planDeudas';
+import { calcularPlan, ordenarDeudasSegunEstrategia, calcularSerieSaldoDeuda, calcularTablaPlan } from '../logic/planDeudas';
 import {
   marcarSaldada,
   eliminarDeuda,
@@ -364,6 +364,37 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
     return deudasActivas.reduce((acc, d) => acc + (d.saldo ?? d.saldoTotal ?? 0), 0);
   }, [deudasActivas]);
 
+  // --- Datos del plan (comparativa, ahorro, tabla, abono guiado) ---
+  const [tablaAbierta, setTablaAbierta] = useState(false);
+
+  const planBola = useMemo(
+    () => calcularPlan(deudasActivas, disponibleMensual, 'bola_de_nieve'),
+    [deudasActivas, disponibleMensual]
+  );
+  const planAval = useMemo(
+    () => calcularPlan(deudasActivas, disponibleMensual, 'avalancha'),
+    [deudasActivas, disponibleMensual]
+  );
+  const planMinimos = useMemo(
+    () => calcularPlan(deudasActivas, plan.pagoMinimoTotal, estrategia),
+    [deudasActivas, plan.pagoMinimoTotal, estrategia]
+  );
+  const ahorroVsMinimos =
+    planMinimos.esViable && planMinimos.interesesTotales > plan.interesesTotales
+      ? planMinimos.interesesTotales - plan.interesesTotales
+      : null;
+  const ahorroAvalancha = Math.max(0, planBola.interesesTotales - planAval.interesesTotales);
+  const tabla = useMemo(
+    () => calcularTablaPlan(deudasActivas, disponibleMensual, estrategia),
+    [deudasActivas, disponibleMensual, estrategia]
+  );
+  const prioridad = deudasOrdenadas[0] || null;
+  const minimosTotal = plan.pagoMinimoTotal;
+  const extraMensual = Math.max(0, disponibleMensual - minimosTotal);
+  const abonoPrioridad = prioridad
+    ? Math.min(prioridad.saldo ?? prioridad.saldoTotal ?? 0, (prioridad.pagoMinimo || 0) + extraMensual)
+    : 0;
+
   // Manejador para marcar como saldada con celebración y registro de victoria
   const handleMarcarSaldada = (deuda: Deuda) => {
     marcarSaldada(deuda.id, true);
@@ -564,7 +595,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
       {/* PANEL RESUMEN: FECHA DE LIBERTAD + LO QUE DEBES          */}
       {/* ========================================================= */}
       <Tarjeta padding="lg" className="overflow-hidden relative">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--linea)]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--linea)]">
           {/* Fecha de libertad calculada */}
           <div className="space-y-1 sm:pr-4">
             <span className="text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider flex items-center gap-1.5">
@@ -600,6 +631,20 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
               En {deudasActivas.length} deuda{deudasActivas.length === 1 ? '' : 's'} pendiente{deudasActivas.length === 1 ? '' : 's'}
             </p>
           </div>
+
+          {/* Te ahorras en intereses */}
+          <div className="space-y-1 pt-3 sm:pt-0 sm:pl-4">
+            <span className="text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[color:var(--positivo)]" />
+              Te ahorras
+            </span>
+            <div className="font-display font-bold text-2xl sm:text-3xl tabular-nums text-[color:var(--positivo)] tracking-tight">
+              {ahorroVsMinimos != null ? formatearCOP(ahorroVsMinimos) : '—'}
+            </div>
+            <p className="text-xs text-[color:var(--texto-2)]">
+              {ahorroVsMinimos != null ? 'en intereses vs. pagar solo mínimos' : 'sube tu plata al mes para ahorrar intereses'}
+            </p>
+          </div>
         </div>
 
         {plan.mensajeAdvertencia && (
@@ -610,22 +655,181 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         )}
       </Tarjeta>
 
-      {/* Curva: tu deuda va bajando (reacciona a la estrategia) */}
+      {/* Elige tu estrategia — comparativa */}
       {deudasActivas.length > 0 && (
+        <div className="space-y-3">
+          <div className="px-1">
+            <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Elige tu estrategia</h2>
+            <p className="text-xs text-[color:var(--texto-2)] mt-0.5">Las dos pagan todo; cambian el orden y el resultado.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setEstrategia('bola_de_nieve')}
+              className={`text-left p-4 rounded-2xl border transition-all cursor-pointer ${
+                estrategia === 'bola_de_nieve'
+                  ? 'bg-[var(--superficie)] border-[var(--acento)]'
+                  : 'bg-[var(--superficie)] border-[var(--hairline)] hover:border-[var(--acento)]/40'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">❄️ Bola de nieve</h3>
+                {estrategia === 'bola_de_nieve' && (
+                  <span className="text-[9px] font-bold uppercase tracking-wide text-[color:var(--on-accion)] bg-[var(--acento)] px-2 py-0.5 rounded-full">Elegida</span>
+                )}
+              </div>
+              <p className="text-[11px] text-[color:var(--texto-3)] mt-0.5">Ataca la deuda más pequeña primero.</p>
+              <div className="mt-2.5 space-y-1">
+                <div className="flex justify-between text-xs"><span className="text-[color:var(--texto-2)]">Libre en</span><b className="font-display text-[color:var(--texto)]">{planBola.fechaLibertad}</b></div>
+                <div className="flex justify-between text-xs"><span className="text-[color:var(--texto-2)]">Intereses</span><b className="font-display text-[color:var(--texto)] tabular-nums">{formatearCOP(planBola.interesesTotales)}</b></div>
+              </div>
+              {planBola.ordenSaldado[0] && (
+                <p className="mt-2 text-[11px] font-semibold text-[color:var(--positivo)]">✦ 1ª victoria en {planBola.ordenSaldado[0].mesSaldado} {planBola.ordenSaldado[0].mesSaldado === 1 ? 'mes' : 'meses'}</p>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEstrategia('avalancha')}
+              className={`text-left p-4 rounded-2xl border transition-all cursor-pointer ${
+                estrategia === 'avalancha'
+                  ? 'bg-[var(--superficie)] border-[var(--acento)]'
+                  : 'bg-[var(--superficie)] border-[var(--hairline)] hover:border-[var(--acento)]/40'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">⛰️ Avalancha</h3>
+                {estrategia === 'avalancha' && (
+                  <span className="text-[9px] font-bold uppercase tracking-wide text-[color:var(--on-accion)] bg-[var(--acento)] px-2 py-0.5 rounded-full">Elegida</span>
+                )}
+              </div>
+              <p className="text-[11px] text-[color:var(--texto-3)] mt-0.5">Ataca la de mayor interés primero.</p>
+              <div className="mt-2.5 space-y-1">
+                <div className="flex justify-between text-xs"><span className="text-[color:var(--texto-2)]">Libre en</span><b className="font-display text-[color:var(--texto)]">{planAval.fechaLibertad}</b></div>
+                <div className="flex justify-between text-xs"><span className="text-[color:var(--texto-2)]">Intereses</span><b className="font-display tabular-nums text-[color:var(--positivo)]">{formatearCOP(planAval.interesesTotales)}</b></div>
+              </div>
+              {ahorroAvalancha > 0 ? (
+                <p className="mt-2 text-[11px] font-semibold text-[color:var(--positivo)]">✦ Ahorras {formatearCOP(ahorroAvalancha)} en intereses</p>
+              ) : (
+                <p className="mt-2 text-[11px] font-semibold text-[color:var(--texto-3)]">Mismo interés en tu caso</p>
+              )}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setEstrategia('personalizado')}
+            className={`text-xs font-semibold cursor-pointer transition-colors ${
+              estrategia === 'personalizado' ? 'text-[color:var(--acento)]' : 'text-[color:var(--texto-3)] hover:text-[color:var(--texto-2)]'
+            }`}
+          >
+            {estrategia === 'personalizado' ? '✓ ' : ''}Prefiero ordenar yo mismo (arrastrar en la lista)
+          </button>
+        </div>
+      )}
+
+      {/* Tu pago de este mes (abono guiado) */}
+      {prioridad && (
         <Tarjeta padding="lg">
-          <div className="flex items-center justify-between mb-1 gap-3">
-            <div className="min-w-0">
-              <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tu deuda va bajando</h2>
-              <p className="text-xs text-[color:var(--texto-2)] mt-0.5 truncate">
-                Proyección con la estrategia actual · libre en {plan.fechaLibertad}
-              </p>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tu pago de este mes</h2>
+              <p className="text-xs text-[color:var(--texto-2)] mt-0.5">Mínimos en todas + todo el extra a UNA deuda.</p>
             </div>
-            <Chip variante="aqua">−{formatearCOP(plan.interesesTotales)} interés</Chip>
+            {editandoDisponible ? (
+              <form onSubmit={handleGuardarDisponible} className="flex items-center gap-1.5 flex-none">
+                <input
+                  type="text"
+                  value={disponibleTemp}
+                  onChange={(e) => {
+                    const clean = e.target.value.replace(/[^\d]/g, '');
+                    const num = parseInt(clean, 10) || 0;
+                    setDisponibleTemp(num > 0 ? formatearCOP(num) : '');
+                  }}
+                  className="w-28 px-2 py-1 rounded-lg bg-[var(--superficie-2)] border border-[var(--acento)] text-sm font-bold tabular-nums text-[color:var(--texto)] focus:outline-none"
+                  placeholder="$600.000"
+                  autoFocus
+                />
+                <button type="submit" className="p-1.5 rounded-lg bg-[var(--positivo)] text-[color:var(--on-acento)] cursor-pointer" title="Guardar">
+                  <Check className="w-4 h-4" />
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setDisponibleTemp(formatearCOP(disponibleMensual)); setEditandoDisponible(true); }}
+                className="text-right cursor-pointer group flex-none"
+              >
+                <span className="text-[10px] uppercase tracking-wider text-[color:var(--texto-3)] block">Plata / mes</span>
+                <span className="font-display font-bold text-sm text-[color:var(--positivo)] group-hover:underline inline-flex items-center gap-1">
+                  {formatearCOP(disponibleMensual)} <Edit3 className="w-3 h-3" />
+                </span>
+              </button>
+            )}
           </div>
-          <div className="mt-2">
-            <GraficoLinea puntos={puntosDeuda} color="var(--acento)" altura={200} />
+
+          <div>
+            <div className="flex items-center gap-2.5 py-2.5 text-sm text-[color:var(--texto-2)] border-t border-[var(--hairline)]">
+              <span className="w-2 h-2 rounded-full bg-[var(--texto-3)] flex-none" />
+              Mínimos de tus {deudasActivas.length} deudas
+              <span className="ml-auto font-display font-bold text-[color:var(--texto)] tabular-nums">{formatearCOP(minimosTotal)}</span>
+            </div>
+            <div className="flex items-center gap-2.5 py-2.5 text-sm text-[color:var(--texto-2)] border-t border-[var(--hairline)]">
+              <span className="w-2 h-2 rounded-full bg-[var(--accion)] flex-none" />
+              Extra a <b className="text-[color:var(--texto)]">{prioridad.nombre}</b>
+              <span className="ml-auto font-display font-bold text-[color:var(--accion)] tabular-nums">{formatearCOP(extraMensual)}</span>
+            </div>
+            <div className="flex items-center gap-2.5 py-2.5 text-sm border-t border-[var(--linea)]">
+              <span className="w-2 h-2 rounded-full bg-[var(--positivo)] flex-none" />
+              <b className="text-[color:var(--texto)]">Total del mes</b>
+              <span className="ml-auto font-display font-bold text-[color:var(--texto)] tabular-nums">{formatearCOP(disponibleMensual)}</span>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => { setDeudaSeleccionadaAbono(prioridad); setModalAbonarAbierto(true); }}
+            className="mt-4 w-full py-3.5 rounded-xl bg-accion-gradient text-[color:var(--on-accion)] font-display font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:opacity-95 transition-opacity"
+          >
+            Abonar a {prioridad.nombre} →
+          </button>
         </Tarjeta>
+      )}
+
+      {/* Tu camino a estar libre (línea de tiempo) */}
+      {plan.ordenSaldado.length > 0 && (
+        <div className="space-y-3">
+          <div className="px-1">
+            <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tu camino a estar libre</h2>
+            <p className="text-xs text-[color:var(--texto-2)] mt-0.5">Cuándo se libera cada deuda con tu plan.</p>
+          </div>
+          <Tarjeta padding="lg">
+            <div className="relative pl-8 pb-5">
+              <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />
+              <span className="absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 border-[var(--texto-3)] bg-[var(--superficie)]" />
+              <div className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">Hoy</div>
+              <div className="text-sm font-bold text-[color:var(--texto)] mt-0.5">Debes {formatearCOP(totalSaldosActivos)}</div>
+              <div className="text-[11px] text-[color:var(--texto-2)]">{deudasActivas.length} deudas activas</div>
+            </div>
+            {plan.ordenSaldado.map((item, idx) => {
+              const esUltimo = idx === plan.ordenSaldado.length - 1;
+              const severe = item.tipo === 'gota_a_gota';
+              return (
+                <div key={item.id} className="relative pl-8 pb-5 last:pb-0">
+                  {!esUltimo && <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />}
+                  <span className={`absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 ${esUltimo ? 'bg-[var(--positivo)] border-[var(--positivo)]' : severe ? 'border-[var(--alerta)] bg-[var(--superficie)]' : 'border-[var(--positivo)] bg-[var(--superficie)]'}`} />
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">{item.fechaEstimada}</div>
+                  <div className="text-sm font-bold mt-0.5">
+                    <span className={severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--positivo)]'}>✓ {item.nombre} — LIBRE</span>
+                    {esUltimo && ' 🎉'}
+                  </div>
+                  <div className="text-[11px] text-[color:var(--texto-2)]">
+                    {esUltimo ? '¡Libre de deudas!' : idx === 0 ? 'Tu primera victoria' : severe ? 'La más cara, ¡fuera!' : `Intereses pagados: ${formatearCOP(item.interesesPagados)}`}
+                  </div>
+                </div>
+              );
+            })}
+          </Tarjeta>
+        </div>
       )}
 
       {/* Aviso Contextual Pro Just-in-Time */}
@@ -637,119 +841,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         />
       )}
 
-      {/* ========================================================= */}
-      {/* CONTROL DE ESTRATEGIA Y CAJA LIGERA (DISPONIBLE MENSUAL) */}
-      {/* ========================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Toggle de Estrategia (3 opciones: Bola de nieve, Avalancha, Mi orden) */}
-        <Tarjeta padding="md" className="flex flex-col justify-between">
-          <div>
-            <span className="text-[11px] font-semibold text-[color:var(--texto-2)] uppercase tracking-wider block mb-2">
-              Estrategia de pago
-            </span>
-            <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)]">
-              <button
-                type="button"
-                onClick={() => setEstrategia('bola_de_nieve')}
-                className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center truncate ${
-                  estrategia === 'bola_de_nieve'
-                    ? 'bg-[var(--superficie)] text-[color:var(--texto)] shadow-xs border border-[var(--linea)]'
-                    : 'text-[color:var(--texto-2)] hover:text-[color:var(--texto)]'
-                }`}
-              >
-                Bola de nieve
-              </button>
-              <button
-                type="button"
-                onClick={() => setEstrategia('avalancha')}
-                className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center truncate ${
-                  estrategia === 'avalancha'
-                    ? 'bg-[var(--superficie)] text-[color:var(--texto)] shadow-xs border border-[var(--linea)]'
-                    : 'text-[color:var(--texto-2)] hover:text-[color:var(--texto)]'
-                }`}
-              >
-                Avalancha
-              </button>
-              <button
-                type="button"
-                onClick={() => setEstrategia('personalizado')}
-                className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer text-center truncate ${
-                  estrategia === 'personalizado'
-                    ? 'bg-[var(--superficie)] text-[color:var(--texto)] shadow-xs border border-[var(--linea)]'
-                    : 'text-[color:var(--texto-2)] hover:text-[color:var(--texto)]'
-                }`}
-              >
-                Mi orden
-              </button>
-            </div>
-          </div>
-
-          <p className="text-[11px] text-[color:var(--texto-2)] mt-2.5 leading-relaxed">
-            {estrategia === 'bola_de_nieve'
-              ? 'Menor saldo primero: victorias rápidas liberando cuotas de raíz.'
-              : estrategia === 'avalancha'
-              ? 'Mayor interés primero: ahorra la mayor cantidad de plata en intereses.'
-              : 'Orden personalizado: arrastra las tarjetas o usa ↑/↓ para fijar la prioridad.'}
-          </p>
-        </Tarjeta>
-
-        {/* Caja Ligera: Plata disponible mensual para abonar a deudas */}
-        <Tarjeta padding="md" className="flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold text-[color:var(--texto-2)] uppercase tracking-wider">
-              Plata para pagar deudas al mes
-            </span>
-            {!editandoDisponible && (
-              <button
-                onClick={() => {
-                  setDisponibleTemp(formatearCOP(disponibleMensual));
-                  setEditandoDisponible(true);
-                }}
-                className="p-1 rounded text-[color:var(--texto-2)] hover:text-[color:var(--acento)] cursor-pointer"
-                aria-label="Editar plata disponible"
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {editandoDisponible ? (
-            <form onSubmit={handleGuardarDisponible} className="flex items-center gap-2 my-1">
-              <input
-                type="text"
-                value={disponibleTemp}
-                onChange={(e) => {
-                  const clean = e.target.value.replace(/[^\d]/g, '');
-                  const num = parseInt(clean, 10) || 0;
-                  setDisponibleTemp(num > 0 ? formatearCOP(num) : '');
-                }}
-                className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--superficie-2)] border border-[var(--acento)] text-sm font-bold tabular-nums text-[color:var(--texto)] focus:outline-none"
-                placeholder="$600.000"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="p-2 rounded-lg bg-[var(--positivo)] text-[color:var(--on-acento)] font-bold cursor-pointer"
-                title="Guardar"
-              >
-                <Check className="w-4 h-4" />
-              </button>
-            </form>
-          ) : (
-            <div className="font-display font-bold text-2xl tabular-nums text-[color:var(--positivo)] tracking-tight">
-              {formatearCOP(disponibleMensual)}
-              <span className="text-xs font-normal text-[color:var(--texto-2)] ml-1.5">/ mes</span>
-            </div>
-          )}
-
-          <div className="text-[11px] text-[color:var(--texto-2)] mt-2 flex items-center justify-between pt-1 border-t border-[var(--linea)]">
-            <span>Cuotas mínimas: {formatearCOP(plan.pagoMinimoTotal)}</span>
-            <span className="text-[color:var(--positivo)] font-semibold">
-              Abono extra: {formatearCOP(Math.max(0, disponibleMensual - plan.pagoMinimoTotal))}
-            </span>
-          </div>
-        </Tarjeta>
-      </div>
+      {/* (La estrategia se elige arriba en la comparativa; la plata/mes se ajusta en "Tu pago de este mes".) */}
 
       {/* ========================================================= */}
       {/* SIMULADOR DE ABONO EXTRA EN TIEMPO REAL                   */}
@@ -845,6 +937,66 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         )}
       </div>
 
+      {/* Detalle mes a mes (desplegable) */}
+      {tabla.filas.length > 0 && (
+        <div className="space-y-3">
+          <div className="px-1">
+            <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Detalle mes a mes</h2>
+            <p className="text-xs text-[color:var(--texto-2)] mt-0.5">El saldo de cada deuda, mes por mes.</p>
+          </div>
+          <Tarjeta padding="md">
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr>
+                    <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Mes</th>
+                    {tabla.columnas.map((c) => (
+                      <th key={c.id} className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">
+                        {c.nombre.length > 12 ? c.nombre.slice(0, 11) + '…' : c.nombre}
+                      </th>
+                    ))}
+                    <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Restante</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(tablaAbierta ? tabla.filas : tabla.filas.slice(0, 6)).map((f) => (
+                    <tr key={f.mes} className="border-t border-[var(--hairline)]">
+                      <td className="py-2 px-2 text-[color:var(--texto)] font-semibold whitespace-nowrap">{f.etiqueta}</td>
+                      {tabla.columnas.map((c) => {
+                        const s = f.saldos[c.id] ?? 0;
+                        const severe = c.tipo === 'gota_a_gota';
+                        return (
+                          <td
+                            key={c.id}
+                            className={`py-2 px-2 text-right tabular-nums whitespace-nowrap ${
+                              s <= 0 ? 'text-[color:var(--positivo)]' : severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--texto-2)]'
+                            }`}
+                          >
+                            {s <= 0 ? '✓' : formatearCOP(s)}
+                          </td>
+                        );
+                      })}
+                      <td className="py-2 px-2 text-right tabular-nums font-semibold text-[color:var(--texto)] whitespace-nowrap">
+                        {formatearCOP(f.total)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {tabla.filas.length > 6 && (
+              <button
+                type="button"
+                onClick={() => setTablaAbierta((v) => !v)}
+                className="mt-2 w-full text-center text-xs font-semibold text-[color:var(--acento)] cursor-pointer py-1"
+              >
+                {tablaAbierta ? 'Ver menos ▴' : `Ver los ${tabla.filas.length} meses ▾`}
+              </button>
+            )}
+          </Tarjeta>
+        </div>
+      )}
+
       {/* ========================================================= */}
       {/* SECCIÓN DEUDAS SALDADAS (TACHADAS, ATENUADAS)             */}
       {/* ========================================================= */}
@@ -906,6 +1058,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         abierto={modalAbonarAbierto}
         deuda={deudaSeleccionadaAbono}
         billeteras={billeteras.length > 0 ? billeteras : getBilleteras()}
+        montoInicial={deudaSeleccionadaAbono && prioridad && deudaSeleccionadaAbono.id === prioridad.id ? abonoPrioridad : undefined}
         onCerrar={() => {
           setModalAbonarAbierto(false);
           setDeudaSeleccionadaAbono(null);

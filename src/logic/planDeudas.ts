@@ -321,3 +321,76 @@ export function calcularSerieSaldoDeuda(
 
   return serie;
 }
+
+export interface FilaTablaPlan {
+  mes: number;
+  etiqueta: string;
+  saldos: Record<string, number>;
+  total: number;
+}
+
+export interface TablaPlan {
+  columnas: { id: string; nombre: string; tipo: Deuda['tipo'] }[];
+  filas: FilaTablaPlan[];
+}
+
+/**
+ * Cronograma mes a mes: saldo restante de cada deuda y el total, mes por mes,
+ * hasta liquidar todo. Para la tabla desplegable del plan.
+ */
+export function calcularTablaPlan(
+  deudas: Deuda[],
+  disponibleMensual: number,
+  estrategia: EstrategiaPago = 'bola_de_nieve'
+): TablaPlan {
+  const ordenadas = ordenarDeudasSegunEstrategia(deudas, estrategia);
+  const columnas = ordenadas.map((d) => ({ id: d.id, nombre: d.nombre, tipo: d.tipo }));
+  const filas: FilaTablaPlan[] = [];
+
+  if (ordenadas.length === 0 || disponibleMensual <= 0) return { columnas, filas };
+
+  const estado = ordenadas.map((d) => ({
+    id: d.id,
+    saldo: d.saldo ?? d.saldoTotal ?? 0,
+    tasa: d.tasaMensual ?? 0,
+    min: d.pagoMinimo,
+  }));
+
+  let meses = 0;
+  const LIMITE_MESES = 360;
+
+  while (meses < LIMITE_MESES) {
+    const activas = estado.filter((d) => d.saldo > 0);
+    if (activas.length === 0) break;
+    meses += 1;
+    let caja = disponibleMensual;
+
+    for (const d of activas) {
+      const c = Math.min(d.min, d.saldo, caja);
+      d.saldo -= c;
+      caja -= c;
+    }
+    while (caja > 0.01) {
+      const o = estado.find((d) => d.saldo > 0);
+      if (!o) break;
+      const a = Math.min(caja, o.saldo);
+      o.saldo -= a;
+      caja -= a;
+    }
+    for (const d of estado) {
+      if (d.saldo > 0 && d.tasa > 0) d.saldo += d.saldo * (d.tasa / 100);
+    }
+
+    const saldos: Record<string, number> = {};
+    let total = 0;
+    for (const d of estado) {
+      const s = Math.max(0, Math.round(d.saldo));
+      saldos[d.id] = s;
+      total += s;
+    }
+    filas.push({ mes: meses, etiqueta: calcularFechaMesRelativo(meses), saldos, total });
+    if (total <= 0.5) break;
+  }
+
+  return { columnas, filas };
+}
