@@ -22,6 +22,7 @@ import {
   TarjetaCredito,
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
+import { aporteDeSemana } from '../logic/retos';
 
 const STORAGE_KEYS = {
   RESUMEN: 'bolsillo_data_resumen_v3',
@@ -1089,7 +1090,7 @@ export function eliminarReto(id: string): void {
 /** Aporte que corresponde a la semana pendiente de un reto. */
 export function aporteSemanaDe(reto: RetoAhorro): number {
   if (reto.completado) return 0;
-  return reto.tipo === 'escalado' ? reto.aporteBase * reto.semanaActual : reto.aporteBase;
+  return aporteDeSemana(reto, reto.semanaActual);
 }
 
 /**
@@ -1106,7 +1107,7 @@ export function aportarSemanaReto(
   const r = { ...retos[idx] };
   if (r.completado) return { exito: false, aporte: 0, completado: true, acumulado: r.acumulado };
 
-  const aporte = r.tipo === 'escalado' ? r.aporteBase * r.semanaActual : r.aporteBase;
+  const aporte = aporteDeSemana(r, r.semanaActual);
   r.acumulado += aporte;
   r.semanaActual += 1;
   r.racha += 1;

@@ -166,12 +166,17 @@ export interface Sobre {
 
 export type TipoReto = 'escalado' | 'semanal_fijo';
 
+/** Escalado: la cuota sube semana a semana, o baja (empieza duro y afloja). */
+export type ModoEscalado = 'sube' | 'al_reves';
+
 /** Reto de ahorro guiado con aporte semanal y racha. */
 export interface RetoAhorro {
   id: string;
   nombre: string;
   tipo: TipoReto;
-  aporteBase: number;      // escalado: incremento por semana; semanal_fijo: aporte fijo
+  aporteBase: number;      // escalado: aporte de la primera semana; semanal_fijo: aporte fijo
+  incremento?: number;     // escalado: cuánto sube cada semana (si falta, es igual a aporteBase)
+  modo?: ModoEscalado;     // escalado: 'sube' por defecto
   metaTotal: number;
   semanasTotales: number;
   semanaActual: number;    // próxima semana a aportar (1-based); cumplidas = semanaActual - 1

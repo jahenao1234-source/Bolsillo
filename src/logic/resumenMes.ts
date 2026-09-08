@@ -17,18 +17,19 @@ import {
   TarjetaCredito,
 } from '../types';
 
+import {
+  MESES_ABREV,
+  MESES_NOMBRE,
+  diasEnMes,
+  fechaISOLocal,
+  mismoDia,
+} from '../utils/fechas';
+import { aporteDeSemana, escaleraPorMes, planDeReto } from './retos';
+
+export { MESES_ABREV, MESES_NOMBRE, fechaISOLocal };
+
 /** Azul de categorías del sistema (mismo de los donuts). */
 export const COLOR_TARJETA = '#8AA9FF';
-
-export const MESES_ABREV = [
-  'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-  'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
-];
-
-export const MESES_NOMBRE = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-];
 
 // =====================================================================
 // CONTEXTO DEL MES
@@ -48,10 +49,6 @@ export interface ContextoMes {
   abrevAnterior: string;
   nombreAnterior: string;
   diasDelMesAnterior: number;
-}
-
-function diasEnMes(mes: number, anio: number): number {
-  return new Date(anio, mes + 1, 0).getDate();
 }
 
 export function getContextoMes(ref: Date = new Date()): ContextoMes {
@@ -97,21 +94,6 @@ export function fechaDeMovimiento(m: Movimiento): Date | null {
   return fechaDeTexto(m.fecha);
 }
 
-/**
- * Lee una fecha ISO respetando el día que se ve escrito.
- * "2026-07-01" a secas lo interpreta el navegador como UTC y en Colombia se
- * corre al 30 de junio; aquí se construye en hora local para evitarlo.
- */
-export function fechaISOLocal(iso: string): Date | null {
-  if (!iso) return null;
-  const soloFecha = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (soloFecha) {
-    return new Date(Number(soloFecha[1]), Number(soloFecha[2]) - 1, Number(soloFecha[3]));
-  }
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? null : d;
-}
-
 /** Convierte "15 sep 2026" o "15 sep" en una fecha. */
 export function fechaDeTexto(texto?: string, anioPorDefecto?: number): Date | null {
   if (!texto) return null;
@@ -150,14 +132,6 @@ export function proximaFechaDeDia(diaDelMes: number, hoy: Date): Date {
   const anioSiguiente = hoy.getMonth() === 11 ? hoy.getFullYear() + 1 : hoy.getFullYear();
   const topeSiguiente = diasEnMes(mesSiguiente, anioSiguiente);
   return new Date(anioSiguiente, mesSiguiente, Math.min(dia, topeSiguiente));
-}
-
-function mismoDia(a: Date, b: Date): boolean {
-  return (
-    a.getDate() === b.getDate() &&
-    a.getMonth() === b.getMonth() &&
-    a.getFullYear() === b.getFullYear()
-  );
 }
 
 // =====================================================================
@@ -299,25 +273,18 @@ export function guardadoDelMes(
 ): number {
   if (!esPro) return 0;
 
+  // En el escalado cada semana vale distinto, así que se suman los aportes
+  // reales que caen en ese mes, no un aporte promedio por el número de semanas.
   return retos
     .filter((r) => !r.completado)
     .reduce((acc, reto) => {
       const inicio = fechaISOLocal(reto.creadoEn);
       if (!inicio) return acc;
 
-      const aporte = reto.tipo === 'escalado' ? reto.aporteBase * reto.semanaActual : reto.aporteBase;
-      const diasMes = diasEnMes(mes, anio);
-      let semanasEnElMes = 0;
-
-      for (let s = 0; s < reto.semanasTotales + 8; s++) {
-        const fecha = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + s * 7);
-        if (fecha.getFullYear() > anio || (fecha.getFullYear() === anio && fecha.getMonth() > mes)) break;
-        if (fecha.getFullYear() === anio && fecha.getMonth() === mes && fecha.getDate() <= diasMes) {
-          semanasEnElMes++;
-        }
-      }
-
-      return acc + aporte * semanasEnElMes;
+      const delMes = escaleraPorMes(planDeReto(reto), inicio).find(
+        (m) => m.mes === mes && m.anio === anio
+      );
+      return acc + (delMes ? delMes.monto : 0);
     }, 0);
 }
 
@@ -677,7 +644,7 @@ export function calcularAgenda(entrada: {
     // --- Retos: el aporte de la semana.
     for (const reto of retos) {
       if (reto.completado) continue;
-      const aporte = reto.tipo === 'escalado' ? reto.aporteBase * reto.semanaActual : reto.aporteBase;
+      const aporte = aporteDeSemana(reto, reto.semanaActual);
       agregar(
         `reto-${reto.id}`,
         proximoAporteReto(reto, hoy),
