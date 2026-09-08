@@ -810,39 +810,61 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         </Tarjeta>
       )}
 
-      {/* Tu camino a estar libre (línea de tiempo) */}
+      {/* Tu camino a estar libre (mapa + estaciones) */}
       {plan.ordenSaldado.length > 0 && (
         <div className={`space-y-3 ${tabCls('crono')}`}>
           <div className="px-1">
             <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tu camino a estar libre</h2>
-            <p className="text-xs text-[color:var(--texto-2)] mt-0.5">Cuándo se libera cada deuda con tu plan.</p>
+            <p className="text-xs text-[color:var(--texto-2)] mt-0.5">
+              De {formatearCOP(totalSaldosActivos)} hoy a $0 en {plan.fechaLibertad}. Cada estación es una deuda menos.
+            </p>
           </div>
           <Tarjeta padding="lg">
-            <div className="relative pl-8 pb-5">
-              <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />
-              <span className="absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 border-[var(--texto-3)] bg-[var(--superficie)]" />
-              <div className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">Hoy</div>
-              <div className="text-sm font-bold text-[color:var(--texto)] mt-0.5">Debes {formatearCOP(totalSaldosActivos)}</div>
-              <div className="text-[11px] text-[color:var(--texto-2)]">{deudasActivas.length} deudas activas</div>
+            {/* El mapa: la curva de tu deuda bajando hasta cero */}
+            <GraficoLinea puntos={puntosDeuda} color="var(--acento)" altura={110} />
+
+            {/* Estaciones del camino */}
+            <div className="mt-5 pt-4 border-t border-[var(--hairline)]">
+              <div className="relative pl-8 pb-5">
+                <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />
+                <span className="absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 border-[var(--accion)] bg-[var(--superficie)]" />
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--accion)]">Hoy · estás aquí</span>
+                <div className="text-sm font-bold text-[color:var(--texto)] mt-0.5">Debes {formatearCOP(totalSaldosActivos)}</div>
+                <div className="text-[11px] text-[color:var(--texto-2)]">{deudasActivas.length} deudas activas</div>
+              </div>
+
+              {plan.ordenSaldado.map((item, idx) => {
+                const esUltimo = idx === plan.ordenSaldado.length - 1;
+                const severe = item.tipo === 'gota_a_gota';
+                const restante = tabla.filas.find((f) => f.mes === item.mesSaldado)?.total ?? 0;
+                const pagadoPct = totalSaldosActivos > 0
+                  ? Math.min(100, Math.round(((totalSaldosActivos - restante) / totalSaldosActivos) * 100))
+                  : 100;
+                return (
+                  <div key={item.id} className="relative pl-8 pb-5 last:pb-0">
+                    {!esUltimo && <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />}
+                    <span className={`absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 ${esUltimo ? 'bg-[var(--positivo)] border-[var(--positivo)]' : severe ? 'border-[var(--alerta)] bg-[var(--superficie)]' : 'border-[var(--positivo)] bg-[var(--superficie)]'}`} />
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">{item.fechaEstimada}</span>
+                      {!esUltimo && (
+                        <span className="text-[11px] tabular-nums text-[color:var(--texto-3)]">quedan {formatearCOP(restante)}</span>
+                      )}
+                    </div>
+                    <div className="text-sm font-bold mt-0.5">
+                      <span className={severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--positivo)]'}>✓ {item.nombre} — LIBRE</span>
+                      {esUltimo && ' 🎉'}
+                    </div>
+                    <div className="text-[11px] text-[color:var(--texto-2)]">
+                      {esUltimo ? '¡Libre de deudas!' : idx === 0 ? 'Tu primera victoria' : severe ? 'La más cara, ¡fuera!' : `Intereses pagados: ${formatearCOP(item.interesesPagados)}`}
+                    </div>
+                    <div className="mt-2 h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(3, pagadoPct)}%`, background: esUltimo ? 'var(--positivo)' : 'var(--acento)' }} />
+                    </div>
+                    <div className="text-[10px] text-[color:var(--texto-3)] mt-1">{pagadoPct}% del camino recorrido</div>
+                  </div>
+                );
+              })}
             </div>
-            {plan.ordenSaldado.map((item, idx) => {
-              const esUltimo = idx === plan.ordenSaldado.length - 1;
-              const severe = item.tipo === 'gota_a_gota';
-              return (
-                <div key={item.id} className="relative pl-8 pb-5 last:pb-0">
-                  {!esUltimo && <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />}
-                  <span className={`absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 ${esUltimo ? 'bg-[var(--positivo)] border-[var(--positivo)]' : severe ? 'border-[var(--alerta)] bg-[var(--superficie)]' : 'border-[var(--positivo)] bg-[var(--superficie)]'}`} />
-                  <div className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">{item.fechaEstimada}</div>
-                  <div className="text-sm font-bold mt-0.5">
-                    <span className={severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--positivo)]'}>✓ {item.nombre} — LIBRE</span>
-                    {esUltimo && ' 🎉'}
-                  </div>
-                  <div className="text-[11px] text-[color:var(--texto-2)]">
-                    {esUltimo ? '¡Libre de deudas!' : idx === 0 ? 'Tu primera victoria' : severe ? 'La más cara, ¡fuera!' : `Intereses pagados: ${formatearCOP(item.interesesPagados)}`}
-                  </div>
-                </div>
-              );
-            })}
           </Tarjeta>
         </div>
       )}
@@ -853,6 +875,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
           deudas={deudasActivas}
           disponibleMensual={disponibleMensual}
           estrategia={estrategia}
+          onSubirAbono={(n) => setDisponibleMensual(n)}
         />
       </div>
       </div>
