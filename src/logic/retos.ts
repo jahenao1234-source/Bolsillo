@@ -101,13 +101,24 @@ export function semanasParaMeta(
   return n;
 }
 
-/** ¿Con cuánto tengo que arrancar para que la escalera llegue a la meta? */
-export function arranqueParaMeta(meta: number, semanas: number, incremento: number): number {
-  if (semanas <= 0) return 0;
-  const queDanLosEscalones = (incremento * semanas * (semanas - 1)) / 2;
-  const porSemana = (meta - queDanLosEscalones) / semanas;
-  // Redondeado hacia arriba a la centena, para nunca quedar corto de la meta.
-  return Math.max(0, Math.ceil(porSemana / 100) * 100);
+/**
+ * ¿Qué escalera llega a la meta en ese plazo?
+ *
+ * Mueve el arranque y el incremento juntos —el clásico, donde la semana n
+ * vale n veces el escalón—. Es la única forma de que la escalera escale sin
+ * romperse: con el incremento clavado, los escalones solos ya se pasan de
+ * metas pequeñas y el arranque tendría que ser negativo.
+ *
+ * Redondea el escalón hacia arriba (al múltiplo de 50) para no quedar corto.
+ */
+export function escaleraParaMeta(
+  meta: number,
+  semanas: number
+): { arranque: number; incremento: number } {
+  if (semanas <= 0 || meta <= 0) return { arranque: 0, incremento: 0 };
+  const factor = semanas + (semanas * (semanas - 1)) / 2;
+  const escalon = Math.max(100, Math.ceil(meta / factor / 50) * 50);
+  return { arranque: escalon, incremento: escalon };
 }
 
 /** ¿Cuánto tengo que meter cada semana para llegar a la meta en ese plazo? */

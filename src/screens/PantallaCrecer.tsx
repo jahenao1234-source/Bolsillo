@@ -129,6 +129,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     return (
       <PantallaRetos
         retos={retos}
+        ingresoMensual={ingresoMensual}
         onGuardarReto={onGuardarReto}
         onEliminarReto={onEliminarReto}
         onAportarReto={onAportarReto}
