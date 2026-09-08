@@ -77,6 +77,7 @@ interface PantallaDeudasProps {
     billeteraId: string,
     monto: number
   ) => { exito: boolean; deudaSaldada: boolean; deuda?: Deuda };
+  esPro?: boolean;
 }
 
 interface ItemDeudaProps {
@@ -301,6 +302,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
   onVolver,
   onNavegar,
   onAbonarDeuda,
+  esPro = false,
 }) => {
   const { esPapel } = useTema();
   const [estrategia, setEstrategia] = useState<EstrategiaPago>('bola_de_nieve');
@@ -1006,6 +1008,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         <AvisoContextualPro
           id="aviso-deudas-sobres"
           texto="Aparta lo intocable en Sobres antes de gastarlo."
+          esPro={esPro}
           onAbrirPro={() => onNavegar('pro')}
         />
       )}

@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
-import { X, Plus, Banknote, Smartphone, Landmark, PiggyBank, Wallet } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Pencil, Banknote, Smartphone, Landmark, PiggyBank, Wallet } from 'lucide-react';
 import { TipoBilletera, Billetera } from '../../types';
 import { Boton } from '../ui/Boton';
+import { SelectorColor, COLORES_COMPONENTE } from '../ui/SelectorColor';
 import { formatearCOP } from '../../utils/format';
 
 interface ModalAgregarBilleteraProps {
   abierto: boolean;
   onCerrar: () => void;
   onGuardar: (billetera: Billetera) => void;
+  billeteraAEditar?: Billetera | null;
 }
 
 const OPCIONES_TIPO: {
@@ -58,13 +60,33 @@ export const ModalAgregarBilletera: React.FC<ModalAgregarBilleteraProps> = ({
   abierto,
   onCerrar,
   onGuardar,
+  billeteraAEditar = null,
 }) => {
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState<TipoBilletera>('nequi');
   const [saldoStr, setSaldoStr] = useState('');
+  const [color, setColor] = useState<string>(COLORES_COMPONENTE[1]);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (!abierto) return;
+    if (billeteraAEditar) {
+      setNombre(billeteraAEditar.nombre);
+      setTipo(billeteraAEditar.tipo);
+      setSaldoStr(billeteraAEditar.saldo ? formatearCOP(billeteraAEditar.saldo) : '');
+      setColor(billeteraAEditar.color || COLORES_COMPONENTE[1]);
+    } else {
+      setNombre('');
+      setTipo('nequi');
+      setSaldoStr('');
+      setColor(COLORES_COMPONENTE[1]);
+    }
+    setError('');
+  }, [abierto, billeteraAEditar]);
+
   if (!abierto) return null;
+
+  const esEdicion = !!billeteraAEditar;
 
   const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^\d]/g, '');
@@ -84,21 +106,17 @@ export const ModalAgregarBilletera: React.FC<ModalAgregarBilleteraProps> = ({
     const opcionSeleccionada = OPCIONES_TIPO.find((o) => o.tipo === tipo);
 
     const nuevaBilletera: Billetera = {
-      id: `bil-${Date.now()}`,
+      id: billeteraAEditar?.id || `bil-${Date.now()}`,
       nombre: nombre.trim(),
       tipo,
       saldo: saldoNum,
-      creadoEn: new Date().toISOString(),
-      entidad: opcionSeleccionada?.etiqueta.split('/')[0].trim(),
-      color: opcionSeleccionada?.color,
+      creadoEn: billeteraAEditar?.creadoEn || new Date().toISOString(),
+      entidad: billeteraAEditar?.entidad || opcionSeleccionada?.etiqueta.split('/')[0].trim(),
+      numeroCuentaCorto: billeteraAEditar?.numeroCuentaCorto,
+      color,
     };
 
     onGuardar(nuevaBilletera);
-    // Limpiar formulario y cerrar
-    setNombre('');
-    setSaldoStr('');
-    setTipo('nequi');
-    setError('');
     onCerrar();
   };
 
@@ -114,13 +132,15 @@ export const ModalAgregarBilletera: React.FC<ModalAgregarBilleteraProps> = ({
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--linea)] bg-[var(--superficie-2)]">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-[var(--acento)]/10 text-[color:var(--acento)] border border-[var(--acento)]/20">
-              <Plus className="w-4 h-4" />
+              {esEdicion ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             </div>
             <div>
               <h2 id="modal-billetera-titulo" className="text-base font-bold text-[color:var(--texto)]">
-                Nueva billetera o cuenta
+                {esEdicion ? 'Editar billetera' : 'Nueva billetera o cuenta'}
               </h2>
-              <p className="text-xs text-[color:var(--texto-2)]">Agrega un fondo para registrar tus movimientos</p>
+              <p className="text-xs text-[color:var(--texto-2)]">
+                {esEdicion ? 'Ajusta el nombre, saldo, tipo o color' : 'Agrega un fondo para registrar tus movimientos'}
+              </p>
             </div>
           </div>
 
@@ -215,13 +235,16 @@ export const ModalAgregarBilletera: React.FC<ModalAgregarBilleteraProps> = ({
             </div>
           </div>
 
+          {/* Color de la billetera */}
+          <SelectorColor valor={color} onChange={setColor} label="Color" />
+
           {/* Botones de acción */}
           <div className="pt-3 border-t border-[var(--linea)] flex items-center justify-end gap-2.5">
             <Boton variante="fantasma" tamano="md" onClick={onCerrar} type="button">
               Cancelar
             </Boton>
             <Boton variante="primario" tamano="md" type="submit">
-              Guardar billetera
+              {esEdicion ? 'Guardar cambios' : 'Guardar billetera'}
             </Boton>
           </div>
         </form>

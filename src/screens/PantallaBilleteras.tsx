@@ -12,6 +12,7 @@ import {
   PiggyBank,
   CreditCard,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { Chip } from '../components/ui/Chip';
@@ -36,6 +37,7 @@ interface PantallaBilleterasProps {
   onGuardarBilletera: (billetera: Billetera) => void;
   onEliminarBilletera: (id: string) => void;
   onRegistrarMovimiento: (mov: Omit<Movimiento, 'id'>) => void;
+  esPro?: boolean;
 }
 
 export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
@@ -49,8 +51,18 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
   onGuardarBilletera,
   onEliminarBilletera,
   onRegistrarMovimiento,
+  esPro = false,
 }) => {
   const [modalBilleteraAbierto, setModalBilleteraAbierto] = useState(false);
+  const [billeteraAEditar, setBilleteraAEditar] = useState<Billetera | null>(null);
+  const abrirNuevaBilletera = () => {
+    setBilleteraAEditar(null);
+    setModalBilleteraAbierto(true);
+  };
+  const abrirEditarBilletera = (b: Billetera) => {
+    setBilleteraAEditar(b);
+    setModalBilleteraAbierto(true);
+  };
   const [modalMovimientoAbierto, setModalMovimientoAbierto] = useState(false);
   const [billeteraSeleccionadaParaMov, setBilleteraSeleccionadaParaMov] = useState<string | undefined>(
     undefined
@@ -122,7 +134,7 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
           <Boton
             variante="secundario"
             tamano="sm"
-            onClick={() => setModalBilleteraAbierto(true)}
+            onClick={() => abrirNuevaBilletera()}
             icono={<Plus className="w-3.5 h-3.5" />}
           >
             Billetera
@@ -219,6 +231,7 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
         <AvisoContextualPro
           id="aviso-billeteras-presupuesto"
           texto="¿Se te va la plata sin saber en qué? Presupuesto te pone topes."
+          esPro={esPro}
           onAbrirPro={() => onNavegar('pro')}
         />
       )}
@@ -230,7 +243,7 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
             Tus Billeteras ({billeteras.length})
           </h2>
           <button
-            onClick={() => setModalBilleteraAbierto(true)}
+            onClick={() => abrirNuevaBilletera()}
             className="text-xs font-semibold text-[color:var(--acento)] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -245,7 +258,7 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
             descripcion="Crea tu primera billetera para administrar tus saldos bancarios y efectivo en mano."
             textoBoton="Crea tu primera billetera"
             varianteBoton="primario"
-            onAccion={() => setModalBilleteraAbierto(true)}
+            onAccion={() => abrirNuevaBilletera()}
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -257,7 +270,13 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] flex items-center justify-center flex-shrink-0">
+                    <div
+                      className="w-9 h-9 rounded-xl border flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: `color-mix(in srgb, ${billetera.color || 'var(--acento)'} 16%, transparent)`,
+                        borderColor: 'var(--hairline)',
+                      }}
+                    >
                       {getIconoBilletera(billetera.tipo)}
                     </div>
                     <div>
@@ -269,16 +288,26 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
                     </div>
                   </div>
 
-                  {billeteras.length > 1 && (
+                  <div className="flex items-center gap-1 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={() => onEliminarBilletera(billetera.id)}
-                      className="opacity-40 group-hover:opacity-100 p-1.5 rounded-lg text-[color:var(--texto-2)] hover:text-[color:var(--alerta)] hover:bg-[var(--alerta)]/10 transition-all cursor-pointer"
-                      title="Eliminar billetera"
-                      aria-label={`Eliminar billetera ${billetera.nombre}`}
+                      onClick={() => abrirEditarBilletera(billetera)}
+                      className="p-1.5 rounded-lg text-[color:var(--texto-2)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] transition-all cursor-pointer"
+                      title="Editar billetera"
+                      aria-label={`Editar billetera ${billetera.nombre}`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Pencil className="w-3.5 h-3.5" />
                     </button>
-                  )}
+                    {billeteras.length > 1 && (
+                      <button
+                        onClick={() => onEliminarBilletera(billetera.id)}
+                        className="p-1.5 rounded-lg text-[color:var(--texto-2)] hover:text-[color:var(--alerta)] hover:bg-[var(--alerta)]/10 transition-all cursor-pointer"
+                        title="Eliminar billetera"
+                        aria-label={`Eliminar billetera ${billetera.nombre}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-[var(--linea)] flex items-center justify-between">
@@ -466,7 +495,11 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
       {/* Modales */}
       <ModalAgregarBilletera
         abierto={modalBilleteraAbierto}
-        onCerrar={() => setModalBilleteraAbierto(false)}
+        billeteraAEditar={billeteraAEditar}
+        onCerrar={() => {
+          setModalBilleteraAbierto(false);
+          setBilleteraAEditar(null);
+        }}
         onGuardar={onGuardarBilletera}
       />
 

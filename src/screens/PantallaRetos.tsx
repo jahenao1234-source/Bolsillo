@@ -20,6 +20,7 @@ import { Boton } from '../components/ui/Boton';
 import { CountUp } from '../components/ui/CountUp';
 import { ConfetiCelebracion } from '../components/ui/ConfetiCelebracion';
 import { formatearCOP } from '../utils/format';
+import { NotaModulo } from '../components/ui/NotaModulo';
 
 interface PantallaRetosProps {
   retos: RetoAhorro[];
@@ -85,6 +86,8 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
           </div>
         </div>
       </header>
+
+      <NotaModulo texto="Ahorrar se vuelve un juego con racha. Aportas cada semana y ves crecer tu meta sin sentirlo." />
 
       {/* Retos activos */}
       {activos.map((reto) => {

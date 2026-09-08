@@ -14,6 +14,7 @@ import { Suscripcion } from '../types';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
+import { NotaModulo } from '../components/ui/NotaModulo';
 
 interface PantallaSuscripcionesProps {
   suscripciones: Suscripcion[];
@@ -84,6 +85,8 @@ export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
           Nueva
         </Boton>
       </header>
+
+      <NotaModulo texto="Descubre cuánto se te va en cobros automáticos al mes y al año, y que no te agarren por sorpresa." />
 
       {/* Resumen del sangrado */}
       <Tarjeta padding="lg">

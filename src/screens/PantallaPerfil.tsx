@@ -14,12 +14,15 @@ import {
   ExternalLink,
   ChevronRight,
   Trophy,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { Chip } from '../components/ui/Chip';
 import { PWAInstallButton } from '../components/ui/PWAInstallButton';
 import { NivelAcceso } from '../types';
-import { restablecerDatosEjemplo, setNivelAcceso } from '../data/store';
+import { restablecerDatosEjemplo, setNivelAcceso, setNombreUsuario } from '../data/store';
 import { useTema } from '../utils/theme';
 import { getVictorias, Victoria } from '../utils/victorias';
 import { formatearCOP } from '../utils/format';
@@ -40,6 +43,14 @@ export const PantallaPerfil: React.FC<PantallaPerfilProps> = ({
   const { tema, cambiarTema, esPapel } = useTema();
   const [victorias, setVictorias] = useState<Victoria[]>(getVictorias);
   const [restablecido, setRestablecido] = useState(false);
+  const [editandoNombre, setEditandoNombre] = useState(false);
+  const [nombreTmp, setNombreTmp] = useState(usuario);
+
+  const guardarNombre = () => {
+    const n = nombreTmp.trim();
+    if (n) setNombreUsuario(n);
+    setEditandoNombre(false);
+  };
 
   useEffect(() => {
     const handleVictorias = () => {
@@ -63,26 +74,59 @@ export const PantallaPerfil: React.FC<PantallaPerfilProps> = ({
       {/* 1) TARJETA DE USUARIO + PLAN ACTUAL                       */}
       {/* ========================================================= */}
       <div className="p-5 rounded-3xl bg-[var(--superficie)] border border-[var(--linea)] flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--superficie-2)] border border-[var(--linea)] flex items-center justify-center font-display font-black text-base text-[color:var(--texto)]">
-            {usuario.slice(0, 2).toUpperCase()}
+        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+          <div className="w-12 h-12 rounded-2xl bg-[var(--superficie-2)] border border-[var(--linea)] flex items-center justify-center font-display font-black text-base text-[color:var(--texto)] flex-shrink-0">
+            {(usuario || '?').slice(0, 2).toUpperCase()}
           </div>
-          <div className="min-w-0">
-            <h2 className="font-display text-lg font-bold text-[color:var(--texto)] truncate">
-              {usuario}
-            </h2>
-            <p className="text-xs text-[color:var(--texto-2)]">
-              {nivelAcceso === 'pro' ? 'Bolsillo Pro · Acceso vitalicio' : 'Plan Deuda Cero'}
-            </p>
-          </div>
+
+          {editandoNombre ? (
+            <form
+              onSubmit={(e) => { e.preventDefault(); guardarNombre(); }}
+              className="flex items-center gap-2 flex-1 min-w-0"
+            >
+              <input
+                autoFocus
+                value={nombreTmp}
+                onChange={(e) => setNombreTmp(e.target.value)}
+                placeholder="Tu nombre"
+                className="flex-1 min-w-0 px-3 py-2 rounded-xl bg-[var(--superficie-2)] border border-[var(--acento)] text-sm font-semibold text-[color:var(--texto)] focus:outline-none"
+              />
+              <button type="submit" className="p-2 rounded-lg bg-[var(--acento)]/15 text-[color:var(--acento)] cursor-pointer" aria-label="Guardar nombre">
+                <Check className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={() => setEditandoNombre(false)} className="p-2 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--texto)] cursor-pointer" aria-label="Cancelar">
+                <X className="w-4 h-4" />
+              </button>
+            </form>
+          ) : (
+            <div className="min-w-0 flex items-center gap-2">
+              <div className="min-w-0">
+                <h2 className="font-display text-lg font-bold text-[color:var(--texto)] truncate">
+                  {usuario}
+                </h2>
+                <p className="text-xs text-[color:var(--texto-2)]">
+                  {nivelAcceso === 'pro' ? 'Bolsillo Pro · Acceso vitalicio' : 'Plan Deuda Cero'}
+                </p>
+              </div>
+              <button
+                onClick={() => { setNombreTmp(usuario); setEditandoNombre(true); }}
+                className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] transition-colors cursor-pointer flex-shrink-0"
+                aria-label="Editar nombre"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
 
-        <Chip
-          variante={nivelAcceso === 'pro' ? 'platino' : 'aqua'}
-          icono={<Sparkles className="w-3.5 h-3.5" />}
-        >
-          {nivelAcceso === 'pro' ? 'Pro' : 'Activo'}
-        </Chip>
+        {!editandoNombre && (
+          <Chip
+            variante={nivelAcceso === 'pro' ? 'platino' : 'aqua'}
+            icono={<Sparkles className="w-3.5 h-3.5" />}
+          >
+            {nivelAcceso === 'pro' ? 'Pro' : 'Activo'}
+          </Chip>
+        )}
       </div>
 
       {/* ========================================================= */}

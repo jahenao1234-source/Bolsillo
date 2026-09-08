@@ -195,6 +195,7 @@ export default function App() {
                   onGuardarBilletera={guardarBilletera}
                   onEliminarBilletera={eliminarBilletera}
                   onRegistrarMovimiento={registrarMovimiento}
+                  esPro={nivelAcceso === 'pro'}
                 />
               </div>
             )}
@@ -210,6 +211,7 @@ export default function App() {
                   onVolver={() => setSeccionActiva('inicio')}
                   onNavegar={handleNavegar}
                   onAbonarDeuda={abonarDeudaDesdeBilletera}
+                  esPro={nivelAcceso === 'pro'}
                 />
               </div>
             )}

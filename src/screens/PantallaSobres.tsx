@@ -15,6 +15,7 @@ import { Sobre } from '../types';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
+import { NotaModulo } from '../components/ui/NotaModulo';
 
 interface PantallaSobresProps {
   sobres: Sobre[];
@@ -70,6 +71,8 @@ export const PantallaSobres: React.FC<PantallaSobresProps> = ({
           Nuevo sobre
         </Boton>
       </header>
+
+      <NotaModulo texto="Aparta la plata de tus metas antes de gastarla: lo apartado deja de contar como disponible, así no lo tocas por error." />
 
       {/* Resumen */}
       <Tarjeta padding="lg">

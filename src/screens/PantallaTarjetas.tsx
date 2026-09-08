@@ -15,6 +15,7 @@ import { TarjetaCredito } from '../types';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
+import { NotaModulo } from '../components/ui/NotaModulo';
 
 interface PantallaTarjetasProps {
   tarjetas: TarjetaCredito[];
@@ -78,6 +79,8 @@ export const PantallaTarjetas: React.FC<PantallaTarjetasProps> = ({
           Nueva
         </Boton>
       </header>
+
+      <NotaModulo texto="Sabe con cuál tarjeta comprar hoy para estirar al máximo tus días sin intereses." />
 
       {/* Recomendación de hoy */}
       {recomendada && (

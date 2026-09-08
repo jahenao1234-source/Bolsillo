@@ -14,6 +14,7 @@ import { CATEGORIAS_GASTOS_DEFECTO } from '../data/store';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
+import { NotaModulo } from '../components/ui/NotaModulo';
 
 interface PantallaPresupuestoProps {
   presupuestos: Presupuesto[];
@@ -104,6 +105,8 @@ export const PantallaPresupuesto: React.FC<PantallaPresupuestoProps> = ({
           Nuevo tope
         </Boton>
       </header>
+
+      <NotaModulo texto="Ponle un límite a cada categoría y te aviso antes de que se te pase la mano. Menos sustos a fin de mes." />
 
       {/* Resumen */}
       <Tarjeta padding="lg" className="overflow-hidden">
