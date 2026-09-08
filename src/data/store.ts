@@ -23,6 +23,7 @@ import {
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
 import { aporteDeSemana } from '../logic/retos';
+import { sangradoVigente } from '../logic/suscripciones';
 
 const STORAGE_KEYS = {
   RESUMEN: 'bolsillo_data_resumen_v3',
@@ -272,6 +273,18 @@ const MOCK_SUSCRIPCIONES_INICIAL: Suscripcion[] = [
   { id: 'sus-spotify', nombre: 'Spotify', monto: 16900, diaCobro: 5, categoria: 'Música', activa: true, color: '#5FE0A8', creadoEn: '2026-08-01' },
   { id: 'sus-gym', nombre: 'Gimnasio Smart Fit', monto: 89900, diaCobro: 1, categoria: 'Salud', activa: true, color: '#FF7A3D', creadoEn: '2026-08-01' },
   { id: 'sus-disney', nombre: 'Disney+', monto: 29900, diaCobro: 20, categoria: 'Streaming', activa: true, color: '#8AA9FF', creadoEn: '2026-08-01' },
+  {
+    id: 'sus-hbo',
+    nombre: 'HBO Max',
+    monto: 26900,
+    diaCobro: 11,
+    categoria: 'Streaming',
+    activa: true,
+    color: '#8AA9FF',
+    creadoEn: '2026-09-04',
+    // Prueba gratis de 7 días: el 11 se acaba y pasa a costar $26.900 al mes.
+    promo: { monto: 0, desde: '2026-09-04', hasta: '2026-09-11' },
+  },
 ];
 
 // Semilla Pro: tarjetas de crédito (días de corte y pago)
@@ -1166,11 +1179,13 @@ export function eliminarSuscripcion(id: string): void {
   setSuscripciones(getSuscripciones().filter((s) => s.id !== id));
 }
 
-/** Suma mensual de las suscripciones activas (el "sangrado"). */
+/**
+ * Suma mensual de las suscripciones activas (el "sangrado"), contando el
+ * precio que está vigente hoy: si algo está en promoción, cuesta lo de la
+ * promoción hasta que se acabe.
+ */
 export function getSangradoMensual(): number {
-  return getSuscripciones()
-    .filter((s) => s.activa)
-    .reduce((sum, s) => sum + (Number(s.monto) || 0), 0);
+  return sangradoVigente(getSuscripciones(), new Date());
 }
 
 // ==========================================

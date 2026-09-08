@@ -55,3 +55,39 @@ export function fechaLarga(fecha: Date): string {
 export function mesCorto(fecha: Date): string {
   return `${MESES_ABREV[fecha.getMonth()]} ${fecha.getFullYear()}`;
 }
+
+export const DIAS_SEMANA = [
+  'domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado',
+];
+
+/** Próxima vez que cae ese día del mes, contando desde hoy (hoy incluido). */
+export function proximaFechaDeDia(diaDelMes: number, hoy: Date): Date {
+  const dia = Math.min(31, Math.max(1, diaDelMes));
+  const topeEsteMes = diasEnMes(hoy.getMonth(), hoy.getFullYear());
+
+  if (Math.min(dia, topeEsteMes) >= hoy.getDate()) {
+    return new Date(hoy.getFullYear(), hoy.getMonth(), Math.min(dia, topeEsteMes));
+  }
+
+  const mesSiguiente = hoy.getMonth() === 11 ? 0 : hoy.getMonth() + 1;
+  const anioSiguiente = hoy.getMonth() === 11 ? hoy.getFullYear() + 1 : hoy.getFullYear();
+  const topeSiguiente = diasEnMes(mesSiguiente, anioSiguiente);
+  return new Date(anioSiguiente, mesSiguiente, Math.min(dia, topeSiguiente));
+}
+
+/** El mismo día del mes anterior, recortado si ese mes es más corto. */
+export function unMesAntes(fecha: Date): Date {
+  const mes = fecha.getMonth() === 0 ? 11 : fecha.getMonth() - 1;
+  const anio = fecha.getMonth() === 0 ? fecha.getFullYear() - 1 : fecha.getFullYear();
+  return new Date(anio, mes, Math.min(fecha.getDate(), diasEnMes(mes, anio)));
+}
+
+/** Días enteros entre dos fechas (b − a). */
+export function diferenciaEnDias(a: Date, b: Date): number {
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
+/** "el martes 15 de septiembre" — la fecha que una persona sí ubica. */
+export function fechaConDiaSemana(fecha: Date): string {
+  return `el ${DIAS_SEMANA[fecha.getDay()]} ${fecha.getDate()} de ${MESES_NOMBRE[fecha.getMonth()].toLowerCase()}`;
+}

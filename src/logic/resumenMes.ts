@@ -23,10 +23,12 @@ import {
   diasEnMes,
   fechaISOLocal,
   mismoDia,
+  proximaFechaDeDia,
 } from '../utils/fechas';
 import { aporteDeSemana, escaleraPorMes, planDeReto } from './retos';
+import { finDePromo, montoVigente } from './suscripciones';
 
-export { MESES_ABREV, MESES_NOMBRE, fechaISOLocal };
+export { MESES_ABREV, MESES_NOMBRE, fechaISOLocal, proximaFechaDeDia };
 
 /** Azul de categorías del sistema (mismo de los donuts). */
 export const COLOR_TARJETA = '#8AA9FF';
@@ -118,21 +120,6 @@ export function diaDeTexto(texto?: string): number | null {
   return dia >= 1 && dia <= 31 ? dia : null;
 }
 
-/** Próxima vez que cae ese día del mes, contando desde hoy (hoy incluido). */
-export function proximaFechaDeDia(diaDelMes: number, hoy: Date): Date {
-  const dia = Math.min(31, Math.max(1, diaDelMes));
-  const mesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const topeEsteMes = diasEnMes(mesActual.getMonth(), mesActual.getFullYear());
-
-  if (Math.min(dia, topeEsteMes) >= hoy.getDate()) {
-    return new Date(hoy.getFullYear(), hoy.getMonth(), Math.min(dia, topeEsteMes));
-  }
-
-  const mesSiguiente = hoy.getMonth() === 11 ? 0 : hoy.getMonth() + 1;
-  const anioSiguiente = hoy.getMonth() === 11 ? hoy.getFullYear() + 1 : hoy.getFullYear();
-  const topeSiguiente = diasEnMes(mesSiguiente, anioSiguiente);
-  return new Date(anioSiguiente, mesSiguiente, Math.min(dia, topeSiguiente));
-}
 
 // =====================================================================
 // MOVIMIENTOS
@@ -212,20 +199,24 @@ export interface EntradaReparto {
   esPro: boolean;
 }
 
-/** Suscripciones ya cobradas y por cobrar en el mes en curso. */
+/**
+ * Suscripciones ya cobradas y por cobrar en el mes en curso, contando el
+ * precio que está vigente hoy (el de promoción, si la hay).
+ */
 export function suscripcionesDelMes(
   suscripciones: Suscripcion[],
-  dia: number,
+  contexto: ContextoMes,
   esPro: boolean
 ): { yaCobradas: number; pendientes: number } {
   const activas = esPro ? suscripciones.filter((s) => s.activa) : [];
+  const monto = (s: Suscripcion) => montoVigente(s, contexto.hoy);
   return {
     yaCobradas: activas
-      .filter((s) => s.diaCobro <= dia)
-      .reduce((acc, s) => acc + (Number(s.monto) || 0), 0),
+      .filter((s) => s.diaCobro <= contexto.dia)
+      .reduce((acc, s) => acc + monto(s), 0),
     pendientes: activas
-      .filter((s) => s.diaCobro > dia)
-      .reduce((acc, s) => acc + (Number(s.monto) || 0), 0),
+      .filter((s) => s.diaCobro > contexto.dia)
+      .reduce((acc, s) => acc + monto(s), 0),
   };
 }
 
@@ -327,7 +318,7 @@ export function calcularReparto(entrada: EntradaReparto): Reparto {
   const gastadoHastaHoy = sumar(delMes.filter(esGastoCorriente));
   const gastosAnterior = sumar(delAnterior.filter(esGastoCorriente));
   const gastosAnteriorMismoDia = sumar(delAnterior.filter((m) => esGastoCorriente(m) && hastaHoy(m)));
-  const suscripciones30 = suscripcionesDelMes(suscripciones, contexto.dia, esPro);
+  const suscripciones30 = suscripcionesDelMes(suscripciones, contexto, esPro);
   const proyeccion = proyectarCierre({
     contexto,
     acumuladoHoy: gastadoHastaHoy,
@@ -481,7 +472,7 @@ export function calcularRitmo(entrada: {
     ? puntosAnterior[puntosAnterior.length - 1].acumulado
     : 0;
 
-  const suscripciones30 = suscripcionesDelMes(suscripciones, contexto.dia, esPro);
+  const suscripciones30 = suscripcionesDelMes(suscripciones, contexto, esPro);
   const proyeccion = proyectarCierre({
     contexto,
     acumuladoHoy: gastadoHoy,
@@ -511,7 +502,7 @@ export function calcularRitmo(entrada: {
 // 3. AGENDA — ¿qué se me viene?
 // =====================================================================
 
-export type OrigenEvento = 'deuda' | 'suscripcion' | 'corte' | 'pago_tarjeta' | 'reto';
+export type OrigenEvento = 'deuda' | 'suscripcion' | 'promo' | 'corte' | 'pago_tarjeta' | 'reto';
 
 export interface EventoAgenda {
   id: string;
@@ -608,12 +599,29 @@ export function calcularAgenda(entrada: {
     // --- Suscripciones: se cobran solas.
     for (const sus of suscripciones) {
       if (!sus.activa) continue;
+
+      // El día que se acaba la promoción pesa más que un cobro cualquiera:
+      // es cuando el precio cambia sin que nadie lo decida.
+      const finPromo = finDePromo(sus);
+      if (finPromo && finPromo > hoy) {
+        agregar(
+          `promo-${sus.id}`,
+          finPromo,
+          sus.nombre,
+          `Se acaba la promo · pasa a ${sus.monto.toLocaleString('es-CO')} al mes`,
+          sus.monto,
+          'var(--accion)',
+          'promo'
+        );
+        continue;
+      }
+
       agregar(
         `sus-${sus.id}`,
         proximaFechaDeDia(sus.diaCobro, hoy),
         sus.nombre,
         'Suscripción · se cobra sola',
-        sus.monto,
+        montoVigente(sus, hoy),
         COLOR_TARJETA,
         'suscripcion'
       );
@@ -698,7 +706,7 @@ export function restoDelMes(entrada: {
   if (esPro) {
     for (const sus of suscripciones) {
       if (!sus.activa) continue;
-      contar(proximaFechaDeDia(sus.diaCobro, hoy), sus.monto);
+      contar(proximaFechaDeDia(sus.diaCobro, hoy), montoVigente(sus, hoy));
     }
   }
 

@@ -187,16 +187,32 @@ export interface RetoAhorro {
   creadoEn: string;
 }
 
+/**
+ * Promoción o prueba gratis: un precio distinto hasta una fecha, y de ahí
+ * en adelante el precio normal. Es donde la plata se va sola.
+ */
+export interface PromoSuscripcion {
+  /** Lo que pagas mientras dura (casi siempre 0). */
+  monto: number;
+  /** Día en que empezó, en ISO. Sirve para la barra del ciclo. */
+  desde: string;
+  /** Día en que termina y pasa al precio normal, en ISO. */
+  hasta: string;
+}
+
 /** Suscripción recurrente (cobro mensual automático). */
 export interface Suscripcion {
   id: string;
   nombre: string;
-  monto: number;
+  monto: number;           // precio normal, el de después de la promoción
   diaCobro: number;        // día del mes (1-31)
   categoria?: string;
   activa: boolean;
   color?: string;
   creadoEn: string;
+  promo?: PromoSuscripcion;
+  /** Fecha del último cobro que el usuario registró (ISO). */
+  ultimoCobro?: string;
 }
 
 /** Tarjeta de crédito con días de corte y de pago. */
