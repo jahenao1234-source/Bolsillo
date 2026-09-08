@@ -143,10 +143,15 @@ export interface DatosTermometro {
 // MÓDULOS PRO (pestaña "Crecer")
 // ==========================================
 
+/** Grupo de la regla 50/30/20. */
+export type GrupoPresupuesto = 'necesidad' | 'gusto' | 'ahorro';
+
 /** Presupuesto: tope de gasto mensual por categoría. */
 export interface Presupuesto {
   categoria: string;
   tope: number;
+  color?: string;
+  grupo?: GrupoPresupuesto;
 }
 
 /** Sobre digital: dinero apartado (virtual) hacia una meta. */

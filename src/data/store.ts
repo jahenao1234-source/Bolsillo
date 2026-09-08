@@ -197,10 +197,10 @@ export const CATEGORIAS_GASTOS_DEFECTO = [
 
 // Semilla Pro: topes de presupuesto por categoría (mensual)
 const MOCK_PRESUPUESTOS_INICIAL: Presupuesto[] = [
-  { categoria: 'Comida', tope: 600000 },
-  { categoria: 'Transporte', tope: 200000 },
-  { categoria: 'Servicios', tope: 250000 },
-  { categoria: 'Ocio', tope: 150000 },
+  { categoria: 'Comida', tope: 600000, color: '#5FE0A8', grupo: 'necesidad' },
+  { categoria: 'Transporte', tope: 200000, color: '#25C9BE', grupo: 'necesidad' },
+  { categoria: 'Servicios', tope: 250000, color: '#8AA9FF', grupo: 'necesidad' },
+  { categoria: 'Ocio', tope: 150000, color: '#FF7A3D', grupo: 'gusto' },
 ];
 
 // Semilla Pro: sobres digitales (dinero apartado hacia metas)
@@ -915,18 +915,23 @@ export function setPresupuestos(items: Presupuesto[]): void {
   }
 }
 
-export function guardarPresupuesto(categoria: string, tope: number): void {
-  const cat = (categoria || '').trim();
+export function guardarPresupuesto(p: Presupuesto): void {
+  const cat = (p.categoria || '').trim();
   if (!cat) return;
   const items = getPresupuestos();
-  const idx = items.findIndex((p) => p.categoria.toLowerCase() === cat.toLowerCase());
-  const valor = Math.max(0, Math.round(tope));
+  const idx = items.findIndex((x) => x.categoria.toLowerCase() === cat.toLowerCase());
+  const normal: Presupuesto = {
+    categoria: idx >= 0 ? items[idx].categoria : cat,
+    tope: Math.max(0, Math.round(p.tope)),
+    color: p.color,
+    grupo: p.grupo,
+  };
   let nuevos: Presupuesto[];
   if (idx >= 0) {
     nuevos = [...items];
-    nuevos[idx] = { categoria: items[idx].categoria, tope: valor };
+    nuevos[idx] = normal;
   } else {
-    nuevos = [...items, { categoria: cat, tope: valor }];
+    nuevos = [...items, normal];
   }
   setPresupuestos(nuevos);
 }

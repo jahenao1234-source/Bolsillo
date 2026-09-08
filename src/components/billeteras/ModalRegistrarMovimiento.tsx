@@ -19,6 +19,8 @@ interface ModalRegistrarMovimientoProps {
   abierto: boolean;
   billeteras: Billetera[];
   billeteraPreseleccionadaId?: string;
+  categoriaPreseleccionada?: string;
+  tipoPreseleccionado?: 'ingreso' | 'gasto';
   onCerrar: () => void;
   onGuardar: (movimiento: Omit<Movimiento, 'id'>) => void;
 }
@@ -27,15 +29,17 @@ export const ModalRegistrarMovimiento: React.FC<ModalRegistrarMovimientoProps> =
   abierto,
   billeteras,
   billeteraPreseleccionadaId,
+  categoriaPreseleccionada,
+  tipoPreseleccionado,
   onCerrar,
   onGuardar,
 }) => {
-  const [tipo, setTipo] = useState<'ingreso' | 'gasto'>('gasto');
+  const [tipo, setTipo] = useState<'ingreso' | 'gasto'>(tipoPreseleccionado || 'gasto');
   const [montoStr, setMontoStr] = useState('');
   const [billeteraId, setBilleteraId] = useState<string>(() => {
     return billeteraPreseleccionadaId || (billeteras[0]?.id ?? '');
   });
-  const [categoria, setCategoria] = useState<string>('Comida');
+  const [categoria, setCategoria] = useState<string>(categoriaPreseleccionada || 'Comida');
   const [mostrarNuevaCategoria, setMostrarNuevaCategoria] = useState(false);
   const [categoriaPersonalizada, setCategoriaPersonalizada] = useState('');
   const [fecha, setFecha] = useState<string>(() => {
@@ -60,12 +64,26 @@ export const ModalRegistrarMovimiento: React.FC<ModalRegistrarMovimientoProps> =
   }, [tipo]);
 
   React.useEffect(() => {
-    if (!mostrarNuevaCategoria) {
+    if (!mostrarNuevaCategoria && !categoriaPreseleccionada) {
       setCategoria(tipo === 'ingreso' ? 'Salario' : 'Comida');
     }
-  }, [tipo, mostrarNuevaCategoria]);
+  }, [tipo, mostrarNuevaCategoria, categoriaPreseleccionada]);
+
+  // Preselección al abrir (registrar gasto desde el presupuesto)
+  React.useEffect(() => {
+    if (!abierto) return;
+    if (tipoPreseleccionado) setTipo(tipoPreseleccionado);
+    if (categoriaPreseleccionada) {
+      setCategoria(categoriaPreseleccionada);
+      setMostrarNuevaCategoria(false);
+    }
+  }, [abierto, categoriaPreseleccionada, tipoPreseleccionado]);
 
   if (!abierto) return null;
+
+  const categoriasChips = categoriasDisponibles.includes(categoria)
+    ? categoriasDisponibles
+    : [categoria, ...categoriasDisponibles];
 
   const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/[^\d]/g, '');
@@ -310,7 +328,7 @@ export const ModalRegistrarMovimiento: React.FC<ModalRegistrarMovimientoProps> =
               </div>
             ) : (
               <div className="flex flex-wrap gap-1.5">
-                {categoriasDisponibles.map((cat) => {
+                {categoriasChips.map((cat) => {
                   const activa = categoria === cat;
                   return (
                     <button

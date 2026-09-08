@@ -225,8 +225,11 @@ export default function App() {
                     usuario={resumen.usuario}
                     presupuestos={presupuestos}
                     gastoPorCategoria={gastoPorCategoria}
+                    ingresoMensual={flujoMes.ingresos}
+                    billeteras={billeteras}
                     onGuardarPresupuesto={guardarPresupuesto}
                     onEliminarPresupuesto={eliminarPresupuesto}
+                    onRegistrarMovimiento={registrarMovimiento}
                     sobres={sobres}
                     totalApartado={totalApartado}
                     saldoTotal={saldoTotal}

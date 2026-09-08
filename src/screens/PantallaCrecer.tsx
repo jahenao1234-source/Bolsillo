@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import { Presupuesto, Sobre, RetoAhorro, Suscripcion, TarjetaCredito } from '../types';
+import { Presupuesto, Sobre, RetoAhorro, Suscripcion, TarjetaCredito, Billetera, Movimiento } from '../types';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { formatearCOP } from '../utils/format';
 import { PantallaPresupuesto } from './PantallaPresupuesto';
@@ -23,8 +23,11 @@ interface PantallaCrecerProps {
   usuario: string;
   presupuestos: Presupuesto[];
   gastoPorCategoria: Record<string, number>;
-  onGuardarPresupuesto: (categoria: string, tope: number) => void;
+  ingresoMensual: number;
+  billeteras: Billetera[];
+  onGuardarPresupuesto: (p: Presupuesto) => void;
   onEliminarPresupuesto: (categoria: string) => void;
+  onRegistrarMovimiento: (mov: Omit<Movimiento, 'id'>) => void;
   sobres: Sobre[];
   totalApartado: number;
   saldoTotal: number;
@@ -50,8 +53,11 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     usuario,
     presupuestos,
     gastoPorCategoria,
+    ingresoMensual,
+    billeteras,
     onGuardarPresupuesto,
     onEliminarPresupuesto,
+    onRegistrarMovimiento,
     sobres,
     totalApartado,
     saldoTotal,
@@ -96,8 +102,11 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
       <PantallaPresupuesto
         presupuestos={presupuestos}
         gastoPorCategoria={gastoPorCategoria}
+        ingresoMensual={ingresoMensual}
+        billeteras={billeteras}
         onGuardarPresupuesto={onGuardarPresupuesto}
         onEliminarPresupuesto={onEliminarPresupuesto}
+        onRegistrarMovimiento={onRegistrarMovimiento}
         onVolver={() => setModulo('hub')}
       />
     );
