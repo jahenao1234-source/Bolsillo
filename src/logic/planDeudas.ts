@@ -327,6 +327,7 @@ export interface FilaTablaPlan {
   etiqueta: string;
   saldos: Record<string, number>;
   total: number;
+  interes: number; // interés total generado ese mes (baja conforme cae el saldo)
 }
 
 export interface TablaPlan {
@@ -377,8 +378,13 @@ export function calcularTablaPlan(
       o.saldo -= a;
       caja -= a;
     }
+    let interesMes = 0;
     for (const d of estado) {
-      if (d.saldo > 0 && d.tasa > 0) d.saldo += d.saldo * (d.tasa / 100);
+      if (d.saldo > 0 && d.tasa > 0) {
+        const i = d.saldo * (d.tasa / 100);
+        d.saldo += i;
+        interesMes += i;
+      }
     }
 
     const saldos: Record<string, number> = {};
@@ -388,7 +394,7 @@ export function calcularTablaPlan(
       saldos[d.id] = s;
       total += s;
     }
-    filas.push({ mes: meses, etiqueta: calcularFechaMesRelativo(meses), saldos, total });
+    filas.push({ mes: meses, etiqueta: calcularFechaMesRelativo(meses), saldos, total, interes: Math.round(interesMes) });
     if (total <= 0.5) break;
   }
 

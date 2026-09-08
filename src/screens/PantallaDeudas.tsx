@@ -730,7 +730,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
             <div className="space-y-3">
               <div className="px-1">
                 <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Detalle mes a mes</h2>
-                <p className="text-xs text-[color:var(--texto-2)] mt-0.5">El saldo de cada deuda, mes por mes, hasta $0.</p>
+                <p className="text-xs text-[color:var(--texto-2)] mt-0.5">El saldo de cada deuda y el interés que se achica mes a mes, hasta $0.</p>
               </div>
               <Tarjeta padding="md">
                 <div className="overflow-x-auto -mx-1">
@@ -744,6 +744,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                           </th>
                         ))}
                         <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Restante</th>
+                        <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--alerta)] font-bold whitespace-nowrap">Interés/mes</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -760,6 +761,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                             );
                           })}
                           <td className="py-2 px-2 text-right tabular-nums font-semibold text-[color:var(--texto)] whitespace-nowrap">{formatearCOP(f.total)}</td>
+                          <td className="py-2 px-2 text-right tabular-nums whitespace-nowrap text-[color:var(--alerta)]">{f.interes > 0 ? formatearCOP(f.interes) : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
