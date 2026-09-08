@@ -13,6 +13,7 @@ import {
   Movimiento,
   Presupuesto,
   RetoAhorro,
+  Sobre,
   Suscripcion,
   TarjetaCredito,
 } from '../types';
@@ -24,9 +25,13 @@ import {
   calcularAgenda,
   restoDelMes,
   categoriasDeGasto,
+  gastoPorCategoriaDelMes,
+  diasHasta,
+  COLOR_TARJETA,
   DestinoReparto,
   EventoAgenda,
 } from '../logic/resumenMes';
+import { calcularPlan } from '../logic/planDeudas';
 import { ModalAbonarDeuda } from '../components/deudas/ModalAbonarDeuda';
 import { ModalRegistrarMovimiento } from '../components/billeteras/ModalRegistrarMovimiento';
 import { CelebracionLogro } from '../components/ui/CelebracionLogro';
@@ -38,9 +43,13 @@ interface PantallaInicioProps {
   movimientos: Movimiento[];
   disponibleMensual: number;
   esPro: boolean;
+  saldoTotal: number;
   presupuestos: Presupuesto[];
+  sobres: Sobre[];
+  totalApartado: number;
   retos: RetoAhorro[];
   suscripciones: Suscripcion[];
+  sangradoMensual: number;
   tarjetasCredito: TarjetaCredito[];
   onNavegar: (seccion: SeccionApp) => void;
   onRegistrarMovimiento: (movimiento: Omit<Movimiento, 'id'>) => void;
@@ -223,6 +232,81 @@ const FilaEvento: React.FC<{ evento: EventoAgenda; onPagar?: () => void }> = ({
   </div>
 );
 
+type TonoEtiqueta = 'ok' | 'ojo' | 'mal' | 'neutro';
+
+interface Frente {
+  id: string;
+  modulo: string;
+  cifra: string;
+  sufijo?: string;
+  /** Tramos de la barra (porcentajes sobre el total del riel). */
+  segmentos: { ancho: number; color: string }[];
+  /** Marca fija sobre el riel, en % (ej: por dónde va el mes). */
+  hito?: number;
+  pie: React.ReactNode;
+  etiqueta?: { texto: string; tono: TonoEtiqueta };
+  destino: SeccionApp;
+}
+
+const TONOS: Record<TonoEtiqueta, string> = {
+  ok: 'text-[color:var(--positivo)] bg-[var(--positivo)]/12',
+  ojo: 'text-[color:var(--accion)] bg-[var(--accion)]/12',
+  mal: 'text-[color:var(--alerta)] bg-[var(--alerta)]/12',
+  neutro: 'text-[color:var(--texto-2)] bg-[var(--superficie-2)]',
+};
+
+/** Un módulo resumido: cifra, riel y una línea de contexto. Todos idénticos. */
+const TarjetaFrente: React.FC<{ frente: Frente; onClick: () => void }> = ({ frente, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="bg-[var(--superficie)] hover:bg-[var(--elevada)] transition-colors cursor-pointer text-left px-4 py-3.5 flex flex-col gap-2"
+  >
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-[10.5px] font-bold uppercase tracking-wider text-[color:var(--texto-2)] truncate">
+        {frente.modulo}
+      </span>
+      {frente.etiqueta && (
+        <span
+          className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 whitespace-nowrap ${TONOS[frente.etiqueta.tono]}`}
+        >
+          {frente.etiqueta.texto}
+        </span>
+      )}
+    </div>
+
+    <div className="font-display font-black text-[19px] sm:text-[21px] tabular-nums tracking-tight text-[color:var(--texto)] leading-none">
+      {frente.cifra}
+      {frente.sufijo && (
+        <span className="font-body text-[11.5px] font-medium text-[color:var(--texto-3)] ml-1.5 tracking-normal">
+          {frente.sufijo}
+        </span>
+      )}
+    </div>
+
+    <div className="relative">
+      <div className="h-[5px] rounded-full bg-[var(--superficie-2)] overflow-hidden flex">
+        {frente.segmentos.map((s, i) => (
+          <span
+            key={i}
+            className="h-full transition-all duration-500"
+            style={{ width: `${Math.max(0, Math.min(100, s.ancho))}%`, background: s.color }}
+          />
+        ))}
+      </div>
+      {frente.hito !== undefined && (
+        <span
+          className="absolute -top-[3px] w-0.5 h-[11px] rounded-sm bg-[var(--texto-2)]"
+          style={{ left: `${Math.min(99, Math.max(0, frente.hito))}%` }}
+          title="por aquí va el mes"
+        />
+      )}
+    </div>
+
+    <p className="text-[11.5px] text-[color:var(--texto-3)] leading-snug">{frente.pie}</p>
+  </button>
+);
+
 export const PantallaInicio: React.FC<PantallaInicioProps> = ({
   resumen,
   billeteras,
@@ -230,9 +314,13 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
   movimientos,
   disponibleMensual,
   esPro,
+  saldoTotal,
   presupuestos,
+  sobres,
+  totalApartado,
   retos,
   suscripciones,
+  sangradoMensual,
   tarjetasCredito,
   onNavegar,
   onRegistrarMovimiento,
@@ -304,6 +392,253 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
   const ocultos = agenda.slice(eventosVisibles.length);
   const faltanCantidad = ocultos.length + resto.cantidad;
   const faltanMonto = ocultos.reduce((acc, e) => acc + e.monto, 0) + resto.monto;
+
+  // ---------- Cómo van tus frentes ----------
+  const frentes = useMemo<Frente[]>(() => {
+    const lista: Frente[] = [];
+    const pct = (parte: number, total: number) => (total > 0 ? (parte / total) * 100 : 0);
+
+    // Deudas — el frente que siempre está, sea cual sea el nivel.
+    if (deudasActivas.length > 0) {
+      const saldo = deudasActivas.reduce((acc, d) => acc + (d.saldo ?? d.saldoTotal ?? 0), 0);
+      const intereses = deudasActivas.reduce(
+        (acc, d) => acc + ((d.saldo ?? d.saldoTotal ?? 0) * (d.tasaMensual || 0)) / 100,
+        0
+      );
+      const alPlan = reparto.destinos.find((d) => d.id === 'deudas')?.monto ?? 0;
+      const baja = Math.round(alPlan - intereses);
+      const plan = calcularPlan(deudasActivas, disponibleMensual, 'bola_de_nieve');
+
+      lista.push({
+        id: 'deudas',
+        modulo: 'Deudas',
+        cifra: formatearCOP(saldo),
+        sufijo: 'te faltan',
+        segmentos: [{ ancho: resumen.porcentajeDeudaPagada, color: 'var(--acento)' }],
+        pie: (
+          <>
+            Vas <strong className="text-[color:var(--texto-2)] font-semibold">
+              {resumen.porcentajeDeudaPagada}% del camino
+            </strong>{' '}
+            · libre en{' '}
+            <strong className="text-[color:var(--texto-2)] font-semibold">
+              {plan.fechaLibertad}
+            </strong>
+          </>
+        ),
+        etiqueta:
+          baja > 0
+            ? { texto: `−${formatearCOP(baja)} este mes`, tono: 'ok' }
+            : { texto: 'no alcanza al interés', tono: 'mal' },
+        destino: 'deudas',
+      });
+    }
+
+    if (!esPro) {
+      // Sin Pro, el segundo frente es la plata que sí controla: sus billeteras.
+      lista.push({
+        id: 'billeteras',
+        modulo: 'Tu plata',
+        cifra: formatearCOP(saldoTotal),
+        sufijo: `en ${billeteras.length} ${billeteras.length === 1 ? 'cuenta' : 'cuentas'}`,
+        segmentos: billeteras.map((b) => ({
+          ancho: pct(Math.max(0, b.saldo), Math.max(1, saldoTotal)),
+          color: b.color || 'var(--acento)',
+        })),
+        pie: (
+          <>
+            Llevas{' '}
+            <strong className="text-[color:var(--texto-2)] font-semibold">
+              {formatearCOP(reparto.entroRecibido)}
+            </strong>{' '}
+            recibidos y {formatearCOP(reparto.gastadoHastaHoy)} gastados
+          </>
+        ),
+        destino: 'billeteras',
+      });
+      return lista;
+    }
+
+    // --- Presupuesto
+    const gastosCat = gastoPorCategoriaDelMes(movimientos, contexto.mes, contexto.anio);
+    const topeTotal = presupuestos.reduce((acc, p) => acc + (p.tope || 0), 0);
+    if (topeTotal > 0) {
+      const gastadoEnTopes = presupuestos.reduce(
+        (acc, p) => acc + (gastosCat[p.categoria] || 0),
+        0
+      );
+      const pctGastado = pct(gastadoEnTopes, topeTotal);
+      const pctMes = pct(contexto.dia, contexto.diasDelMes);
+      const apretada = presupuestos
+        .map((p) => ({ categoria: p.categoria, uso: pct(gastosCat[p.categoria] || 0, p.tope) }))
+        .sort((a, b) => b.uso - a.uso)[0];
+
+      lista.push({
+        id: 'presupuesto',
+        modulo: 'Presupuesto',
+        cifra: formatearCOP(gastadoEnTopes),
+        sufijo: `de ${formatearCOP(topeTotal)}`,
+        segmentos: [
+          {
+            ancho: pctGastado,
+            color: pctGastado > pctMes + 8 ? 'var(--accion)' : 'var(--positivo)',
+          },
+        ],
+        hito: pctMes,
+        pie: (
+          <>
+            Gastaste{' '}
+            <strong className="text-[color:var(--texto-2)] font-semibold">
+              {Math.round(pctGastado)}%
+            </strong>{' '}
+            y el mes va en{' '}
+            <strong className="text-[color:var(--texto-2)] font-semibold">
+              {Math.round(pctMes)}%
+            </strong>
+            {apretada && apretada.uso > 0 && ` · ${apretada.categoria} al ${Math.round(apretada.uso)}%`}
+          </>
+        ),
+        etiqueta:
+          apretada && apretada.uso >= 90
+            ? { texto: `ojo ${apretada.categoria}`, tono: 'mal' }
+            : pctGastado > pctMes + 8
+            ? { texto: 'vas rápido', tono: 'ojo' }
+            : { texto: 'vas parejo', tono: 'ok' },
+        destino: 'crecer',
+      });
+    }
+
+    // --- Sobres
+    if (sobres.length > 0) {
+      const metas = sobres.reduce((acc, s) => acc + (s.meta || 0), 0);
+      const base = metas > 0 ? metas : Math.max(1, totalApartado);
+      const porAvance = [...sobres].sort(
+        (a, b) => pct(b.apartado, b.meta || 1) - pct(a.apartado, a.meta || 1)
+      );
+
+      lista.push({
+        id: 'sobres',
+        modulo: 'Sobres',
+        cifra: formatearCOP(totalApartado),
+        sufijo: 'apartados',
+        segmentos: sobres.map((s) => ({
+          ancho: pct(s.apartado, base),
+          color: s.color || 'var(--positivo)',
+        })),
+        pie: porAvance
+          .slice(0, 3)
+          .map((s) => `${s.nombre} ${Math.round(pct(s.apartado, s.meta || s.apartado || 1))}%`)
+          .join(' · '),
+        etiqueta: {
+          texto: `${sobres.length} ${sobres.length === 1 ? 'sobre' : 'sobres'}`,
+          tono: 'neutro',
+        },
+        destino: 'crecer',
+      });
+    }
+
+    // --- Reto de ahorro
+    const reto = retos.find((r) => !r.completado) || retos[0];
+    if (reto) {
+      lista.push({
+        id: 'reto',
+        modulo: 'Reto de ahorro',
+        cifra: formatearCOP(reto.acumulado),
+        sufijo: `de ${formatearCOP(reto.metaTotal)}`,
+        segmentos: [
+          { ancho: pct(reto.acumulado, reto.metaTotal), color: reto.color || 'var(--positivo)' },
+        ],
+        pie: (
+          <>
+            {reto.nombre} · semana{' '}
+            <strong className="text-[color:var(--texto-2)] font-semibold">
+              {Math.min(reto.semanaActual, reto.semanasTotales)} de {reto.semanasTotales}
+            </strong>
+          </>
+        ),
+        etiqueta: reto.completado
+          ? { texto: 'completado', tono: 'ok' }
+          : reto.racha > 0
+          ? { texto: `racha de ${reto.racha}`, tono: 'ok' }
+          : { texto: 'sin racha aún', tono: 'neutro' },
+        destino: 'crecer',
+      });
+    }
+
+    // --- Suscripciones
+    const activas = suscripciones.filter((s) => s.activa);
+    if (activas.length > 0) {
+      const pctIngreso = pct(sangradoMensual, reparto.entro);
+      lista.push({
+        id: 'suscripciones',
+        modulo: 'Suscripciones',
+        cifra: formatearCOP(sangradoMensual),
+        sufijo: 'al mes',
+        segmentos: [{ ancho: pctIngreso, color: 'var(--alerta)' }],
+        pie: (
+          <>
+            {activas.length} activas · son{' '}
+            <strong className="text-[color:var(--texto-2)] font-semibold">
+              {formatearCOP(sangradoMensual * 12)}
+            </strong>{' '}
+            en un año
+          </>
+        ),
+        etiqueta:
+          pctIngreso >= 10
+            ? { texto: `${Math.round(pctIngreso)}% de lo que entra`, tono: 'mal' }
+            : { texto: `${Math.round(pctIngreso)}% de lo que entra`, tono: 'neutro' },
+        destino: 'crecer',
+      });
+    }
+
+    // --- Tarjetas y días de corte
+    if (tarjetasCredito.length > 0) {
+      const cupo = tarjetasCredito.reduce((acc, t) => acc + (t.cupo || 0), 0);
+      const usado = deudas
+        .filter((d) => d.tipo === 'tarjeta' && !d.saldada)
+        .reduce((acc, d) => acc + (d.saldo ?? d.saldoTotal ?? 0), 0);
+      const pctCupo = pct(usado, cupo);
+      const corte = tarjetasCredito
+        .map((t) => ({ nombre: t.nombre, dias: diasHasta(t.diaCorte, contexto.hoy) }))
+        .sort((a, b) => a.dias - b.dias)[0];
+
+      lista.push({
+        id: 'tarjetas',
+        modulo: 'Tarjetas',
+        cifra: cupo > 0 ? `${Math.round(pctCupo)}%` : `${tarjetasCredito.length}`,
+        sufijo: cupo > 0 ? 'de cupo usado' : 'registradas',
+        segmentos: [{ ancho: cupo > 0 ? pctCupo : 0, color: COLOR_TARJETA }],
+        pie:
+          cupo > 0 ? (
+            <>
+              {formatearCOP(usado)} de{' '}
+              <strong className="text-[color:var(--texto-2)] font-semibold">
+                {formatearCOP(cupo)}
+              </strong>{' '}
+              · el corte que sigue es el de {corte.nombre}
+            </>
+          ) : (
+            `${corte.nombre} es la que corta primero`
+          ),
+        etiqueta: {
+          texto: corte.dias === 0 ? 'corta hoy' : `corte en ${corte.dias} ${corte.dias === 1 ? 'día' : 'días'}`,
+          tono: corte.dias <= 3 ? 'ojo' : 'neutro',
+        },
+        destino: 'crecer',
+      });
+    }
+
+    return lista;
+  }, [
+    deudasActivas, reparto, resumen.porcentajeDeudaPagada, disponibleMensual, esPro, saldoTotal,
+    billeteras, movimientos, contexto, presupuestos, sobres, totalApartado, retos, suscripciones,
+    sangradoMensual, tarjetasCredito, deudas,
+  ]);
+
+  // Sin Pro se suma la celda que invita a Crecer, para que la rejilla cierre completa.
+  const celdasFrentes = frentes.length + (esPro ? 0 : 1);
+  const columnasFrentes = celdasFrentes % 3 === 0 ? 'lg:grid-cols-3' : 'lg:grid-cols-2';
   const categoriaTop = categorias[0];
   const libreEnRojo = reparto.libre < 0;
 
@@ -543,7 +878,7 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
         </section>
 
         {/* ---------- Tu ritmo de gasto ---------- */}
-        <section className="order-4 lg:order-3 lg:col-span-7 flex flex-col gap-2.5">
+        <section className="order-4 lg:order-3 lg:col-span-7 lg:self-stretch flex flex-col gap-2.5">
           <EncabezadoBloque
             titulo="Tu ritmo de gasto"
             dato={
@@ -553,7 +888,7 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
             }
             datoSoloEscritorio
           />
-          <Tarjeta padding="lg">
+          <Tarjeta padding="lg" className="lg:h-full flex flex-col">
             {ritmo.hayAnterior ? (
               <>
                 <h3 className="font-display font-bold text-[15px] text-[color:var(--texto)]">
@@ -588,16 +923,18 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
               </>
             )}
 
-            <div className="mt-3 hidden sm:block">
-              <GraficoRitmo
-                puntosMes={ritmo.puntosMes}
-                puntosAnterior={ritmo.puntosAnterior}
-                proyeccion={ritmo.proyeccion}
-                diasDelMes={ritmo.diasDelMes}
-                diasDelMesAnterior={ritmo.diasDelMesAnterior}
-                diaActual={contexto.dia}
-                etiquetaAnterior={contexto.nombreAnterior.toLowerCase()}
-              />
+            <div className="mt-3 flex-1 hidden sm:flex items-center">
+              <div className="w-full">
+                <GraficoRitmo
+                  puntosMes={ritmo.puntosMes}
+                  puntosAnterior={ritmo.puntosAnterior}
+                  proyeccion={ritmo.proyeccion}
+                  diasDelMes={ritmo.diasDelMes}
+                  diasDelMesAnterior={ritmo.diasDelMesAnterior}
+                  diaActual={contexto.dia}
+                  etiquetaAnterior={contexto.nombreAnterior.toLowerCase()}
+                />
+              </div>
             </div>
             <div className="mt-3 sm:hidden">
               <GraficoRitmo
@@ -698,6 +1035,48 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
             )}
           </Tarjeta>
         </section>
+
+        {/* ---------- Cómo van tus frentes ---------- */}
+        {celdasFrentes > 1 && (
+          <section className="order-5 lg:col-span-12 flex flex-col gap-2.5">
+            <EncabezadoBloque
+              titulo="Cómo van tus frentes"
+              dato="Un vistazo a cada módulo · toca para entrar"
+              datoSoloEscritorio
+            />
+            <div
+              className={`grid grid-cols-2 ${columnasFrentes} gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-2xl overflow-hidden`}
+            >
+              {frentes.map((f) => (
+                <TarjetaFrente key={f.id} frente={f} onClick={() => onNavegar(f.destino)} />
+              ))}
+
+              {!esPro && (
+                <button
+                  type="button"
+                  onClick={() => onNavegar('crecer')}
+                  className="bg-[var(--superficie)] hover:bg-[var(--elevada)] transition-colors cursor-pointer text-left px-4 py-3.5 flex flex-col gap-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-[color:var(--acento)]">
+                      Crecer
+                    </span>
+                    <span className="text-[10.5px] font-bold rounded-full px-2 py-0.5 bg-[var(--acento)]/12 text-[color:var(--acento)] whitespace-nowrap">
+                      5 módulos
+                    </span>
+                  </div>
+                  <div className="font-display font-black text-[17px] sm:text-[19px] tracking-tight text-[color:var(--texto)] leading-tight">
+                    Presupuesto, sobres y más
+                  </div>
+                  <p className="text-[11.5px] text-[color:var(--texto-3)] leading-snug">
+                    Aquí irían tus topes por categoría, tus sobres, tu reto, tus suscripciones y tus
+                    días de corte.
+                  </p>
+                </button>
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* ===================== Modales ===================== */}

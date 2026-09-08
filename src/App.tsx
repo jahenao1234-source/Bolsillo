@@ -176,9 +176,13 @@ export default function App() {
                   movimientos={movimientos}
                   disponibleMensual={disponibleMensual}
                   esPro={nivelAcceso === 'pro'}
+                  saldoTotal={saldoTotal}
                   presupuestos={presupuestos}
+                  sobres={sobres}
+                  totalApartado={totalApartado}
                   retos={retos}
                   suscripciones={suscripciones}
+                  sangradoMensual={sangradoMensual}
                   tarjetasCredito={tarjetasCredito}
                   onNavegar={handleNavegar}
                   onRegistrarMovimiento={registrarMovimiento}

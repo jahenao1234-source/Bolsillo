@@ -818,3 +818,26 @@ export function categoriasDeGasto(entrada: {
 
   return { categorias, total, totalAnterior };
 }
+
+/** Gasto corriente del mes agrupado por categoría (mapa completo, sin recortar). */
+export function gastoPorCategoriaDelMes(
+  movimientos: Movimiento[],
+  mes: number,
+  anio: number
+): Record<string, number> {
+  const acc: Record<string, number> = {};
+  for (const m of movimientos) {
+    if (!esGastoCorriente(m)) continue;
+    const f = fechaDeMovimiento(m);
+    if (!f || f.getMonth() !== mes || f.getFullYear() !== anio) continue;
+    const cat = m.categoria || 'Otros';
+    acc[cat] = (acc[cat] || 0) + Math.abs(Number(m.monto) || 0);
+  }
+  return acc;
+}
+
+/** Días que faltan para que vuelva a caer ese día del mes. */
+export function diasHasta(diaDelMes: number, hoy: Date): number {
+  const proxima = proximaFechaDeDia(diaDelMes, hoy);
+  return Math.round((proxima.getTime() - hoy.getTime()) / 86400000);
+}
