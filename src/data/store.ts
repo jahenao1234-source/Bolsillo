@@ -156,33 +156,70 @@ const MOCK_BILLETERAS_INICIAL: Billetera[] = [
   },
 ];
 
-// Movimientos de ejemplo: "Salario quincena" +$900.000 (Nequi), "Mercado" −$120.000 (Efectivo)
-const MOCK_MOVIMIENTOS_INICIAL: Movimiento[] = [
-  {
-    id: 'mov-1',
-    tipo: 'ingreso',
-    monto: 900000,
-    billeteraId: 'bil-nequi',
-    billeteraNombre: 'Nequi',
-    categoria: 'Salario',
-    fecha: '01 sep 2026',
-    nota: 'Salario quincena',
-    descripcion: 'Salario quincena',
-    creadoEn: '2026-09-01T10:00:00.000Z',
-  },
-  {
-    id: 'mov-2',
-    tipo: 'gasto',
-    monto: 120000,
-    billeteraId: 'bil-efectivo',
-    billeteraNombre: 'Efectivo',
-    categoria: 'Comida',
-    fecha: '02 sep 2026',
-    nota: 'Mercado',
-    descripcion: 'Mercado',
-    creadoEn: '2026-09-02T14:30:00.000Z',
-  },
+/**
+ * Movimientos de ejemplo: un mes anterior completo (agosto) y el mes en curso
+ * hasta hoy (septiembre). El mes cerrado es lo que le permite a Inicio comparar
+ * ritmo, categorías y reparto contra "el mes pasado" desde el primer minuto.
+ */
+type MovimientoSemilla = [
+  tipo: 'ingreso' | 'gasto',
+  monto: number,
+  billeteraId: string,
+  billeteraNombre: string,
+  categoria: string,
+  fecha: string,
+  iso: string,
+  nota: string,
+  deudaId?: string
 ];
+
+const SEMILLA_MOVIMIENTOS: MovimientoSemilla[] = [
+  // --- Septiembre (mes en curso) ---
+  ['gasto', 22000, 'bil-efectivo', 'Efectivo', 'Transporte', '06 sep 2026', '2026-09-06T15:00:00.000Z', 'Transporte de la semana'],
+  ['gasto', 16900, 'bil-bancolombia', 'Bancolombia', 'Ocio', '05 sep 2026', '2026-09-05T15:00:00.000Z', 'Spotify'],
+  ['gasto', 164000, 'bil-bancolombia', 'Bancolombia', 'Servicios', '03 sep 2026', '2026-09-03T15:00:00.000Z', 'Luz y agua'],
+  ['gasto', 120000, 'bil-efectivo', 'Efectivo', 'Comida', '02 sep 2026', '2026-09-02T15:00:00.000Z', 'Mercado'],
+  ['gasto', 89900, 'bil-bancolombia', 'Bancolombia', 'Salud', '01 sep 2026', '2026-09-01T15:00:00.000Z', 'Gimnasio Smart Fit'],
+  ['ingreso', 900000, 'bil-nequi', 'Nequi', 'Salario', '01 sep 2026', '2026-09-01T14:00:00.000Z', 'Salario quincena'],
+
+  // --- Agosto (mes cerrado, para comparar) ---
+  ['gasto', 24000, 'bil-efectivo', 'Efectivo', 'Transporte', '30 ago 2026', '2026-08-30T15:00:00.000Z', 'Transporte de la semana'],
+  ['gasto', 160000, 'bil-bancolombia', 'Bancolombia', 'Deudas', '30 ago 2026', '2026-08-30T14:00:00.000Z', 'Abono a Libranza Banco Popular', 'deuda-libranza'],
+  ['gasto', 48000, 'bil-nequi', 'Nequi', 'Servicios', '28 ago 2026', '2026-08-28T15:00:00.000Z', 'Datos del celu'],
+  ['gasto', 112000, 'bil-efectivo', 'Efectivo', 'Comida', '25 ago 2026', '2026-08-25T15:00:00.000Z', 'Mercado'],
+  ['gasto', 26000, 'bil-efectivo', 'Efectivo', 'Transporte', '22 ago 2026', '2026-08-22T15:00:00.000Z', 'Transporte de la semana'],
+  ['gasto', 29900, 'bil-bancolombia', 'Bancolombia', 'Ocio', '20 ago 2026', '2026-08-20T15:00:00.000Z', 'Disney+'],
+  ['gasto', 124000, 'bil-efectivo', 'Efectivo', 'Comida', '16 ago 2026', '2026-08-16T15:00:00.000Z', 'Mercado'],
+  ['ingreso', 900000, 'bil-nequi', 'Nequi', 'Salario', '16 ago 2026', '2026-08-16T14:00:00.000Z', 'Salario quincena'],
+  ['gasto', 44900, 'bil-bancolombia', 'Bancolombia', 'Ocio', '15 ago 2026', '2026-08-15T15:00:00.000Z', 'Netflix'],
+  ['gasto', 150000, 'bil-bancolombia', 'Bancolombia', 'Deudas', '15 ago 2026', '2026-08-15T14:00:00.000Z', 'Abono a Tarjeta Éxito', 'deuda-exito'],
+  ['gasto', 28000, 'bil-efectivo', 'Efectivo', 'Transporte', '14 ago 2026', '2026-08-14T15:00:00.000Z', 'Transporte de la semana'],
+  ['gasto', 62000, 'bil-nequi', 'Nequi', 'Comida', '10 ago 2026', '2026-08-10T15:00:00.000Z', 'Almuerzos'],
+  ['gasto', 30000, 'bil-efectivo', 'Efectivo', 'Deudas', '10 ago 2026', '2026-08-10T14:00:00.000Z', 'Abono a Fiado tienda doña Rosa', 'deuda-fiado'],
+  ['gasto', 180000, 'bil-nequi', 'Nequi', 'Deudas', '08 ago 2026', '2026-08-08T14:00:00.000Z', 'Abono a Gota a gota', 'deuda-gota'],
+  ['gasto', 32000, 'bil-efectivo', 'Efectivo', 'Transporte', '07 ago 2026', '2026-08-07T15:00:00.000Z', 'Transporte de la semana'],
+  ['gasto', 16900, 'bil-bancolombia', 'Bancolombia', 'Ocio', '05 ago 2026', '2026-08-05T15:00:00.000Z', 'Spotify'],
+  ['gasto', 178000, 'bil-bancolombia', 'Bancolombia', 'Servicios', '03 ago 2026', '2026-08-03T15:00:00.000Z', 'Luz y agua'],
+  ['gasto', 138000, 'bil-efectivo', 'Efectivo', 'Comida', '02 ago 2026', '2026-08-02T15:00:00.000Z', 'Mercado'],
+  ['gasto', 89900, 'bil-bancolombia', 'Bancolombia', 'Salud', '01 ago 2026', '2026-08-01T15:00:00.000Z', 'Gimnasio Smart Fit'],
+  ['ingreso', 900000, 'bil-nequi', 'Nequi', 'Salario', '01 ago 2026', '2026-08-01T14:00:00.000Z', 'Salario quincena'],
+];
+
+const MOCK_MOVIMIENTOS_INICIAL: Movimiento[] = SEMILLA_MOVIMIENTOS.map(
+  ([tipo, monto, billeteraId, billeteraNombre, categoria, fecha, iso, nota, deudaId], i) => ({
+    id: `mov-semilla-${i + 1}`,
+    tipo,
+    monto,
+    billeteraId,
+    billeteraNombre,
+    categoria,
+    fecha,
+    nota,
+    descripcion: nota,
+    creadoEn: iso,
+    ...(deudaId ? { deudaId } : {}),
+  })
+);
 
 // Categorías por defecto
 export const CATEGORIAS_INGRESOS_DEFECTO = ['Salario', 'Venta', 'Otro'];
@@ -216,11 +253,11 @@ const MOCK_RETOS_INICIAL: RetoAhorro[] = [
     id: 'reto-millon',
     nombre: 'Mi primer millón',
     tipo: 'semanal_fijo',
-    aporteBase: 50000,
+    aporteBase: 25000,
     metaTotal: 1000000,
-    semanasTotales: 20,
+    semanasTotales: 40,
     semanaActual: 9,
-    acumulado: 400000,
+    acumulado: 200000,
     racha: 8,
     completado: false,
     color: '#5FE0A8',

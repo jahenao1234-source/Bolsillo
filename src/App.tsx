@@ -175,7 +175,13 @@ export default function App() {
                   deudas={deudas}
                   movimientos={movimientos}
                   disponibleMensual={disponibleMensual}
+                  esPro={nivelAcceso === 'pro'}
+                  presupuestos={presupuestos}
+                  retos={retos}
+                  suscripciones={suscripciones}
+                  tarjetasCredito={tarjetasCredito}
                   onNavegar={handleNavegar}
+                  onRegistrarMovimiento={registrarMovimiento}
                   onAbonarDeuda={abonarDeudaDesdeBilletera}
                 />
               </div>

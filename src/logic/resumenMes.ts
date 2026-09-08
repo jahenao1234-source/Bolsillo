@@ -91,10 +91,25 @@ export function getContextoMes(ref: Date = new Date()): ContextoMes {
  */
 export function fechaDeMovimiento(m: Movimiento): Date | null {
   if (m.creadoEn) {
-    const d = new Date(m.creadoEn);
-    if (!isNaN(d.getTime())) return d;
+    const d = fechaISOLocal(m.creadoEn);
+    if (d) return d;
   }
   return fechaDeTexto(m.fecha);
+}
+
+/**
+ * Lee una fecha ISO respetando el día que se ve escrito.
+ * "2026-07-01" a secas lo interpreta el navegador como UTC y en Colombia se
+ * corre al 30 de junio; aquí se construye en hora local para evitarlo.
+ */
+export function fechaISOLocal(iso: string): Date | null {
+  if (!iso) return null;
+  const soloFecha = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (soloFecha) {
+    return new Date(Number(soloFecha[1]), Number(soloFecha[2]) - 1, Number(soloFecha[3]));
+  }
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 /** Convierte "15 sep 2026" o "15 sep" en una fecha. */
@@ -197,7 +212,10 @@ export interface DestinoReparto {
 }
 
 export interface Reparto {
+  /** Lo que se espera que entre en el mes completo (base de los porcentajes). */
   entro: number;
+  /** Lo que ya llegó a las billeteras. */
+  entroRecibido: number;
   entroAnterior: number;
   deltaEntro: number | null;
   destinos: DestinoReparto[];
@@ -220,36 +238,56 @@ export interface EntradaReparto {
   esPro: boolean;
 }
 
-/**
- * Proyección de gastos al cierre del mes:
- * lo que llevas gastado + el ritmo variable de los días que faltan +
- * las suscripciones que aún no se han cobrado.
- */
-export function proyectarGastos(entrada: {
-  contexto: ContextoMes;
-  gastadoHastaHoy: number;
-  suscripciones: Suscripcion[];
-  esPro: boolean;
-}): { proyeccion: number; suscripcionesPendientes: number; ritmoDiario: number } {
-  const { contexto, gastadoHastaHoy, suscripciones, esPro } = entrada;
+/** Suscripciones ya cobradas y por cobrar en el mes en curso. */
+export function suscripcionesDelMes(
+  suscripciones: Suscripcion[],
+  dia: number,
+  esPro: boolean
+): { yaCobradas: number; pendientes: number } {
   const activas = esPro ? suscripciones.filter((s) => s.activa) : [];
-
-  const yaCobradas = activas
-    .filter((s) => s.diaCobro <= contexto.dia)
-    .reduce((acc, s) => acc + (Number(s.monto) || 0), 0);
-
-  const pendientes = activas
-    .filter((s) => s.diaCobro > contexto.dia)
-    .reduce((acc, s) => acc + (Number(s.monto) || 0), 0);
-
-  const variableHastaHoy = Math.max(0, gastadoHastaHoy - yaCobradas);
-  const ritmoDiario = contexto.dia > 0 ? variableHastaHoy / contexto.dia : 0;
-
   return {
-    proyeccion: Math.round(gastadoHastaHoy + ritmoDiario * contexto.diasRestantes + pendientes),
-    suscripcionesPendientes: pendientes,
-    ritmoDiario,
+    yaCobradas: activas
+      .filter((s) => s.diaCobro <= dia)
+      .reduce((acc, s) => acc + (Number(s.monto) || 0), 0),
+    pendientes: activas
+      .filter((s) => s.diaCobro > dia)
+      .reduce((acc, s) => acc + (Number(s.monto) || 0), 0),
   };
+}
+
+/**
+ * Cierre estimado del mes.
+ *
+ * Con un mes pasado completo la proyección usa su *forma*: lo que falta cuesta
+ * lo que costó entonces, ajustado por lo suave o cargado que vengas. Es mucho
+ * más fiel que estirar una recta, porque los gastos fijos caen a principio de
+ * mes y una recta los repetiría treinta veces.
+ *
+ * Sin comparativa cae al ritmo diario de lo variable más lo que ya tiene fecha.
+ */
+export function proyectarCierre(entrada: {
+  contexto: ContextoMes;
+  acumuladoHoy: number;
+  acumuladoAnteriorMismoDia: number;
+  cierreAnterior: number;
+  fijoYaOcurrido?: number;
+  fijoPendiente?: number;
+}): number {
+  const { contexto, acumuladoHoy, acumuladoAnteriorMismoDia, cierreAnterior } = entrada;
+  const fijoYaOcurrido = entrada.fijoYaOcurrido ?? 0;
+  const fijoPendiente = entrada.fijoPendiente ?? 0;
+
+  if (contexto.diasRestantes <= 0) return Math.round(acumuladoHoy);
+
+  if (cierreAnterior > 0 && acumuladoAnteriorMismoDia > 0) {
+    const restoAnterior = Math.max(0, cierreAnterior - acumuladoAnteriorMismoDia);
+    const factor = Math.min(2, Math.max(0.5, acumuladoHoy / acumuladoAnteriorMismoDia));
+    return Math.round(acumuladoHoy + restoAnterior * factor);
+  }
+
+  const variable = Math.max(0, acumuladoHoy - fijoYaOcurrido);
+  const ritmoDiario = contexto.dia > 0 ? variable / contexto.dia : 0;
+  return Math.round(acumuladoHoy + ritmoDiario * contexto.diasRestantes + fijoPendiente);
 }
 
 /** Aportes del reto que caen dentro del mes indicado. */
@@ -264,8 +302,8 @@ export function guardadoDelMes(
   return retos
     .filter((r) => !r.completado)
     .reduce((acc, reto) => {
-      const inicio = new Date(reto.creadoEn);
-      if (isNaN(inicio.getTime())) return acc;
+      const inicio = fechaISOLocal(reto.creadoEn);
+      if (!inicio) return acc;
 
       const aporte = reto.tipo === 'escalado' ? reto.aporteBase * reto.semanaActual : reto.aporteBase;
       const diasMes = diasEnMes(mes, anio);
@@ -289,9 +327,24 @@ export function calcularReparto(entrada: EntradaReparto): Reparto {
   const delMes = movimientosDelMes(movimientos, contexto.mes, contexto.anio);
   const delAnterior = movimientosDelMes(movimientos, contexto.mesAnterior, contexto.anioAnterior);
 
-  const entro = sumar(delMes.filter((m) => m.tipo === 'ingreso'));
+  const hastaHoy = (m: Movimiento) => {
+    const f = fechaDeMovimiento(m);
+    return !!f && f.getDate() <= contexto.dia;
+  };
+
+  // --- Lo que entra: lo recibido más lo que el mes pasado dice que falta por
+  //     llegar. Sin esto, a mitad de mes compararíamos media quincena de
+  //     ingresos contra un mes entero de gastos.
+  const entroRecibido = sumar(delMes.filter((m) => m.tipo === 'ingreso'));
   const entroAnterior = sumar(delAnterior.filter((m) => m.tipo === 'ingreso'));
+  const entroAnteriorMismoDia = sumar(
+    delAnterior.filter((m) => m.tipo === 'ingreso' && hastaHoy(m))
+  );
   const hayAnterior = delAnterior.length > 0;
+  const entro =
+    entroAnterior > 0
+      ? entroRecibido + Math.max(0, entroAnterior - entroAnteriorMismoDia)
+      : entroRecibido;
 
   // --- Deudas: lo que ya pagaste o lo que tu plan les destina, lo que sea mayor.
   const saldoActivo = deudas
@@ -306,7 +359,16 @@ export function calcularReparto(entrada: EntradaReparto): Reparto {
   // --- Gastos: lo corriente del mes, proyectado al cierre.
   const gastadoHastaHoy = sumar(delMes.filter(esGastoCorriente));
   const gastosAnterior = sumar(delAnterior.filter(esGastoCorriente));
-  const { proyeccion } = proyectarGastos({ contexto, gastadoHastaHoy, suscripciones, esPro });
+  const gastosAnteriorMismoDia = sumar(delAnterior.filter((m) => esGastoCorriente(m) && hastaHoy(m)));
+  const suscripciones30 = suscripcionesDelMes(suscripciones, contexto.dia, esPro);
+  const proyeccion = proyectarCierre({
+    contexto,
+    acumuladoHoy: gastadoHastaHoy,
+    acumuladoAnteriorMismoDia: gastosAnteriorMismoDia,
+    cierreAnterior: gastosAnterior,
+    fijoYaOcurrido: suscripciones30.yaCobradas,
+    fijoPendiente: suscripciones30.pendientes,
+  });
 
   // --- Guardado: los aportes del reto que caen en el mes.
   const montoGuardado = guardadoDelMes(retos, contexto.mes, contexto.anio, esPro);
@@ -366,6 +428,7 @@ export function calcularReparto(entrada: EntradaReparto): Reparto {
 
   return {
     entro,
+    entroRecibido,
     entroAnterior,
     deltaEntro: hayAnterior ? entro - entroAnterior : null,
     destinos,
@@ -451,7 +514,15 @@ export function calcularRitmo(entrada: {
     ? puntosAnterior[puntosAnterior.length - 1].acumulado
     : 0;
 
-  const { proyeccion } = proyectarGastos({ contexto, gastadoHastaHoy: gastadoHoy, suscripciones, esPro });
+  const suscripciones30 = suscripcionesDelMes(suscripciones, contexto.dia, esPro);
+  const proyeccion = proyectarCierre({
+    contexto,
+    acumuladoHoy: gastadoHoy,
+    acumuladoAnteriorMismoDia: gastadoAnteriorMismoDia,
+    cierreAnterior,
+    fijoYaOcurrido: suscripciones30.yaCobradas,
+    fijoPendiente: suscripciones30.pendientes,
+  });
 
   return {
     puntosMes,
@@ -492,8 +563,8 @@ export interface EventoAgenda {
 
 /** Próximo aporte semanal de un reto, contado desde el día que lo creaste. */
 export function proximoAporteReto(reto: RetoAhorro, hoy: Date): Date | null {
-  const inicio = new Date(reto.creadoEn);
-  if (isNaN(inicio.getTime())) return null;
+  const inicio = fechaISOLocal(reto.creadoEn);
+  if (!inicio) return null;
 
   const base = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate());
   const dias = Math.floor((hoy.getTime() - base.getTime()) / 86400000);
