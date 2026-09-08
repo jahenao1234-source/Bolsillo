@@ -17,6 +17,7 @@ import { PantallaActivarCodigo } from './screens/PantallaActivarCodigo';
 import { PWAInstallButton } from './components/ui/PWAInstallButton';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { useTema, inicializarTema } from './utils/theme';
+import { getContextoMes, ingresoDelMes } from './logic/resumenMes';
 
 export default function App() {
   const [seccionActiva, setSeccionActiva] = useState<SeccionApp>(() =>
@@ -66,6 +67,14 @@ export default function App() {
     guardarTarjetaCredito,
     eliminarTarjetaCredito,
   } = useBolsilloData();
+
+  // Lo que entra en el mes completo. A mitad de mes, `flujoMes.ingresos` solo
+  // trae la quincena que ya llegó, y los módulos que comparan contra el ingreso
+  // (presupuesto, suscripciones, retos) darían porcentajes al doble.
+  const ingresoDelMesCompleto = React.useMemo(
+    () => ingresoDelMes(movimientos, getContextoMes()).proyectado,
+    [movimientos]
+  );
 
   const handleNavegar = (seccion: SeccionApp) => {
     setSeccionActiva(seccion);
@@ -235,7 +244,7 @@ export default function App() {
                     usuario={resumen.usuario}
                     presupuestos={presupuestos}
                     gastoPorCategoria={gastoPorCategoria}
-                    ingresoMensual={flujoMes.ingresos}
+                    ingresoMensual={ingresoDelMesCompleto}
                     billeteras={billeteras}
                     onGuardarPresupuesto={guardarPresupuesto}
                     onEliminarPresupuesto={eliminarPresupuesto}

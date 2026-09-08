@@ -143,8 +143,11 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
       <PantallaSuscripciones
         suscripciones={suscripciones}
         sangradoMensual={sangradoMensual}
+        billeteras={billeteras}
+        ingresoMensual={ingresoMensual}
         onGuardarSuscripcion={onGuardarSuscripcion}
         onEliminarSuscripcion={onEliminarSuscripcion}
+        onRegistrarMovimiento={onRegistrarMovimiento}
         onVolver={() => setModulo('hub')}
       />
     );

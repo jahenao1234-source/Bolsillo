@@ -279,6 +279,36 @@ export function guardadoDelMes(
     }, 0);
 }
 
+/**
+ * Lo que entra en el mes: lo ya recibido, y lo que se espera al cierre.
+ *
+ * A mitad de mes solo ha llegado media quincena; comparar eso contra un mes
+ * entero de gastos deja todo en rojo sin motivo. La proyección suma lo que el
+ * mes pasado dice que todavía falta por llegar.
+ */
+export function ingresoDelMes(
+  movimientos: Movimiento[],
+  contexto: ContextoMes
+): { recibido: number; proyectado: number; anterior: number } {
+  const esIngreso = (m: Movimiento) => m.tipo === 'ingreso';
+
+  const recibido = sumar(movimientosDelMes(movimientos, contexto.mes, contexto.anio).filter(esIngreso));
+  const delAnterior = movimientosDelMes(movimientos, contexto.mesAnterior, contexto.anioAnterior);
+  const anterior = sumar(delAnterior.filter(esIngreso));
+  const anteriorMismoDia = sumar(
+    delAnterior.filter((m) => {
+      const f = fechaDeMovimiento(m);
+      return esIngreso(m) && !!f && f.getDate() <= contexto.dia;
+    })
+  );
+
+  return {
+    recibido,
+    anterior,
+    proyectado: anterior > 0 ? recibido + Math.max(0, anterior - anteriorMismoDia) : recibido,
+  };
+}
+
 export function calcularReparto(entrada: EntradaReparto): Reparto {
   const { contexto, movimientos, deudas, disponibleMensual, suscripciones, retos, esPro } = entrada;
 
@@ -290,19 +320,11 @@ export function calcularReparto(entrada: EntradaReparto): Reparto {
     return !!f && f.getDate() <= contexto.dia;
   };
 
-  // --- Lo que entra: lo recibido más lo que el mes pasado dice que falta por
-  //     llegar. Sin esto, a mitad de mes compararíamos media quincena de
-  //     ingresos contra un mes entero de gastos.
-  const entroRecibido = sumar(delMes.filter((m) => m.tipo === 'ingreso'));
-  const entroAnterior = sumar(delAnterior.filter((m) => m.tipo === 'ingreso'));
-  const entroAnteriorMismoDia = sumar(
-    delAnterior.filter((m) => m.tipo === 'ingreso' && hastaHoy(m))
-  );
+  const ingreso = ingresoDelMes(movimientos, contexto);
+  const entroRecibido = ingreso.recibido;
+  const entroAnterior = ingreso.anterior;
   const hayAnterior = delAnterior.length > 0;
-  const entro =
-    entroAnterior > 0
-      ? entroRecibido + Math.max(0, entroAnterior - entroAnteriorMismoDia)
-      : entroRecibido;
+  const entro = ingreso.proyectado;
 
   // --- Deudas: lo que ya pagaste o lo que tu plan les destina, lo que sea mayor.
   const saldoActivo = deudas
