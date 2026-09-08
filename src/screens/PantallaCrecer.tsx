@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import { Presupuesto, Sobre, RetoAhorro, Suscripcion, TarjetaCredito, Billetera, Movimiento } from '../types';
+import { Presupuesto, Sobre, RetoAhorro, Suscripcion, TarjetaCredito, Billetera, Movimiento, Deuda } from '../types';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { formatearCOP } from '../utils/format';
 import { PantallaPresupuesto } from './PantallaPresupuesto';
@@ -42,6 +42,8 @@ interface PantallaCrecerProps {
   onGuardarSuscripcion: (sus: Suscripcion) => void;
   onEliminarSuscripcion: (id: string) => void;
   tarjetas: TarjetaCredito[];
+  deudas: Deuda[];
+  onAbonarDeuda: (deudaId: string, billeteraId: string, monto: number) => { exito: boolean; deudaSaldada: boolean };
   onGuardarTarjeta: (tc: TarjetaCredito) => void;
   onEliminarTarjeta: (id: string) => void;
 }
@@ -157,6 +159,9 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     return (
       <PantallaTarjetas
         tarjetas={tarjetas}
+        deudas={props.deudas}
+        billeteras={billeteras}
+        onAbonarDeuda={props.onAbonarDeuda}
         onGuardarTarjeta={onGuardarTarjeta}
         onEliminarTarjeta={onEliminarTarjeta}
         onVolver={() => setModulo('hub')}

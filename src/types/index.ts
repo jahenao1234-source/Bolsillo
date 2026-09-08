@@ -222,6 +222,10 @@ export interface TarjetaCredito {
   diaCorte: number;        // día del mes en que cierra el ciclo
   diaPago: number;         // día del mes límite de pago
   cupo?: number;
+  /** Interés % mensual, para simular cuotas y el costo del mínimo. */
+  tasaMensual?: number;
+  /** Deuda de Deuda Cero que corresponde a esta tarjeta, para no repetir el saldo. */
+  deudaId?: string;
   color?: string;
   creadoEn: string;
 }
