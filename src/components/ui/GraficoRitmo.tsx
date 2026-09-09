@@ -62,7 +62,12 @@ export const GraficoRitmo: React.FC<GraficoRitmoProps> = ({
     if (!el) return;
 
     const anotar = (w: number, h: number) => {
-      if (w > 40 && h > 40) setMedida({ w: Math.round(w), h: Math.round(h) });
+      if (w <= 40 || h <= 40) return;
+      const nw = Math.round(w);
+      const nh = Math.round(h);
+      setMedida((prev) =>
+        prev && Math.abs(prev.w - nw) < 2 && Math.abs(prev.h - nh) < 2 ? prev : { w: nw, h: nh },
+      );
     };
 
     // Medimos YA, antes de pintar. Si esperamos al observer, el primer cuadro
@@ -150,10 +155,10 @@ export const GraficoRitmo: React.FC<GraficoRitmoProps> = ({
   );
 
   return (
-    <div ref={hueco} className={`w-full ${compacto ? '' : 'h-full min-h-0'}`}>
+    <div ref={hueco} className={`w-full ${compacto ? '' : 'relative h-full min-h-0'}`}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className={`block w-full ${compacto ? 'h-auto' : 'h-full'} ${className}`}
+        className={`block w-full ${compacto ? 'h-auto' : 'absolute inset-0 h-full'} ${className}`}
         role="img"
         aria-label={`Gasto acumulado del mes: llevas ${formatearCOPCorto(gastadoHoy)} y a este ritmo cierras en ${formatearCOPCorto(proyeccion)}${hayAnterior ? `, contra ${formatearCOPCorto(cierreAnterior)} del mes pasado` : ''}.`}
       >
