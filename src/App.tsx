@@ -135,7 +135,7 @@ export default function App() {
       {/* En escritorio la página no scrollea: lo hace el contenido. */}
       {/* ========================================================= */}
       <ProveedorShell value={shell}>
-      <div className="min-h-screen md:h-screen md:overflow-hidden flex">
+      <div className="app-shell min-h-screen md:h-screen md:overflow-hidden flex">
         {/* Riel de escritorio (68px) */}
         {conShell && (
           <RielNavegacion
@@ -156,7 +156,7 @@ export default function App() {
         )}
 
         {/* Área de contenido principal */}
-        <main className="flex-1 flex flex-col min-w-0 min-h-screen md:min-h-0 md:h-screen relative z-10">
+        <main className="app-main flex-1 flex flex-col min-w-0 min-h-screen md:min-h-0 md:h-screen relative z-10">
           {/* Barra superior en móvil solo cuando no estamos en gancho o pantalla de código */}
           {conShell && (
             <header className="md:hidden sticky top-0 z-20 bg-[var(--fondo)]/90 backdrop-blur-md px-4 py-3 border-b border-[var(--linea)] flex items-center justify-between">
@@ -198,7 +198,7 @@ export default function App() {
 
           {/* La barra de contexto: dónde estás y el botón del cajón de Hoy */}
           {conShell && (
-            <div className="hidden md:block px-5 pt-4 pb-1 flex-none">
+            <div className="no-imprimir hidden md:block px-5 pt-4 pb-1 flex-none">
               <BarraContexto
                 refTitulo={setSlotBarra}
                 refAcciones={setSlotAcciones}
@@ -212,7 +212,7 @@ export default function App() {
           {/* El contenido. En escritorio scrollea aquí, no la página entera. */}
           <div
             ref={contenidoRef}
-            className={`flex-1 min-h-0 md:overflow-y-auto px-4 sm:px-6 md:px-5 py-5 md:pt-3 w-full ${
+            className={`app-contenido flex-1 min-h-0 md:overflow-y-auto px-4 sm:px-6 md:px-5 py-5 md:pt-3 w-full ${
               conShell ? 'pb-24 md:pb-5' : ''
             }`}
           >

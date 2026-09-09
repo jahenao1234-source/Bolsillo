@@ -264,6 +264,29 @@ h1, h2, h3, h4, .stat-value {
   main { padding: 0 !important; }
 
 
+  /*
+   * El shell deja de ser una ventana fija: en pantalla el contenido scrollea
+   * dentro de su contenedor, pero el papel no scrollea — se estira.
+   * Sin esto la hoja salia recortada al alto de una pantalla.
+   */
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .app-shell,
+  .app-main,
+  .app-contenido,
+  .app-contenido > div,
+  .app-contenido > div > div {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   /* El marco de columnas no existe en papel: todo cae en una sola columna. */
   .hoja-reporte.marco,
   .hoja-reporte .marco {
@@ -274,9 +297,14 @@ h1, h2, h3, h4, .stat-value {
     overflow: visible !important;
   }
 
-  .hoja-reporte .marco-col {
+  .hoja-reporte .marco-col,
+  .hoja-reporte .marco-col > div {
     border: none !important;
     display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   /* Nada scrollea en papel: se imprime entero */
