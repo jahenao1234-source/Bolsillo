@@ -111,90 +111,6 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     return { activos, acumulado, mejorRacha };
   }, [retos]);
 
-  if (modulo === 'presupuesto') {
-    return (
-      <PantallaPresupuesto
-        presupuestos={presupuestos}
-        gastoPorCategoria={gastoPorCategoria}
-        ingresoMensual={ingresoMensual}
-        billeteras={billeteras}
-        onGuardarPresupuesto={onGuardarPresupuesto}
-        onEliminarPresupuesto={onEliminarPresupuesto}
-        onRegistrarMovimiento={onRegistrarMovimiento}
-        onVolver={() => setModulo('hub')}
-      />
-    );
-  }
-
-  if (modulo === 'sobres') {
-    return (
-      <PantallaSobres
-        sobres={sobres}
-        totalApartado={totalApartado}
-        saldoTotal={saldoTotal}
-        onGuardarSobre={onGuardarSobre}
-        onEliminarSobre={onEliminarSobre}
-        onVolver={() => setModulo('hub')}
-      />
-    );
-  }
-
-  if (modulo === 'retos') {
-    return (
-      <PantallaRetos
-        retos={retos}
-        ingresoMensual={ingresoMensual}
-        onGuardarReto={onGuardarReto}
-        onEliminarReto={onEliminarReto}
-        onAportarReto={onAportarReto}
-        onVolver={() => setModulo('hub')}
-      />
-    );
-  }
-
-  if (modulo === 'suscripciones') {
-    return (
-      <PantallaSuscripciones
-        suscripciones={suscripciones}
-        sangradoMensual={sangradoMensual}
-        billeteras={billeteras}
-        ingresoMensual={ingresoMensual}
-        onGuardarSuscripcion={onGuardarSuscripcion}
-        onEliminarSuscripcion={onEliminarSuscripcion}
-        onRegistrarMovimiento={onRegistrarMovimiento}
-        onVolver={() => setModulo('hub')}
-      />
-    );
-  }
-
-  if (modulo === 'tarjetas') {
-    return (
-      <PantallaTarjetas
-        tarjetas={tarjetas}
-        deudas={props.deudas}
-        billeteras={billeteras}
-        onAbonarDeuda={props.onAbonarDeuda}
-        onGuardarTarjeta={onGuardarTarjeta}
-        onEliminarTarjeta={onEliminarTarjeta}
-        onVolver={() => setModulo('hub')}
-      />
-    );
-  }
-
-  if (modulo === 'reportes') {
-    return (
-      <PantallaReportes
-        movimientos={props.movimientos}
-        deudas={props.deudas}
-        retos={retos}
-        suscripciones={suscripciones}
-        disponibleMensual={props.disponibleMensual}
-        usuario={usuario}
-        onVolver={() => setModulo('hub')}
-      />
-    );
-  }
-
   // ------------------------------------------------------------------
   // El tablero de Pro. Cada módulo trae su cifra, su forma y lo que toca
   // hacer ahora: seis tarjetas iguales y mudas eran un menú disfrazado.
@@ -292,6 +208,91 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     const total = partes.reduce((s, p) => s + p.monto, 0);
     return { partes, total };
   }, [sobres, retos]);
+
+  if (modulo === 'presupuesto') {
+    return (
+      <PantallaPresupuesto
+        presupuestos={presupuestos}
+        gastoPorCategoria={gastoPorCategoria}
+        ingresoMensual={ingresoMensual}
+        billeteras={billeteras}
+        onGuardarPresupuesto={onGuardarPresupuesto}
+        onEliminarPresupuesto={onEliminarPresupuesto}
+        onRegistrarMovimiento={onRegistrarMovimiento}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
+  if (modulo === 'sobres') {
+    return (
+      <PantallaSobres
+        sobres={sobres}
+        totalApartado={totalApartado}
+        saldoTotal={saldoTotal}
+        onGuardarSobre={onGuardarSobre}
+        onEliminarSobre={onEliminarSobre}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
+  if (modulo === 'retos') {
+    return (
+      <PantallaRetos
+        retos={retos}
+        ingresoMensual={ingresoMensual}
+        onGuardarReto={onGuardarReto}
+        onEliminarReto={onEliminarReto}
+        onAportarReto={onAportarReto}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
+  if (modulo === 'suscripciones') {
+    return (
+      <PantallaSuscripciones
+        suscripciones={suscripciones}
+        sangradoMensual={sangradoMensual}
+        billeteras={billeteras}
+        ingresoMensual={ingresoMensual}
+        onGuardarSuscripcion={onGuardarSuscripcion}
+        onEliminarSuscripcion={onEliminarSuscripcion}
+        onRegistrarMovimiento={onRegistrarMovimiento}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
+  if (modulo === 'tarjetas') {
+    return (
+      <PantallaTarjetas
+        tarjetas={tarjetas}
+        deudas={props.deudas}
+        billeteras={billeteras}
+        onAbonarDeuda={props.onAbonarDeuda}
+        onGuardarTarjeta={onGuardarTarjeta}
+        onEliminarTarjeta={onEliminarTarjeta}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
+  if (modulo === 'reportes') {
+    return (
+      <PantallaReportes
+        movimientos={props.movimientos}
+        deudas={props.deudas}
+        retos={retos}
+        suscripciones={suscripciones}
+        disponibleMensual={props.disponibleMensual}
+        usuario={usuario}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
 
   return (
     <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">

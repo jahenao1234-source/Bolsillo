@@ -35,6 +35,9 @@ import { Boton } from '../components/ui/Boton';
 import { CountUp } from '../components/ui/CountUp';
 import { ConfetiCelebracion } from '../components/ui/ConfetiCelebracion';
 import { formatearCOP } from '../utils/format';
+import { Chip } from '../components/ui/Chip';
+import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
+import { BarraTitulo, BarraAcciones } from '../components/layout/shell';
 import { NotaModulo } from '../components/ui/NotaModulo';
 
 interface PantallaRetosProps {
@@ -74,15 +77,30 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-24 md:pb-12 max-w-5xl mx-auto animate-screen-enter">
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
       <ConfetiCelebracion
         activo={confeti.activo}
         mensaje={confeti.mensaje}
         onTerminar={() => setConfeti({ activo: false, mensaje: '' })}
       />
 
-      {/* Cabecera */}
-      <header className="flex items-center justify-between gap-3 pt-1">
+
+      <BarraTitulo>
+        <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--acento)]">
+          Crecer · Pro
+        </span>
+        <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)]">
+          Retos de ahorro
+        </h1>
+        <span className="w-px h-4 bg-[var(--linea)]" />
+        <Chip>
+          {activos.length} {activos.length === 1 ? 'activo' : 'activos'}
+        </Chip>
+        {completados.length > 0 && <Chip variante="aqua">{completados.length} cumplidos</Chip>}
+      </BarraTitulo>
+
+      {/* Cabecera de móvil */}
+      <header className="md:hidden pt-1">
         <div className="flex items-center gap-3">
           <button
             onClick={onVolver}
@@ -102,172 +120,191 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
         </div>
       </header>
 
-      <NotaModulo texto="Ahorrar se vuelve un juego con racha. Aportas cada semana y ves crecer tu meta sin sentirlo." />
+      <Marco columnas="minmax(0,1fr) 336px">
+        {/* El reto y su escalera: es lo que necesita ancho */}
+        <Columna ordenMovil={1} borde>
+          <Zona crece sinPadding>
+            <Scroll className="px-4 xl:px-[17px] py-3">
+              {/* Retos activos */}
+              {activos.map((reto) => {
+                const aporte = aporteSemanaDe(reto);
+                const pct = reto.metaTotal > 0 ? Math.min(100, (reto.acumulado / reto.metaTotal) * 100) : 0;
+                const cumplidas = reto.semanaActual - 1;
+                const color = reto.color || 'var(--acento)';
+                return (
+                  <Tarjeta key={reto.id} padding="lg" className="overflow-hidden relative">
+                    <div
+                      className="pointer-events-none absolute inset-x-0 top-0 h-32"
+                      style={{ background: `radial-gradient(60% 100% at 15% 0%, color-mix(in srgb, ${color} 16%, transparent) 0%, transparent 70%)` }}
+                    />
+                    <div className="relative">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0" style={{ background: `color-mix(in srgb, ${color} 16%, transparent)` }}>
+                            <Trophy className="w-5 h-5" style={{ color }} />
+                          </span>
+                          <div className="min-w-0">
+                            <h2 className="font-display font-bold text-lg text-[color:var(--texto)] truncate">{reto.nombre}</h2>
+                            <p className="text-xs text-[color:var(--texto-2)] flex items-center gap-1.5">
+                              {reto.tipo === 'escalado' ? (
+                                modoDe(reto) === 'al_reves' ? (
+                                  <><TrendingUp className="w-3 h-3 rotate-90" /> Baja cada semana · {formatearCOP(incrementoDe(reto))} menos</>
+                                ) : (
+                                  <><TrendingUp className="w-3 h-3" /> Sube {formatearCOP(incrementoDe(reto))} cada semana</>
+                                )
+                              ) : (
+                                <><CalendarDays className="w-3 h-3" /> Aporte semanal fijo</>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-[color:var(--accion)] bg-[var(--accion)]/12 border border-[var(--accion)]/25">
+                            <Flame className="w-3.5 h-3.5" /> {reto.racha}
+                          </span>
+                          <button
+                            onClick={() => setModal({ tipo: reto.tipo, editando: reto })}
+                            className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
+                            aria-label={`Editar ${reto.nombre}`}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => onEliminarReto(reto.id)}
+                            className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--alerta)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
+                            aria-label={`Eliminar ${reto.nombre}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
 
-      {/* Retos activos */}
-      {activos.map((reto) => {
-        const aporte = aporteSemanaDe(reto);
-        const pct = reto.metaTotal > 0 ? Math.min(100, (reto.acumulado / reto.metaTotal) * 100) : 0;
-        const cumplidas = reto.semanaActual - 1;
-        const color = reto.color || 'var(--acento)';
-        return (
-          <Tarjeta key={reto.id} padding="lg" className="overflow-hidden relative">
-            <div
-              className="pointer-events-none absolute inset-x-0 top-0 h-32"
-              style={{ background: `radial-gradient(60% 100% at 15% 0%, color-mix(in srgb, ${color} 16%, transparent) 0%, transparent 70%)` }}
-            />
-            <div className="relative">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0" style={{ background: `color-mix(in srgb, ${color} 16%, transparent)` }}>
-                    <Trophy className="w-5 h-5" style={{ color }} />
-                  </span>
-                  <div className="min-w-0">
-                    <h2 className="font-display font-bold text-lg text-[color:var(--texto)] truncate">{reto.nombre}</h2>
-                    <p className="text-xs text-[color:var(--texto-2)] flex items-center gap-1.5">
-                      {reto.tipo === 'escalado' ? (
-                        modoDe(reto) === 'al_reves' ? (
-                          <><TrendingUp className="w-3 h-3 rotate-90" /> Baja cada semana · {formatearCOP(incrementoDe(reto))} menos</>
-                        ) : (
-                          <><TrendingUp className="w-3 h-3" /> Sube {formatearCOP(incrementoDe(reto))} cada semana</>
-                        )
-                      ) : (
-                        <><CalendarDays className="w-3 h-3" /> Aporte semanal fijo</>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-[color:var(--accion)] bg-[var(--accion)]/12 border border-[var(--accion)]/25">
-                    <Flame className="w-3.5 h-3.5" /> {reto.racha}
-                  </span>
-                  <button
-                    onClick={() => setModal({ tipo: reto.tipo, editando: reto })}
-                    className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
-                    aria-label={`Editar ${reto.nombre}`}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => onEliminarReto(reto.id)}
-                    className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--alerta)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
-                    aria-label={`Eliminar ${reto.nombre}`}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+                      {/* Progreso */}
+                      <div className="mt-5 flex items-baseline justify-between gap-2">
+                        <CountUp valor={reto.acumulado} className="font-display font-black text-3xl tracking-tight" formateador={formatearCOP} />
+                        <span className="text-sm text-[color:var(--texto-2)] tabular-nums">de {formatearCOP(reto.metaTotal)}</span>
+                      </div>
+                      <div className="mt-2.5 h-3 rounded-full bg-[var(--superficie-2)] overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(2, pct)}%`, background: color }} />
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between text-xs text-[color:var(--texto-2)]">
+                        <span>Semana {Math.min(reto.semanaActual, reto.semanasTotales)} de {reto.semanasTotales}</span>
+                        <span className="tabular-nums">{Math.round(pct)}% · {cumplidas} aporte{cumplidas === 1 ? '' : 's'}</span>
+                      </div>
 
-              {/* Progreso */}
-              <div className="mt-5 flex items-baseline justify-between gap-2">
-                <CountUp valor={reto.acumulado} className="font-display font-black text-3xl tracking-tight" formateador={formatearCOP} />
-                <span className="text-sm text-[color:var(--texto-2)] tabular-nums">de {formatearCOP(reto.metaTotal)}</span>
-              </div>
-              <div className="mt-2.5 h-3 rounded-full bg-[var(--superficie-2)] overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(2, pct)}%`, background: color }} />
-              </div>
-              <div className="mt-1.5 flex items-center justify-between text-xs text-[color:var(--texto-2)]">
-                <span>Semana {Math.min(reto.semanaActual, reto.semanasTotales)} de {reto.semanasTotales}</span>
-                <span className="tabular-nums">{Math.round(pct)}% · {cumplidas} aporte{cumplidas === 1 ? '' : 's'}</span>
-              </div>
+                      {/* Acción semanal */}
+                      <div className="mt-5 p-4 rounded-2xl bg-[var(--superficie-2)] border border-[var(--linea)] flex items-center justify-between gap-3 flex-wrap">
+                        <div>
+                          <span className="text-[11px] font-semibold text-[color:var(--texto-2)] uppercase tracking-wider block">
+                            Esta semana aparta
+                          </span>
+                          <span className="font-display font-bold text-2xl tabular-nums" style={{ color }}>
+                            {formatearCOP(aporte)}
+                          </span>
+                        </div>
+                        <Boton
+                          variante="primario"
+                          tamano="md"
+                          icono={<Check className="w-4 h-4" />}
+                          onClick={() => handleAportar(reto)}
+                        >
+                          Ya aparté
+                        </Boton>
+                      </div>
+                    </div>
+                  </Tarjeta>
+                );
+              })}
 
-              {/* Acción semanal */}
-              <div className="mt-5 p-4 rounded-2xl bg-[var(--superficie-2)] border border-[var(--linea)] flex items-center justify-between gap-3 flex-wrap">
+            </Scroll>
+          </Zona>
+        </Columna>
+
+        {/* Empezar uno nuevo y los que ya cumpliste */}
+        <Columna ordenMovil={2}>
+          <Zona crece sinPadding>
+            <Scroll className="px-4 xl:px-[17px] py-3">
+              <NotaModulo texto="Ahorrar se vuelve un juego con racha. Aportas cada semana y ves crecer tu meta sin sentirlo." />
+
+              <div className="mt-4">
+                {/* Empieza un reto */}
                 <div>
-                  <span className="text-[11px] font-semibold text-[color:var(--texto-2)] uppercase tracking-wider block">
-                    Esta semana aparta
-                  </span>
-                  <span className="font-display font-bold text-2xl tabular-nums" style={{ color }}>
-                    {formatearCOP(aporte)}
-                  </span>
-                </div>
-                <Boton
-                  variante="primario"
-                  tamano="md"
-                  icono={<Check className="w-4 h-4" />}
-                  onClick={() => handleAportar(reto)}
-                >
-                  Ya aparté
-                </Boton>
-              </div>
-            </div>
-          </Tarjeta>
-        );
-      })}
-
-      {/* Empieza un reto */}
-      <div>
-        <div className="flex items-baseline justify-between px-1 mb-3">
-          <h2 className="font-display font-bold text-base text-[color:var(--texto)]">
-            {activos.length > 0 ? 'Empieza otro reto' : 'Empieza un reto'}
-          </h2>
-          <span className="text-xs text-[color:var(--texto-3)]">elige tu ritmo</span>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <button
-            onClick={() => setModal({ tipo: 'escalado', editando: null })}
-            className="text-left flex items-start gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
-          >
-            <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-              <TrendingUp className="w-5 h-5 text-[color:var(--acento)]" />
-            </span>
-            <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Reto escalado</h3>
-              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
-                Empieza con poco y sube cada semana. El clásico de las 52 semanas, al ritmo que tú elijas.
-              </p>
-            </div>
-          </button>
-          <button
-            onClick={() => setModal({ tipo: 'semanal_fijo', editando: null })}
-            className="text-left flex items-start gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
-          >
-            <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-              <Target className="w-5 h-5 text-[color:var(--acento)]" />
-            </span>
-            <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Ahorro semanal fijo</h3>
-              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
-                El mismo aporte cada semana hasta llegar a tu meta. Tú eliges cuánto y para qué.
-              </p>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Retos cumplidos */}
-      {completados.length > 0 && (
-        <div>
-          <div className="flex items-baseline gap-2 px-1 mb-3">
-            <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Cumplidos</h2>
-            <span className="text-xs text-[color:var(--positivo)]">{completados.length} 🎉</span>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {completados.map((reto) => (
-              <Tarjeta key={reto.id} padding="md" className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-9 h-9 rounded-xl grid place-items-center flex-shrink-0 bg-[var(--positivo)]/15">
-                    <Sparkles className="w-4 h-4 text-[color:var(--positivo)]" />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-[color:var(--texto)] truncate">{reto.nombre}</h3>
-                    <p className="text-xs text-[color:var(--positivo)] font-semibold tabular-nums">
-                      {formatearCOP(reto.acumulado)} juntados
-                    </p>
+                  <div className="flex items-baseline justify-between px-1 mb-3">
+                    <h2 className="font-display font-bold text-base text-[color:var(--texto)]">
+                      {activos.length > 0 ? 'Empieza otro reto' : 'Empieza un reto'}
+                    </h2>
+                    <span className="text-xs text-[color:var(--texto-3)]">elige tu ritmo</span>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <button
+                      onClick={() => setModal({ tipo: 'escalado', editando: null })}
+                      className="text-left flex items-start gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
+                    >
+                      <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
+                        <TrendingUp className="w-5 h-5 text-[color:var(--acento)]" />
+                      </span>
+                      <div>
+                        <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Reto escalado</h3>
+                        <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
+                          Empieza con poco y sube cada semana. El clásico de las 52 semanas, al ritmo que tú elijas.
+                        </p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setModal({ tipo: 'semanal_fijo', editando: null })}
+                      className="text-left flex items-start gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
+                    >
+                      <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
+                        <Target className="w-5 h-5 text-[color:var(--acento)]" />
+                      </span>
+                      <div>
+                        <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Ahorro semanal fijo</h3>
+                        <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
+                          El mismo aporte cada semana hasta llegar a tu meta. Tú eliges cuánto y para qué.
+                        </p>
+                      </div>
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => onEliminarReto(reto.id)}
-                  className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--alerta)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors flex-shrink-0"
-                  aria-label={`Eliminar ${reto.nombre}`}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </Tarjeta>
-            ))}
-          </div>
-        </div>
-      )}
+              </div>
+
+              {/* Retos cumplidos */}
+              {completados.length > 0 && (
+                <div>
+                  <div className="flex items-baseline gap-2 px-1 mb-3">
+                    <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Cumplidos</h2>
+                    <span className="text-xs text-[color:var(--positivo)]">{completados.length} 🎉</span>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {completados.map((reto) => (
+                      <Tarjeta key={reto.id} padding="md" className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="w-9 h-9 rounded-xl grid place-items-center flex-shrink-0 bg-[var(--positivo)]/15">
+                            <Sparkles className="w-4 h-4 text-[color:var(--positivo)]" />
+                          </span>
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-[color:var(--texto)] truncate">{reto.nombre}</h3>
+                            <p className="text-xs text-[color:var(--positivo)] font-semibold tabular-nums">
+                              {formatearCOP(reto.acumulado)} juntados
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => onEliminarReto(reto.id)}
+                          className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--alerta)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors flex-shrink-0"
+                          aria-label={`Eliminar ${reto.nombre}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </Tarjeta>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Scroll>
+          </Zona>
+        </Columna>
+      </Marco>
 
       {modal && (
         <ModalReto
