@@ -6,6 +6,7 @@ import {
   Flame,
   Repeat,
   CreditCard,
+  BarChart3,
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
@@ -17,6 +18,7 @@ import { PantallaSobres } from './PantallaSobres';
 import { PantallaRetos } from './PantallaRetos';
 import { PantallaSuscripciones } from './PantallaSuscripciones';
 import { PantallaTarjetas } from './PantallaTarjetas';
+import { PantallaReportes } from './PantallaReportes';
 
 interface PantallaCrecerProps {
   resetToken?: number;
@@ -44,11 +46,13 @@ interface PantallaCrecerProps {
   tarjetas: TarjetaCredito[];
   deudas: Deuda[];
   onAbonarDeuda: (deudaId: string, billeteraId: string, monto: number) => { exito: boolean; deudaSaldada: boolean };
+  movimientos: Movimiento[];
+  disponibleMensual: number;
   onGuardarTarjeta: (tc: TarjetaCredito) => void;
   onEliminarTarjeta: (id: string) => void;
 }
 
-type Modulo = 'hub' | 'presupuesto' | 'sobres' | 'retos' | 'suscripciones' | 'tarjetas';
+type Modulo = 'hub' | 'presupuesto' | 'sobres' | 'retos' | 'suscripciones' | 'tarjetas' | 'reportes';
 
 export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
   const {
@@ -164,6 +168,20 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
         onAbonarDeuda={props.onAbonarDeuda}
         onGuardarTarjeta={onGuardarTarjeta}
         onEliminarTarjeta={onEliminarTarjeta}
+        onVolver={() => setModulo('hub')}
+      />
+    );
+  }
+
+  if (modulo === 'reportes') {
+    return (
+      <PantallaReportes
+        movimientos={props.movimientos}
+        deudas={props.deudas}
+        retos={retos}
+        suscripciones={suscripciones}
+        disponibleMensual={props.disponibleMensual}
+        usuario={usuario}
         onVolver={() => setModulo('hub')}
       />
     );
@@ -332,6 +350,25 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
                 {tarjetas.length > 0
                   ? `${tarjetas.length} tarjeta${tarjetas.length === 1 ? '' : 's'} · con cuál pagar hoy`
                   : 'Sabe con cuál pagar para no pagar intereses'}
+              </p>
+            </div>
+          </button>
+
+          {/* Reportes */}
+          <button
+            onClick={() => setModulo('reportes')}
+            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
+                <BarChart3 className="w-5 h-5 text-[color:var(--acento)]" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Reportes</h3>
+              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
+                Lo que solo se ve con varios meses · exportable
               </p>
             </div>
           </button>

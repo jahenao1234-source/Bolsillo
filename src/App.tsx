@@ -264,6 +264,8 @@ export default function App() {
                     onEliminarSuscripcion={eliminarSuscripcion}
                     tarjetas={tarjetasCredito}
                     deudas={deudas}
+                    movimientos={movimientos}
+                    disponibleMensual={disponibleMensual}
                     onAbonarDeuda={abonarDeudaDesdeBilletera}
                     onGuardarTarjeta={guardarTarjetaCredito}
                     onEliminarTarjeta={eliminarTarjetaCredito}

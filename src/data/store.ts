@@ -207,7 +207,58 @@ const SEMILLA_MOVIMIENTOS: MovimientoSemilla[] = [
   ['ingreso', 900000, 'bil-nequi', 'Nequi', 'Salario', '01 ago 2026', '2026-08-01T14:00:00.000Z', 'Salario quincena'],
 ];
 
-const MOCK_MOVIMIENTOS_INICIAL: Movimiento[] = SEMILLA_MOVIMIENTOS.map(
+/**
+ * Meses anteriores (abril a julio). Se arman con el mismo patrón —dos
+ * quincenas, el gasto grande justo después de cada una— y cifras propias por
+ * mes, para que Reportes tenga historia con la que mostrar tendencias desde el
+ * primer día sin escribir cien movimientos a mano.
+ */
+const HISTORIA_MESES = [
+  { mes: 4, comida1: 148000, comida2: 132000, ocio: 112000, transporte: 176000, servicios: 234000 },
+  { mes: 5, comida1: 158000, comida2: 142000, ocio: 148000, transporte: 182000, servicios: 241000 },
+  { mes: 6, comida1: 178000, comida2: 162000, ocio: 118000, transporte: 174000, servicios: 228000 },
+  { mes: 7, comida1: 198000, comida2: 182000, ocio: 96000, transporte: 158000, servicios: 206000 },
+];
+
+const MESES_ABREV_SEMILLA = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+function movimientosDeHistoria(): MovimientoSemilla[] {
+  const filas: MovimientoSemilla[] = [];
+
+  for (const m of HISTORIA_MESES) {
+    const mm = `${m.mes}`.padStart(2, '0');
+    const abrev = MESES_ABREV_SEMILLA[m.mes - 1];
+    const dia = (d: number) => `${`${d}`.padStart(2, '0')} ${abrev} 2026`;
+    const iso = (d: number, h = '15') => `2026-${mm}-${`${d}`.padStart(2, '0')}T${h}:00:00.000Z`;
+
+    filas.push(
+      ['ingreso', 850000, 'bil-nequi', 'Nequi', 'Salario', dia(1), iso(1, '14'), 'Salario quincena'],
+      ['gasto', 89900, 'bil-bancolombia', 'Bancolombia', 'Salud', dia(1), iso(1), 'Gimnasio Smart Fit'],
+      ['gasto', m.comida1, 'bil-efectivo', 'Efectivo', 'Comida', dia(2), iso(2), 'Mercado'],
+      ['gasto', m.ocio, 'bil-nequi', 'Nequi', 'Ocio', dia(3), iso(3), 'Salida'],
+      ['gasto', 16900, 'bil-bancolombia', 'Bancolombia', 'Ocio', dia(5), iso(5), 'Spotify'],
+      ['gasto', m.servicios, 'bil-bancolombia', 'Bancolombia', 'Servicios', dia(6), iso(6), 'Luz y agua'],
+      ['gasto', 180000, 'bil-nequi', 'Nequi', 'Deudas', dia(8), iso(8, '14'), 'Abono a Gota a gota', 'deuda-gota'],
+      ['gasto', 30000, 'bil-efectivo', 'Efectivo', 'Deudas', dia(10), iso(10, '14'), 'Abono a Fiado tienda doña Rosa', 'deuda-fiado'],
+      ['gasto', 44900, 'bil-bancolombia', 'Bancolombia', 'Ocio', dia(15), iso(15), 'Netflix'],
+      ['gasto', 150000, 'bil-bancolombia', 'Bancolombia', 'Deudas', dia(15), iso(15, '14'), 'Abono a Tarjeta Éxito', 'deuda-exito'],
+      ['ingreso', 850000, 'bil-nequi', 'Nequi', 'Salario', dia(16), iso(16, '14'), 'Salario quincena'],
+      ['gasto', m.comida2, 'bil-efectivo', 'Efectivo', 'Comida', dia(17), iso(17), 'Mercado'],
+      ['gasto', 29900, 'bil-bancolombia', 'Bancolombia', 'Ocio', dia(20), iso(20), 'Disney+'],
+      ['gasto', Math.round(m.transporte / 2), 'bil-efectivo', 'Efectivo', 'Transporte', dia(22), iso(22), 'Transporte de la quincena'],
+      ['gasto', Math.round(m.transporte / 2), 'bil-efectivo', 'Efectivo', 'Transporte', dia(27), iso(27), 'Transporte de la quincena'],
+      ['gasto', 48000, 'bil-nequi', 'Nequi', 'Servicios', dia(28), iso(28), 'Datos del celu'],
+      ['gasto', 160000, 'bil-bancolombia', 'Bancolombia', 'Deudas', dia(30), iso(30, '14'), 'Abono a Libranza Banco Popular', 'deuda-libranza']
+    );
+  }
+
+  return filas;
+}
+
+const MOCK_MOVIMIENTOS_INICIAL: Movimiento[] = [
+  ...SEMILLA_MOVIMIENTOS,
+  ...movimientosDeHistoria(),
+].map(
   ([tipo, monto, billeteraId, billeteraNombre, categoria, fecha, iso, nota, deudaId], i) => ({
     id: `mov-semilla-${i + 1}`,
     tipo,

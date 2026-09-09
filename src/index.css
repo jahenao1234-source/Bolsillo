@@ -214,3 +214,54 @@ h1, h2, h3, h4, .stat-value {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================= */
+/* IMPRESIÓN — la hoja del mes de Reportes                        */
+/* El navegador guarda como PDF; sin librerías ni servidor.       */
+/* ============================================================= */
+
+.solo-imprimir { display: none; }
+
+@media print {
+  /* Papel blanco y tinta oscura, aunque la app esté en oscuro */
+  :root {
+    --fondo: #FFFFFF;
+    --base: #FFFFFF;
+    --superficie: #FFFFFF;
+    --superficie-2: #F3F7F6;
+    --elevada: #FFFFFF;
+    --linea: #D8E4E1;
+    --hairline: #E6EEEC;
+    --texto: #112320;
+    --texto-2: #4A605C;
+    --texto-3: #7C918D;
+    --acento: #0C8C7E;
+    --acento-2: #12A897;
+    --accion: #C25A18;
+    --positivo: #0E7F60;
+    --alerta: #B04A3D;
+    color-scheme: light;
+  }
+
+  body { background: #FFFFFF; }
+
+  /* Fuera todo lo que no es la hoja */
+  .no-imprimir,
+  nav,
+  aside,
+  header.md\:hidden { display: none !important; }
+
+  .solo-imprimir { display: block !important; }
+
+  /* La hoja ocupa la página, sin sombras ni bordes de pantalla */
+  .hoja-reporte { max-width: none; margin: 0; }
+  .hoja-reporte .rounded-2xl,
+  .hoja-reporte .rounded-xl { box-shadow: none !important; }
+
+  main { padding: 0 !important; }
+
+  /* Nada se parte a la mitad */
+  .hoja-reporte > * { break-inside: avoid; page-break-inside: avoid; }
+
+  @page { margin: 14mm; }
+}
