@@ -435,7 +435,7 @@ export const PantallaTarjetas: React.FC<PantallaTarjetasProps> = ({
             <Zona crece sinPadding>
               <Scroll className="px-4 xl:px-[17px] py-3">
                 {/* ===== 3. Las tarjetas ===== */}
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 @xl:grid-cols-2">
                   {conPlazo.map(({ tc, plazo }, i) => {
                     const color = tc.color || 'var(--acento)';
                     const deuda = deudaDeTarjeta(tc, deudas);

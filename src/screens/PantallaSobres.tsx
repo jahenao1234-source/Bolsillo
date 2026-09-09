@@ -104,7 +104,7 @@ export const PantallaSobres: React.FC<PantallaSobresProps> = ({
         <Columna ordenMovil={1} borde>
           <Zona>
             <Tarjeta padding="lg">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--linea)]">
+              <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4 divide-y @2xl:divide-y-0 @2xl:divide-x divide-[var(--linea)]">
                 <div className="space-y-1 sm:pr-4">
                   <span className="text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-[color:var(--acento)]" />
@@ -175,7 +175,7 @@ export const PantallaSobres: React.FC<PantallaSobresProps> = ({
                   </div>
                 </Tarjeta>
               ) : (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 @xl:grid-cols-2">
                   {sobres.map((s) => {
                     const color = s.color || 'var(--acento)';
                     const pct = s.meta && s.meta > 0 ? Math.min(100, (s.apartado / s.meta) * 100) : s.apartado > 0 ? 100 : 0;

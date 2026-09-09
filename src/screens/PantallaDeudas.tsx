@@ -686,7 +686,6 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
             <Columna ordenMovil={1} borde>
               <Zona crece sinPadding>
                 <Scroll className="px-4 xl:px-[17px] py-3">
-                  <h2 className={secH}>Tu jugada de este mes</h2>
                   <div className="space-y-4">
                     <h2 className={secH}>Tu jugada de este mes</h2>
 
@@ -711,7 +710,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                           </p>
 
                           {/* Desglose base + extra */}
-                          <div className="mt-4 grid grid-cols-3 gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-xl overflow-hidden">
+                          <div className="mt-4 grid grid-cols-1 @sm:grid-cols-3 gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-xl overflow-hidden">
                             <div className="bg-[var(--superficie)] p-3">
                               <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--texto-2)]">Mínimo (base)</div>
                               <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--texto)] mt-0.5">{formatearCOP(baseFoco)}</div>

@@ -95,7 +95,7 @@ export const SimuladorAbonoExtra: React.FC<SimuladorAbonoExtraProps> = ({
       </div>
 
       {/* Impacto */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 @lg:grid-cols-2 gap-3">
         <div className="p-3.5 rounded-xl bg-[var(--superficie)] border border-[var(--linea)] flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-[color:var(--texto-2)] mb-1">
             <span className="flex items-center gap-1.5 font-medium">
@@ -108,7 +108,7 @@ export const SimuladorAbonoExtra: React.FC<SimuladorAbonoExtraProps> = ({
               </span>
             )}
           </div>
-          <div className="font-display font-bold text-xl sm:text-2xl text-[color:var(--texto)] tracking-tight mt-1">
+          <div className="font-display font-bold text-xl @lg:text-2xl text-[color:var(--texto)] tracking-tight mt-1">
             {simulacion.nuevaFechaLibertad}
           </div>
           <div className="text-[11px] text-[color:var(--texto-2)] mt-2 pt-2 border-t border-[var(--hairline)] flex items-center gap-1.5">
@@ -125,7 +125,7 @@ export const SimuladorAbonoExtra: React.FC<SimuladorAbonoExtraProps> = ({
               Ahorras en intereses
             </span>
           </div>
-          <div className="font-display font-bold text-xl sm:text-2xl text-[color:var(--positivo)] tabular-nums tracking-tight mt-1">
+          <div className="font-display font-bold text-xl @lg:text-2xl text-[color:var(--positivo)] tabular-nums tracking-tight mt-1">
             {simulacion.ahorroIntereses > 0 ? formatearCOP(simulacion.ahorroIntereses) : '$0'}
           </div>
           <p className="text-[11px] text-[color:var(--texto-2)] mt-2 pt-2 border-t border-[var(--hairline)] leading-tight">

@@ -57,8 +57,14 @@ export const Columna: React.FC<ColumnaProps> = ({
   borde = false,
   className = '',
 }) => (
+  /*
+   * @container: la columna es el marco de referencia de lo que lleva dentro.
+   * Sin esto, un bloque con `sm:grid-cols-3` se pinta a tres columnas porque la
+   * VENTANA mide 1440 —aunque la columna mida 320— y los textos se montan unos
+   * sobre otros. Con container queries el bloque mira el ancho real que tiene.
+   */
   <div
-    className={`marco-col flex flex-col gap-4 xl:gap-0 min-w-0 xl:min-h-0 ${
+    className={`marco-col @container flex flex-col gap-4 xl:gap-0 min-w-0 xl:min-h-0 ${
       ordenMovil !== undefined ? ORDEN_MOVIL[ordenMovil] ?? '' : ''
     } ${borde ? 'xl:border-r xl:border-[var(--hairline)]' : ''} ${className}`}
   >

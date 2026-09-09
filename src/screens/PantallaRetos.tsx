@@ -235,7 +235,7 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
                     </h2>
                     <span className="text-xs text-[color:var(--texto-3)]">elige tu ritmo</span>
                   </div>
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-3 @xl:grid-cols-2">
                     <button
                       onClick={() => setModal({ tipo: 'escalado', editando: null })}
                       className="text-left flex items-start gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
@@ -275,7 +275,7 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
                     <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Cumplidos</h2>
                     <span className="text-xs text-[color:var(--positivo)]">{completados.length} 🎉</span>
                   </div>
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-3 @xl:grid-cols-2">
                     {completados.map((reto) => (
                       <Tarjeta key={reto.id} padding="md" className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3 min-w-0">

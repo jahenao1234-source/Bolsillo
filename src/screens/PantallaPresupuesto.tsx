@@ -149,7 +149,7 @@ export const PantallaPresupuesto: React.FC<PantallaPresupuestoProps> = ({
         <Columna ordenMovil={1} borde>
           <Zona>
             <Tarjeta padding="lg" className="overflow-hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-[var(--linea)]">
+              <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4 divide-y @2xl:divide-y-0 @2xl:divide-x divide-[var(--linea)]">
                 <div className="space-y-1 sm:pr-4">
                   <span className="text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider">Presupuestado</span>
                   <div className="font-display font-bold text-2xl sm:text-3xl tabular-nums text-[color:var(--texto)] tracking-tight">{formatearCOP(totalTope)}</div>
@@ -194,7 +194,7 @@ export const PantallaPresupuesto: React.FC<PantallaPresupuestoProps> = ({
                   </div>
                 </Tarjeta>
               ) : (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 @xl:grid-cols-2">
                   {filas.map((f) => {
                     const color = f.color || COLOR_ESTADO[f.estado];
                     return (
@@ -260,7 +260,7 @@ export const PantallaPresupuesto: React.FC<PantallaPresupuestoProps> = ({
                 </div>
               )}
 
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 @2xl:grid-cols-3">
                 {GRUPOS.map((g) => {
                   const ideal = Math.round((ingresoMensual * g.pct) / 100);
                   const real = gastoPorGrupo[g.id];

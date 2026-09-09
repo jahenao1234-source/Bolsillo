@@ -305,7 +305,7 @@ export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
               {/* ===== Cifras de apoyo ===== */}
               {suscripciones.length > 0 && (
                 <Tarjeta padding="lg">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+                  <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-5 @2xl:gap-6">
                     <div className="space-y-1">
                       <span className="text-[10.5px] font-bold text-[color:var(--texto-2)] uppercase tracking-wider">
                         Te sangran al mes
@@ -399,7 +399,7 @@ export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
                   </div>
                 </Tarjeta>
               ) : (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 @xl:grid-cols-2">
                   {ordenadas.map((s) => {
                     const color = s.color || 'var(--acento)';
                     const estado = estadoDe(s, hoy);
