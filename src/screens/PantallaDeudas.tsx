@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   CreditCard,
   ArrowLeft,
@@ -20,6 +20,7 @@ import {
   ChevronDown,
   Pencil,
   X,
+  MoreHorizontal,
 } from 'lucide-react';
 import {
   DndContext,
@@ -97,6 +98,84 @@ interface ItemDeudaProps {
   };
 }
 
+interface AccionMenu {
+  etiqueta: string;
+  icono: React.ReactNode;
+  onClick: () => void;
+  tono?: 'normal' | 'positivo' | 'alerta';
+}
+
+/**
+ * Las acciones de una vez: saldar, editar, eliminar. Viven aqui para que la
+ * fila no gaste una linea entera en botones que casi nunca se tocan. Abonar se
+ * queda fuera, a la vista, porque esa si se usa todos los meses.
+ */
+const MenuAcciones: React.FC<{ acciones: AccionMenu[]; nombre: string }> = ({ acciones, nombre }) => {
+  const [abierto, setAbierto] = useState(false);
+  const caja = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const fuera = (e: MouseEvent) => {
+      if (caja.current && !caja.current.contains(e.target as Node)) setAbierto(false);
+    };
+    const escape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAbierto(false);
+    };
+    document.addEventListener('mousedown', fuera);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('mousedown', fuera);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [abierto]);
+
+  const color = (t?: AccionMenu['tono']) =>
+    t === 'positivo'
+      ? 'text-[color:var(--positivo)]'
+      : t === 'alerta'
+        ? 'text-[color:var(--alerta)]'
+        : 'text-[color:var(--texto-2)]';
+
+  return (
+    <div className="relative flex-none" ref={caja}>
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={abierto}
+        aria-label={`Mas acciones para ${nombre}`}
+        className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+
+      {abierto && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full mt-1 z-30 min-w-[152px] rounded-xl border border-[var(--linea)] bg-[var(--elevada)] shadow-lg py-1"
+        >
+          {acciones.map((a) => (
+            <button
+              key={a.etiqueta}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setAbierto(false);
+                a.onClick();
+              }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold hover:bg-[var(--superficie-2)] cursor-pointer transition-colors ${color(a.tono)}`}
+            >
+              {a.icono}
+              <span>{a.etiqueta}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const TarjetaDeudaItem: React.FC<ItemDeudaProps> = ({
   deuda,
   idx,
@@ -133,8 +212,117 @@ const TarjetaDeudaItem: React.FC<ItemDeudaProps> = ({
       ? Math.min(100, Math.max(0, Math.round(((montoOrig - saldo) / montoOrig) * 100)))
       : 0;
 
+  /* Lo de una vez: al menu. Con orden propio, subir y bajar entran tambien. */
+  const accionesMenu: AccionMenu[] = [
+    ...(esPersonalizado
+      ? [
+          {
+            etiqueta: 'Subir prioridad',
+            icono: <ChevronUp className="w-3.5 h-3.5" />,
+            onClick: () => onMover(deuda.id, 'arriba'),
+          },
+          {
+            etiqueta: 'Bajar prioridad',
+            icono: <ChevronDown className="w-3.5 h-3.5" />,
+            onClick: () => onMover(deuda.id, 'abajo'),
+          },
+        ]
+      : []),
+    {
+      etiqueta: 'Marcar saldada',
+      icono: <CheckCircle2 className="w-3.5 h-3.5" />,
+      onClick: () => onMarcarSaldada(deuda),
+      tono: 'positivo' as const,
+    },
+    {
+      etiqueta: 'Editar deuda',
+      icono: <Pencil className="w-3.5 h-3.5" />,
+      onClick: () => onEditarDeuda(deuda),
+    },
+    {
+      etiqueta: 'Quitar del plan',
+      icono: <Trash2 className="w-3.5 h-3.5" />,
+      onClick: () => onEliminarDeuda(deuda.id, deuda.nombre),
+      tono: 'alerta' as const,
+    },
+  ];
+
   return (
     <div ref={setNodeRef} style={style}>
+      {/* ---- Escritorio: tres lineas y las acciones de una vez, plegadas ---- */}
+      <div className="hidden xl:block">
+        <Tarjeta
+          padding="sm"
+          className="relative border-[var(--linea)] hover:border-[var(--acento)]/30 transition-colors"
+        >
+          {/* Quien es y cuanto debes */}
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {esPersonalizado && (
+                <button
+                  type="button"
+                  {...attributes}
+                  {...listeners}
+                  className="p-0.5 -ml-0.5 rounded text-[color:var(--texto-3)] hover:text-[color:var(--texto)] cursor-grab active:cursor-grabbing touch-none flex-none"
+                  title="Arrastrar para reordenar"
+                  aria-label={`Arrastrar para reordenar ${deuda.nombre}`}
+                >
+                  <GripVertical className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <h4 className="text-[13px] font-semibold text-[color:var(--texto)] truncate">
+                {deuda.nombre}
+              </h4>
+            </div>
+            <span className="font-display font-bold text-[15px] tabular-nums text-[color:var(--alerta)] flex-none">
+              {formatearCOP(saldo)}
+            </span>
+          </div>
+
+          {/* De que es, a que interes, y el minimo del mes */}
+          <p className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5 truncate">
+            {tipoInfo.etiqueta} &middot; {deuda.tasaMensual}% mes &middot; mínimo{' '}
+            <strong className="text-[color:var(--texto-2)] font-semibold tabular-nums">
+              {formatearCOP(deuda.pagoMinimo)}
+            </strong>
+          </p>
+
+          {/* Lo que llevas pagado, y que puedes hacer */}
+          <div className="flex items-center gap-2 mt-2">
+            {montoOrig > saldo ? (
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <div className="h-1 flex-1 rounded-full bg-[var(--superficie-2)] border border-[var(--linea)] overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--positivo)] rounded-full transition-all duration-500"
+                    style={{ width: `${porcentajePagado}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-semibold tabular-nums text-[color:var(--positivo)] flex-none">
+                  {porcentajePagado}%
+                </span>
+              </div>
+            ) : (
+              <span className="flex-1 text-[10px] text-[color:var(--texto-3)]">
+                Sin abonos todavía
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => onAbrirAbono(deuda)}
+              className="flex-none inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--acento)]/40 text-[11px] font-semibold text-[color:var(--acento)] hover:bg-[var(--acento)]/10 cursor-pointer transition-colors"
+            >
+              <CreditCard className="w-3 h-3" />
+              <span>Abonar</span>
+            </button>
+
+            <MenuAcciones acciones={accionesMenu} nombre={deuda.nombre} />
+          </div>
+        </Tarjeta>
+      </div>
+
+      {/* ---- Movil: la ficha de siempre. Aqui hay ancho de sobra y no estorba. ---- */}
+      <div className="xl:hidden">
       <Tarjeta
         padding="md"
         className="transition-all relative border-[var(--linea)] hover:border-[var(--acento)]/30"
@@ -270,6 +458,7 @@ const TarjetaDeudaItem: React.FC<ItemDeudaProps> = ({
           </button>
         </div>
       </Tarjeta>
+      </div>
     </div>
   );
 };
@@ -465,11 +654,11 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
   const secH = 'text-xs font-bold uppercase tracking-wider text-[color:var(--texto-2)] px-1';
 
   /**
-   * A dónde llegas: el camino de estaciones y el simulador de abono extra.
-   * Vive en su propia columna, y cuando el cajón de Hoy empuja se pliega
-   * debajo de la tabla en vez de desaparecer.
+   * A dónde llegas: el camino de estaciones. Vive en su propia columna, y
+   * cuando el cajón de Hoy empuja se pliega debajo de la tabla en vez de
+   * desaparecer.
    */
-  const panelResultado = (
+  const panelCamino = (
     <>
         {plan.ordenSaldado.length > 0 && (
           <div className="space-y-3">
@@ -515,13 +704,21 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
           </div>
         )}
 
-        <SimuladorAbonoExtra
-          deudas={deudasActivas}
-          disponibleMensual={disponibleMensual}
-          estrategia={estrategia}
-          onSubirAbono={(n) => setDisponibleMensual(n)}
-        />
     </>
+  );
+
+  /**
+   * El simulador vive bajo la tabla, en la columna ancha: ahí las pastillas de
+   * abono caben en una línea y los dos resultados van lado a lado. En la
+   * columna estrecha de al lado se apilaba y costaba el doble de alto.
+   */
+  const panelAcelera = (
+    <SimuladorAbonoExtra
+      deudas={deudasActivas}
+      disponibleMensual={disponibleMensual}
+      estrategia={estrategia}
+      onSubirAbono={(n) => setDisponibleMensual(n)}
+    />
   );
 
   return (
@@ -874,15 +1071,20 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
               {/* Con el cajón abierto, el camino se pliega aquí debajo */}
               {cajonEmpuja && (
                 <Zona sinPadding className="xl:flex xl:flex-col">
-                  <Scroll className="px-4 xl:px-[17px] py-3">{panelResultado}</Scroll>
+                  <Scroll className="px-4 xl:px-[17px] py-3">{panelCamino}</Scroll>
                 </Zona>
               )}
+
+              {/* Acelera tu libertad: bajo la tabla, donde hay ancho de sobra */}
+              <Zona sinPadding className="xl:flex xl:flex-col">
+                <Scroll className="px-4 xl:px-[17px] py-3">{panelAcelera}</Scroll>
+              </Zona>
             </Columna>
 
             {/* ---------- Columna 3: a dónde llegas ---------- */}
             <Columna ordenMovil={2} className={cajonEmpuja ? 'xl:hidden' : ''}>
               <Zona crece sinPadding>
-                <Scroll className="px-4 xl:px-[17px] py-3">{panelResultado}</Scroll>
+                <Scroll className="px-4 xl:px-[17px] py-3">{panelCamino}</Scroll>
               </Zona>
             </Columna>
           </Marco>

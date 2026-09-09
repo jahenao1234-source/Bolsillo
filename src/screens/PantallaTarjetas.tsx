@@ -448,10 +448,91 @@ export const PantallaTarjetas: React.FC<PantallaTarjetasProps> = ({
                       : null;
 
                     return (
+                      <React.Fragment key={tc.id}>
+                      {/* Sin saldo pendiente no hay decisión que tomar: en escritorio
+                          va como fila y deja el alto para la que sí la tiene. */}
+                      {!deuda && (
+                        <div className="hidden xl:block">
+                          <Tarjeta
+                            padding="none"
+                            className="px-3.5 py-3 border-[var(--linea)] hover:border-[var(--acento)]/30 transition-colors"
+                          >
+                            <div className="flex items-baseline justify-between gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="w-2 h-2 rounded-full flex-none" style={{ background: color }} />
+                                <h3 className="text-[13px] font-semibold text-[color:var(--texto)] truncate">
+                                  {tc.nombre}
+                                </h3>
+                                {esMejor && (
+                                  <span className="text-[9px] font-bold uppercase tracking-wider text-[color:var(--acento)] flex-none">
+                                    · hoy
+                                  </span>
+                                )}
+                              </div>
+                              <span className="font-display font-bold text-[15px] tabular-nums flex-none" style={{ color }}>
+                                {plazo.dias}
+                                <span className="text-[10px] font-medium text-[color:var(--texto-3)]"> días sin interés</span>
+                              </span>
+                            </div>
+
+                            <p className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5 truncate">
+                              Corta en {ciclo.diasAlCorte} {ciclo.diasAlCorte === 1 ? 'día' : 'días'} · pagas en{' '}
+                              {ciclo.diasAlPago} · sin saldo pendiente
+                            </p>
+
+                            <div className="flex items-center gap-1.5 mt-2">
+                              {uso.cupo > 0 ? (
+                                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                  <div className="h-1 flex-1 min-w-[24px] rounded-full bg-[var(--superficie-2)] border border-[var(--linea)] overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full transition-all duration-500"
+                                      style={{
+                                        width: `${Math.max(2, Math.min(100, uso.pct))}%`,
+                                        background:
+                                          uso.estado === 'riesgo'
+                                            ? 'var(--alerta)'
+                                            : uso.estado === 'medio'
+                                              ? 'var(--accion)'
+                                              : 'var(--positivo)',
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] font-semibold tabular-nums text-[color:var(--texto-2)] flex-none">
+                                    {Math.round(uso.pct)}%
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="flex-1 text-[10px] text-[color:var(--texto-3)]">Sin cupo registrado</span>
+                              )}
+
+                              <button
+                                onClick={() => abrirSimulador(tc)}
+                                className="flex-none px-2 py-1 rounded-lg border border-[var(--linea)] text-[10.5px] font-semibold text-[color:var(--texto-2)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
+                              >
+                                ¿A cuántas cuotas?
+                              </button>
+                              <button
+                                onClick={() => setModal({ editando: tc })}
+                                className="flex-none p-1 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
+                                aria-label={`Editar ${tc.nombre}`}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => onEliminarTarjeta(tc.id)}
+                                className="flex-none p-1 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--alerta)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
+                                aria-label={`Eliminar ${tc.nombre}`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </Tarjeta>
+                        </div>
+                      )}
+
                       <Tarjeta
-                        key={tc.id}
                         padding="md"
-                        className={`flex flex-col gap-3.5 ${uso.estado === 'riesgo' ? 'border-[var(--alerta)]/40' : ''}`}
+                        className={`flex flex-col gap-3.5 ${!deuda ? 'xl:hidden ' : ''}${uso.estado === 'riesgo' ? 'border-[var(--alerta)]/40' : ''}`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-2.5 min-w-0">
@@ -657,6 +738,7 @@ export const PantallaTarjetas: React.FC<PantallaTarjetasProps> = ({
                           </>
                         )}
                       </Tarjeta>
+                      </React.Fragment>
                     );
                   })}
                 </div>
