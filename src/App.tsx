@@ -6,6 +6,10 @@
 import React, { useState, useEffect } from 'react';
 import { useBolsilloData } from './hooks/useBolsilloData';
 import { BarraNavegacion, SeccionApp } from './components/navigation/BarraNavegacion';
+import { RielNavegacion } from './components/layout/RielNavegacion';
+import { BarraContexto } from './components/layout/BarraContexto';
+import { CajonHoy } from './components/layout/CajonHoy';
+import { useCajonHoy } from './hooks/useCajonHoy';
 import { PantallaInicio } from './screens/PantallaInicio';
 import { PantallaBilleteras } from './screens/PantallaBilleteras';
 import { PantallaDeudas } from './screens/PantallaDeudas';
@@ -17,7 +21,7 @@ import { PantallaActivarCodigo } from './screens/PantallaActivarCodigo';
 import { PWAInstallButton } from './components/ui/PWAInstallButton';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { useTema, inicializarTema } from './utils/theme';
-import { getContextoMes, ingresoDelMes } from './logic/resumenMes';
+import { getContextoMes, ingresoDelMes, calcularAgenda } from './logic/resumenMes';
 
 export default function App() {
   const [seccionActiva, setSeccionActiva] = useState<SeccionApp>(() =>
@@ -76,14 +80,41 @@ export default function App() {
     [movimientos]
   );
 
+  // El cajón de "Hoy": mobiliario de toda la app, no de una pantalla.
+  const cajon = useCajonHoy();
+
+  // La misma agenda que muestra Inicio. Se calcula aquí porque el cajón la
+  // necesita esté donde esté el usuario.
+  const agendaHoy = React.useMemo(
+    () =>
+      calcularAgenda({
+        contexto: getContextoMes(),
+        deudas,
+        suscripciones,
+        tarjetas: tarjetasCredito,
+        retos,
+        esPro: nivelAcceso === 'pro',
+      }),
+    [deudas, suscripciones, tarjetasCredito, retos, nivelAcceso]
+  );
+
+  const cobrosPendientes = agendaHoy.filter((e) => e.monto > 0).length;
+
+  // En escritorio el que scrollea es el contenedor del contenido, no la ventana.
+  const contenidoRef = React.useRef<HTMLDivElement>(null);
+
   const handleNavegar = (seccion: SeccionApp) => {
     setSeccionActiva(seccion);
     setNavTick((t) => t + 1);
+    contenidoRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Determinar si debemos renderizar el Termómetro como entrada para Demo
   const mostrarTermometro = nivelAcceso === 'demo' && seccionActiva !== 'activar_codigo';
+
+  // El gancho y la pantalla de código van a pantalla completa, sin shell.
+  const conShell = !mostrarTermometro && seccionActiva !== 'activar_codigo';
 
   return (
     <div className="min-h-screen bg-[var(--fondo)] text-[color:var(--texto)] font-sans antialiased relative overflow-x-hidden transition-colors duration-200">
@@ -91,28 +122,33 @@ export default function App() {
       <OfflineIndicator />
 
       {/* ========================================================= */}
-      {/* ESTRUCTURA PRINCIPAL: NAVEGACIÓN Y CONTENIDO RESPONSIVO */}
+      {/* EL SHELL: riel · área de trabajo · cajón de Hoy           */}
+      {/* En escritorio la página no scrollea: lo hace el contenido. */}
       {/* ========================================================= */}
-      <div className="min-h-screen flex flex-col md:flex-row">
-        {/* Barra de navegación (Sidebar en desktop, Bottom Nav en móvil) */}
-        {!mostrarTermometro && seccionActiva !== 'activar_codigo' && (
-          <BarraNavegacion
+      <div className="min-h-screen md:h-screen md:overflow-hidden flex">
+        {/* Riel de escritorio (68px) */}
+        {conShell && (
+          <RielNavegacion
             seccionActiva={seccionActiva}
             onCambiarSeccion={handleNavegar}
             usuario={resumen.usuario}
+            saldoTotal={saldoTotal}
+          />
+        )}
+
+        {/* Barra inferior de móvil (fija, fuera del flujo) */}
+        {conShell && (
+          <BarraNavegacion
+            seccionActiva={seccionActiva}
+            onCambiarSeccion={handleNavegar}
             nivelAcceso={nivelAcceso}
           />
         )}
 
         {/* Área de contenido principal */}
-        <main
-          className={`
-            flex-1 flex flex-col min-h-screen relative z-10
-            ${!mostrarTermometro && seccionActiva !== 'activar_codigo' ? 'md:pl-64' : ''}
-          `}
-        >
+        <main className="flex-1 flex flex-col min-w-0 min-h-screen md:min-h-0 md:h-screen relative z-10">
           {/* Barra superior en móvil solo cuando no estamos en gancho o pantalla de código */}
-          {!mostrarTermometro && seccionActiva !== 'activar_codigo' && (
+          {conShell && (
             <header className="md:hidden sticky top-0 z-20 bg-[var(--fondo)]/90 backdrop-blur-md px-4 py-3 border-b border-[var(--linea)] flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div
@@ -150,10 +186,22 @@ export default function App() {
             </header>
           )}
 
-          {/* Contenedor central del contenido con padding ergonómico y espacio para la barra inferior móvil */}
+          {/* La barra de contexto: dónde estás y el botón del cajón de Hoy */}
+          {conShell && (
+            <div className="hidden md:block px-5 pt-4 pb-1 flex-none">
+              <BarraContexto
+                cajonAbierto={cajon.abierto}
+                pendientes={cobrosPendientes}
+                onAlternarCajon={cajon.alternar}
+              />
+            </div>
+          )}
+
+          {/* El contenido. En escritorio scrollea aquí, no la página entera. */}
           <div
-            className={`flex-1 px-4 sm:px-6 md:px-8 py-5 sm:py-7 w-full max-w-6xl mx-auto ${
-              !mostrarTermometro && seccionActiva !== 'activar_codigo' ? 'pb-24 sm:pb-8' : ''
+            ref={contenidoRef}
+            className={`flex-1 min-h-0 md:overflow-y-auto px-4 sm:px-6 md:px-5 py-5 md:pt-3 w-full ${
+              conShell ? 'pb-24 md:pb-5' : ''
             }`}
           >
             {/* Pantalla 1: Termómetro de la Deuda (Gancho Demo) */}
@@ -302,6 +350,18 @@ export default function App() {
             )}
           </div>
         </main>
+
+        {/* El cajón de Hoy: la misma columna en todas las pantallas */}
+        {conShell && (
+          <CajonHoy
+            abierto={cajon.abierto}
+            flotante={cajon.flotante}
+            eventos={agendaHoy}
+            saldoTotal={saldoTotal}
+            onCerrar={cajon.cerrar}
+            onNavegar={handleNavegar}
+          />
+        )}
       </div>
     </div>
   );
