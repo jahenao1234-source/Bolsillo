@@ -1,7 +1,13 @@
 /**
  * Bolsillo - Registro de la Línea de Victorias
  * Almacena los hitos de deudas liquidadas y metas financieras alcanzadas
+ *
+ * Ojo: esto guarda aparte del store, con su propia clave. Su semilla también
+ * tiene que respetar el interruptor de datos de ejemplo, o en producción
+ * aparecería una victoria que nadie consiguió.
  */
+
+import { DATOS_DE_EJEMPLO } from '../data/store';
 
 export interface Victoria {
   id: string;
@@ -26,16 +32,17 @@ const VICTORIAS_INICIALES: Victoria[] = [
 ];
 
 export function getVictorias(): Victoria[] {
-  if (typeof window === 'undefined') return VICTORIAS_INICIALES;
+  const semilla = DATOS_DE_EJEMPLO ? VICTORIAS_INICIALES : [];
+  if (typeof window === 'undefined') return semilla;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_VICTORIAS);
     if (raw) {
       return JSON.parse(raw);
     }
   } catch {
-    // Fallback a lista inicial
+    // Sin almacenamiento: cae a la semilla que corresponda al modo.
   }
-  return VICTORIAS_INICIALES;
+  return semilla;
 }
 
 export function registrarVictoria(

@@ -42,6 +42,26 @@ const STORAGE_KEYS = {
   TARJETAS_CREDITO: 'bolsillo_data_tarjetas_credito_v3',
 };
 
+/**
+ * ¿Arrancamos con el mes de ejemplo o en blanco?
+ *
+ * En desarrollo, con ejemplo: es lo que permite trabajar las pantallas sin
+ * teclear un mes entero cada vez. En producción, en blanco: quien paga abre la
+ * app y ve SUS datos, no los de Marcela.
+ *
+ * VITE_DATOS_EJEMPLO=1 fuerza el ejemplo en un build de producción (para
+ * enseñar la app); VITE_DATOS_EJEMPLO=0 lo apaga en desarrollo (para probar
+ * cómo se ve el primer día).
+ */
+export const DATOS_DE_EJEMPLO =
+  import.meta.env.VITE_DATOS_EJEMPLO === '1' ||
+  (import.meta.env.DEV && import.meta.env.VITE_DATOS_EJEMPLO !== '0');
+
+/** El respaldo de cada getter pasa por aquí: con ejemplo devuelve, sin él, nada. */
+function ejemplo<T>(datos: T[]): T[] {
+  return DATOS_DE_EJEMPLO ? datos : [];
+}
+
 // ==========================================
 // SEMILLA DE DATOS REALISTAS DE COLOMBIA
 // ==========================================
@@ -374,6 +394,7 @@ export function suscribirStore(listener: Listener): () => void {
 function asegurarInicializacion(): void {
   if (typeof window === 'undefined') return;
   try {
+    if (!DATOS_DE_EJEMPLO) return;
     const inicializado = localStorage.getItem(STORAGE_KEYS.INICIALIZADO);
     if (!inicializado) {
       localStorage.setItem(STORAGE_KEYS.BILLETERAS, JSON.stringify(MOCK_BILLETERAS_INICIAL));
@@ -409,7 +430,7 @@ export function getNombreUsuario(): string {
   } catch (err) {
     console.error('Error al leer nombre de usuario:', err);
   }
-  return 'Marcela';
+  return DATOS_DE_EJEMPLO ? 'Marcela' : '';
 }
 
 export function setNombreUsuario(nombre: string): void {
@@ -430,7 +451,7 @@ export function getDisponibleMensual(): number {
   } catch (err) {
     console.error('Error al leer disponible mensual:', err);
   }
-  return MOCK_DISPONIBLE_MENSUAL_INICIAL;
+  return DATOS_DE_EJEMPLO ? MOCK_DISPONIBLE_MENSUAL_INICIAL : 0;
 }
 
 export function setDisponibleMensual(monto: number): void {
@@ -451,7 +472,7 @@ export function getBilleteras(): Billetera[] {
   } catch (err) {
     console.error('Error al leer billeteras:', err);
   }
-  return MOCK_BILLETERAS_INICIAL;
+  return ejemplo(MOCK_BILLETERAS_INICIAL);
 }
 
 /**
@@ -482,7 +503,7 @@ export function getDeudas(): Deuda[] {
   } catch (err) {
     console.error('Error al leer deudas:', err);
   }
-  return MOCK_DEUDAS_INICIAL.map((d, index) => ({ ...d, orden: index }));
+  return ejemplo(MOCK_DEUDAS_INICIAL).map((d, index) => ({ ...d, orden: index }));
 }
 
 /**
@@ -496,11 +517,11 @@ export function getMovimientos(filtros?: FiltrosMovimiento): Movimiento[] {
     if (raw) {
       items = JSON.parse(raw);
     } else {
-      items = MOCK_MOVIMIENTOS_INICIAL;
+      items = ejemplo(MOCK_MOVIMIENTOS_INICIAL);
     }
   } catch (err) {
     console.error('Error al leer movimientos:', err);
-    items = MOCK_MOVIMIENTOS_INICIAL;
+    items = ejemplo(MOCK_MOVIMIENTOS_INICIAL);
   }
 
   if (!filtros) return items;
@@ -1005,7 +1026,7 @@ export function getPresupuestos(): Presupuesto[] {
   } catch (err) {
     console.error('Error al leer presupuestos:', err);
   }
-  return MOCK_PRESUPUESTOS_INICIAL;
+  return ejemplo(MOCK_PRESUPUESTOS_INICIAL);
 }
 
 export function setPresupuestos(items: Presupuesto[]): void {
@@ -1072,7 +1093,7 @@ export function getSobres(): Sobre[] {
   } catch (err) {
     console.error('Error al leer sobres:', err);
   }
-  return MOCK_SOBRES_INICIAL;
+  return ejemplo(MOCK_SOBRES_INICIAL);
 }
 
 export function setSobres(items: Sobre[]): void {
@@ -1122,7 +1143,7 @@ export function getRetos(): RetoAhorro[] {
   } catch (err) {
     console.error('Error al leer retos:', err);
   }
-  return MOCK_RETOS_INICIAL;
+  return ejemplo(MOCK_RETOS_INICIAL);
 }
 
 export function setRetos(items: RetoAhorro[]): void {
@@ -1195,7 +1216,7 @@ export function getSuscripciones(): Suscripcion[] {
   } catch (err) {
     console.error('Error al leer suscripciones:', err);
   }
-  return MOCK_SUSCRIPCIONES_INICIAL;
+  return ejemplo(MOCK_SUSCRIPCIONES_INICIAL);
 }
 
 export function setSuscripciones(items: Suscripcion[]): void {
@@ -1250,7 +1271,7 @@ export function getTarjetasCredito(): TarjetaCredito[] {
   } catch (err) {
     console.error('Error al leer tarjetas de crédito:', err);
   }
-  return MOCK_TARJETAS_CREDITO_INICIAL;
+  return ejemplo(MOCK_TARJETAS_CREDITO_INICIAL);
 }
 
 export function setTarjetasCredito(items: TarjetaCredito[]): void {

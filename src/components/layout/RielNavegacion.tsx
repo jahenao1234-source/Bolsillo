@@ -105,10 +105,10 @@ export const RielNavegacion: React.FC<RielNavegacionProps> = ({
       <button
         type="button"
         onClick={() => onCambiarSeccion('perfil')}
-        title={usuario}
+        title={usuario || 'Tu perfil'}
         className="w-[34px] h-[34px] rounded-full bg-[var(--elevada)] border border-[var(--linea)] grid place-items-center font-display font-bold text-[10.5px] text-[color:var(--acento)] cursor-pointer hover:border-[var(--acento)]/50 transition-colors"
       >
-        {usuario.slice(0, 2).toUpperCase()}
+        {usuario.slice(0, 2).toUpperCase() || '··'}
       </button>
     </aside>
   );

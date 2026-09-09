@@ -711,7 +711,13 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
             </span>
           </div>
           <h1 className="text-2xl font-black font-display tracking-tight text-[color:var(--texto)]">
-            Hola, <span className="text-platinum-gradient">{resumen.usuario}</span>
+            {resumen.usuario ? (
+              <>
+                Hola, <span className="text-platinum-gradient">{resumen.usuario}</span>
+              </>
+            ) : (
+              'Hola'
+            )}
           </h1>
         </div>
         <div className="flex items-center gap-2">
