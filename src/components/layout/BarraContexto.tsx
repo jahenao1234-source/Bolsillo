@@ -2,57 +2,37 @@
  * La barra de contexto del escritorio: una sola línea que dice dónde estás,
  * el dato que manda en esta pantalla, y las acciones.
  *
- * A la derecha, siempre, el botón que abre el cajón de Hoy.
+ * No sabe nada de ninguna pantalla: expone dos huecos y cada pantalla los
+ * llena por portal (ver shell.tsx). A la derecha, siempre, el botón del cajón.
  */
 
 import React from 'react';
 import { PanelRight } from 'lucide-react';
 
 interface BarraContextoProps {
-  /** Rótulo pequeño encima del título. Opcional. */
-  eyebrow?: React.ReactNode;
-  titulo?: React.ReactNode;
-  /** Chips de contexto, a la derecha del título. */
-  chips?: React.ReactNode;
-  /** Botones propios de la pantalla. */
-  acciones?: React.ReactNode;
+  /** Hueco izquierdo: rótulo, título y chips de la pantalla. */
+  refTitulo: (nodo: HTMLDivElement | null) => void;
+  /** Hueco derecho: los botones de la pantalla. */
+  refAcciones: (nodo: HTMLDivElement | null) => void;
   cajonAbierto: boolean;
-  /** Cobros pendientes: se pinta como contador en el botón. */
+  /** Cobros que se vienen: se pinta como contador en el botón. */
   pendientes: number;
   onAlternarCajon: () => void;
 }
 
 export const BarraContexto: React.FC<BarraContextoProps> = ({
-  eyebrow,
-  titulo,
-  chips,
-  acciones,
+  refTitulo,
+  refAcciones,
   cajonAbierto,
   pendientes,
   onAlternarCajon,
 }) => (
-  <div className="hidden md:flex items-center justify-between gap-5 flex-none">
-    <div className="flex items-center gap-3 min-w-0">
-      {(eyebrow || titulo) && (
-        <div className="min-w-0">
-          {eyebrow && (
-            <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
-              {eyebrow}
-            </p>
-          )}
-          {titulo && (
-            <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)] truncate">
-              {titulo}
-            </h1>
-          )}
-        </div>
-      )}
-      {chips && <div className="flex items-center gap-2 min-w-0">{chips}</div>}
-    </div>
+  <div className="hidden md:flex items-center justify-between gap-5 flex-none min-h-[38px]">
+    <div ref={refTitulo} className="flex items-center gap-3 min-w-0" />
 
     <div className="flex items-center gap-2 flex-none">
-      {acciones}
-      {acciones && <span className="w-px h-4 bg-[var(--linea)]" />}
+      <div ref={refAcciones} className="flex items-center gap-2" />
+      <span className="w-px h-4 bg-[var(--linea)]" />
       <button
         type="button"
         onClick={onAlternarCajon}

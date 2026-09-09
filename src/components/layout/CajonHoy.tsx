@@ -14,6 +14,9 @@ import { EventoAgenda } from '../../logic/resumenMes';
 import { SeccionApp } from '../navigation/BarraNavegacion';
 import { formatearCOP } from '../../utils/format';
 
+/** Ancho del cajón abierto. Se usa en el estilo y en el min-width del contenido. */
+const ANCHO_CAJON = 340;
+
 interface CajonHoyProps {
   abierto: boolean;
   /** true cuando flota encima del contenido en vez de empujarlo. */
@@ -97,17 +100,38 @@ export const CajonHoy: React.FC<CajonHoyProps> = ({
         />
       )}
 
+      {/*
+        El cajón mide siempre 340px; lo que cambia es si ese ancho ocupa sitio.
+        Animar `width` (o `flex-basis`) en un flex item deja la transición
+        atascada, porque cada fotograma vuelve a alimentar el cálculo del flex.
+        Con margen negativo el ancho nunca se toca: el cajón se sale del flujo
+        hacia la derecha y el contenedor lo recorta. Cuando flota, se desliza
+        con transform, que tampoco toca el layout.
+      */}
       <aside
         aria-hidden={!abierto}
+        style={
+          flotante
+            ? {
+                width: ANCHO_CAJON,
+                transform: abierto ? 'translateX(0)' : `translateX(${ANCHO_CAJON}px)`,
+              }
+            : {
+                width: ANCHO_CAJON,
+                flexShrink: 0,
+                marginRight: abierto ? 0 : -ANCHO_CAJON,
+              }
+        }
         className={`
           hidden md:flex flex-col overflow-hidden bg-[var(--superficie-2)]
-          transition-[width,border-color] duration-300 ease-out
-          ${abierto ? 'w-[340px] border-l border-[var(--linea)]' : 'w-0 border-l border-transparent'}
-          ${flotante ? 'fixed right-0 top-0 bottom-0 z-40 shadow-2xl' : 'relative flex-none'}
+          transition-[margin-right,transform,border-color] duration-300 ease-out
+          border-l ${abierto ? 'border-[var(--linea)]' : 'border-transparent'}
+          ${abierto ? '' : 'pointer-events-none'}
+          ${flotante ? 'fixed right-0 top-0 bottom-0 z-40 shadow-2xl' : 'relative'}
         `}
       >
         {/* min-w fijo: el contenido no se aplasta mientras el cajón se anima */}
-        <div className="flex flex-col h-full min-w-[340px] w-[340px] py-4 pb-3.5">
+        <div className="flex flex-col h-full py-4 pb-3.5" style={{ minWidth: ANCHO_CAJON, width: ANCHO_CAJON }}>
           <div className="px-[18px] pb-3 border-b border-[var(--hairline)] flex items-end justify-between gap-2.5">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">

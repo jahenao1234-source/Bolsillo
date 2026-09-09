@@ -265,3 +265,38 @@ h1, h2, h3, h4, .stat-value {
 
   @page { margin: 14mm; }
 }
+
+/* ============================================================= */
+/* EL MARCO DE ESCRITORIO                                         */
+/* Una superficie dividida por hairlines. Solo en pantalla ancha:  */
+/* por debajo de 1280 el marco se deshace en la pila de tarjetas. */
+/* ============================================================= */
+@media (min-width: 1280px) {
+  .marco {
+    display: grid;
+    grid-template-columns: var(--cols, 1fr);
+    transition: grid-template-columns 0.3s ease;
+  }
+}
+
+/* Scrollbar delgada para las zonas que scrollean por dentro */
+.scroll-fino {
+  scrollbar-width: thin;
+  scrollbar-color: var(--elevada) transparent;
+}
+.scroll-fino::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-fino::-webkit-scrollbar-thumb {
+  background: var(--elevada);
+  border-radius: 4px;
+}
+.scroll-fino::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marco {
+    transition: none;
+  }
+}

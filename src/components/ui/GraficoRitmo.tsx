@@ -15,6 +15,8 @@ interface GraficoRitmoProps {
   /** Nombre del mes pasado, para la etiqueta de la curva fantasma. */
   etiquetaAnterior: string;
   compacto?: boolean;
+  /** Para que el gráfico pueda ajustarse al alto de su zona en escritorio. */
+  className?: string;
 }
 
 /** Escala redonda con 4 divisiones para el eje vertical. */
@@ -43,6 +45,7 @@ export const GraficoRitmo: React.FC<GraficoRitmoProps> = ({
   diaActual,
   etiquetaAnterior,
   compacto = false,
+  className = '',
 }) => {
   const W = compacto ? 340 : 620;
   const H = compacto ? 156 : 250;
@@ -101,7 +104,7 @@ export const GraficoRitmo: React.FC<GraficoRitmoProps> = ({
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      className="block w-full h-auto"
+      className={`block w-full h-auto ${className}`}
       role="img"
       aria-label={`Gasto acumulado del mes: llevas ${formatearCOPCorto(gastadoHoy)} y a este ritmo cierras en ${formatearCOPCorto(proyeccion)}${hayAnterior ? `, contra ${formatearCOPCorto(cierreAnterior)} del mes pasado` : ''}.`}
     >

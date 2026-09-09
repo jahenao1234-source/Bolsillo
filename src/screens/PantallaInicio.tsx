@@ -6,6 +6,8 @@ import { Boton } from '../components/ui/Boton';
 import { GraficoDonut } from '../components/ui/GraficoDonut';
 import { GraficoRitmo } from '../components/ui/GraficoRitmo';
 import { formatearCOP } from '../utils/format';
+import { Marco, Columna, Zona, Scroll, Zocalo } from '../components/layout/Marco';
+import { BarraTitulo, BarraAcciones, useCajonEmpuja } from '../components/layout/shell';
 import {
   ResumenFinanciero,
   Billetera,
@@ -329,6 +331,9 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
   const [deudaAbono, setDeudaAbono] = useState<Deuda | null>(null);
   const [modalMovimiento, setModalMovimiento] = useState(false);
   const [celebracion, setCelebracion] = useState<{ nombre: string; monto: number } | null>(null);
+
+  // Cuando el cajón de Hoy empuja, la columna de la agenda sobra: muestra lo mismo.
+  const cajonEmpuja = useCajonEmpuja();
 
   const contexto = useMemo(() => getContextoMes(), []);
 
@@ -659,9 +664,39 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto pb-24 md:pb-10 animate-screen-enter">
-      {/* ===================== Cabecera ===================== */}
-      <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
+      {/* ===================== Barra de contexto (escritorio) ===================== */}
+      <BarraTitulo>
+        <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)] whitespace-nowrap">
+          {contexto.nombre} · día {contexto.dia} de {contexto.diasDelMes}
+        </span>
+        <span className="w-[110px] h-[3px] rounded-sm bg-[var(--hairline)] overflow-hidden flex-none">
+          <span
+            className="block h-full rounded-sm bg-[var(--acento)]"
+            style={{ width: `${(contexto.dia / contexto.diasDelMes) * 100}%` }}
+          />
+        </span>
+        {ritmo.hayAnterior && (
+          <Chip variante={ritmo.diferenciaHoy >= 0 ? 'aqua' : 'alerta'}>
+            {ritmo.diferenciaHoy >= 0 ? 'Más suave que en' : 'Más rápido que en'}{' '}
+            {contexto.nombreAnterior.toLowerCase()}
+          </Chip>
+        )}
+      </BarraTitulo>
+
+      <BarraAcciones>
+        <Boton
+          variante="primario"
+          tamano="sm"
+          icono={<Plus className="w-4 h-4" />}
+          onClick={() => setModalMovimiento(true)}
+        >
+          Registrar movimiento
+        </Boton>
+      </BarraAcciones>
+
+      {/* ===================== Cabecera de móvil ===================== */}
+      <header className="md:hidden flex flex-col gap-3 mb-1">
         <div>
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <span className="text-[11px] font-bold text-[color:var(--acento)] uppercase tracking-wider">
@@ -675,11 +710,10 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
               </strong>
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black font-display tracking-tight text-[color:var(--texto)]">
+          <h1 className="text-2xl font-black font-display tracking-tight text-[color:var(--texto)]">
             Hola, <span className="text-platinum-gradient">{resumen.usuario}</span>
           </h1>
         </div>
-
         <div className="flex items-center gap-2">
           {ritmo.hayAnterior && (
             <Chip variante={ritmo.diferenciaHoy >= 0 ? 'aqua' : 'alerta'}>
@@ -699,50 +733,53 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
       </header>
 
       {/* ===================================================== */}
-      {/* El hilo del mes. En móvil el orden cambia: primero el  */}
-      {/* reparto, después lo que se viene, y al final el ritmo. */}
+      {/* El marco del mes. Tres columnas en escritorio; cuando  */}
+      {/* entra el cajón de Hoy la agenda sobra —el cajón muestra */}
+      {/* lo mismo— y las otras dos se ensanchan.                */}
+      {/* En móvil el marco se deshace en la pila de siempre.    */}
       {/* ===================================================== */}
-      <div className="grid gap-4 lg:grid-cols-12 items-start">
+      <Marco columnas={cajonEmpuja ? '404px minmax(0,1fr)' : '376px minmax(0,1fr) 356px'}>
 
-        {/* ---------- A dónde va tu plata ---------- */}
-        <section className="order-1 lg:col-span-7 flex flex-col gap-2.5">
-          <EncabezadoBloque
-            titulo="A dónde va tu plata"
-            dato={`${contexto.nombre} completo · con lo que ya tiene fecha`}
-            datoSoloEscritorio
-          />
-          <Tarjeta padding="lg">
-            {reparto.entro > 0 ? (
-              <>
-                <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                  <p className="text-xs text-[color:var(--texto-2)]">
-                    Este mes cuentas con{' '}
-                    <strong className="font-display font-bold text-sm text-[color:var(--texto)] tabular-nums">
-                      {formatearCOP(reparto.entro)}
-                    </strong>
-                    {reparto.entroRecibido < reparto.entro && (
-                      <span> · llevas {formatearCOP(reparto.entroRecibido)} recibidos</span>
-                    )}
-                    {reparto.deltaEntro !== null && Math.abs(reparto.deltaEntro) >= 1000 && (
-                      <span
-                        className={`ml-2 font-semibold ${
-                          reparto.deltaEntro > 0
-                            ? 'text-[color:var(--positivo)]'
-                            : 'text-[color:var(--texto-2)]'
-                        }`}
-                      >
-                        {reparto.deltaEntro > 0 ? '+' : '−'}
-                        {formatearCOP(Math.abs(reparto.deltaEntro))} vs{' '}
-                        {contexto.nombreAnterior.toLowerCase()}
-                      </span>
-                    )}
-                  </p>
-                  <span className="hidden sm:inline text-[11px] text-[color:var(--texto-3)]">
-                    Toca una fila para ir al módulo
-                  </span>
-                </div>
+        {/* ---------- Columna 1: el héroe y el reparto ---------- */}
+        <Columna ordenMovil={1} borde>
+          {reparto.entro > 0 ? (
+            <>
+              <Zona className="xl:!py-[18px]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
+                  {libreEnRojo
+                    ? 'Este mes te faltan'
+                    : `Te queda libre · ${reparto.diasRestantes} días por delante`}
+                </p>
+                {libreEnRojo ? (
+                  <>
+                    <p className="font-display font-black text-[44px] leading-none tabular-nums text-[color:var(--alerta)] mt-2">
+                      {formatearCOP(Math.abs(reparto.libre))}
+                    </p>
+                    <p className="text-xs text-[color:var(--texto-2)] mt-2 leading-relaxed">
+                      Es lo que falta para cubrir lo que ya tiene fecha este mes.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display font-black text-[52px] leading-none tabular-nums text-[color:var(--accion)] mt-2">
+                      {formatearCOP(reparto.porDia)}
+                    </p>
+                    <p className="font-display font-bold text-base text-[color:var(--accion)] mb-2">
+                      por día
+                    </p>
+                    <p className="text-xs text-[color:var(--texto-2)] leading-relaxed">
+                      Son los{' '}
+                      <strong className="text-[color:var(--texto)] font-semibold tabular-nums">
+                        {formatearCOP(reparto.libre)}
+                      </strong>{' '}
+                      que no tienen dueño todavía. Lo que se te viene ya está apartado.
+                    </p>
+                  </>
+                )}
+              </Zona>
 
-                <div className="mt-3.5 flex flex-col">
+              <Zona sinPadding className="xl:!py-1">
+                <div className="flex flex-col px-4 py-1 xl:px-[17px] xl:py-0">
                   {reparto.destinos.map((d) => (
                     <FilaDestino
                       key={d.id}
@@ -752,44 +789,43 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
                     />
                   ))}
                 </div>
+              </Zona>
 
-                <div className="mt-4 pt-4 border-t border-[var(--hairline)] flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
-                  {libreEnRojo ? (
-                    <div className="flex items-baseline gap-3 flex-wrap">
-                      <span className="text-[13px] text-[color:var(--texto-2)]">
-                        Este mes te faltan
-                      </span>
-                      <span className="font-display font-black text-2xl sm:text-3xl leading-none tabular-nums text-[color:var(--alerta)]">
-                        {formatearCOP(Math.abs(reparto.libre))}
-                      </span>
-                      <span className="text-[11px] text-[color:var(--texto-2)]">
-                        para cubrir lo que ya tiene fecha
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-baseline gap-3 flex-wrap">
-                      <span className="text-[13px] text-[color:var(--texto-2)]">
-                        Libre para los{' '}
-                        <strong className="text-[color:var(--texto)] font-semibold">
-                          {reparto.diasRestantes} días
-                        </strong>{' '}
-                        que faltan
-                      </span>
-                      <span className="text-[color:var(--texto-3)]">→</span>
-                      <span className="font-display font-black text-2xl sm:text-3xl leading-none tabular-nums text-[color:var(--acento)]">
-                        {formatearCOP(reparto.porDia)}
-                        <span className="text-xs font-semibold text-[color:var(--texto-2)] ml-1.5">
-                          por día
-                        </span>
-                      </span>
-                    </div>
+              <Zona crece className="xl:flex xl:justify-end">
+                <p className="text-[11px] text-[color:var(--texto-3)] leading-relaxed xl:mt-auto">
+                  Este mes cuentas con{' '}
+                  <strong className="text-[color:var(--texto-2)] font-semibold tabular-nums">
+                    {formatearCOP(reparto.entro)}
+                  </strong>
+                  {reparto.entroRecibido < reparto.entro && (
+                    <>
+                      {' '}
+                      · llevas{' '}
+                      <strong className="text-[color:var(--texto-2)] font-semibold tabular-nums">
+                        {formatearCOP(reparto.entroRecibido)}
+                      </strong>{' '}
+                      recibidos
+                    </>
                   )}
-                  <span className="text-[11px] text-[color:var(--texto-3)]">
-                    Lo que se te viene ya está apartado.
-                  </span>
-                </div>
-              </>
-            ) : (
+                  {reparto.deltaEntro !== null && Math.abs(reparto.deltaEntro) >= 1000 && (
+                    <span
+                      className={`ml-1.5 font-semibold ${
+                        reparto.deltaEntro > 0
+                          ? 'text-[color:var(--positivo)]'
+                          : 'text-[color:var(--texto-2)]'
+                      }`}
+                    >
+                      {reparto.deltaEntro > 0 ? '+' : '−'}
+                      {formatearCOP(Math.abs(reparto.deltaEntro))} vs{' '}
+                      {contexto.nombreAnterior.toLowerCase()}
+                    </span>
+                  )}
+                  . Toca una fila para ir al módulo.
+                </p>
+              </Zona>
+            </>
+          ) : (
+            <Zona crece>
               <div className="flex flex-col items-center text-center gap-2 py-8">
                 <Sparkles className="w-7 h-7 text-[color:var(--acento)]" />
                 <p className="text-sm font-semibold text-[color:var(--texto)]">
@@ -807,125 +843,70 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
                   Registrar un ingreso
                 </Boton>
               </div>
-            )}
-          </Tarjeta>
-        </section>
+            </Zona>
+          )}
+        </Columna>
 
-        {/* ---------- En qué se va (la dona) ---------- */}
-        <section className="order-3 lg:order-2 lg:col-span-5 flex flex-col gap-2.5">
-          <EncabezadoBloque
-            titulo="En qué se va"
-            dato={`vs. ${contexto.nombreAnterior.toLowerCase()}`}
-          />
-          <Tarjeta padding="lg">
-            {totalGastado > 0 ? (
-              <>
-                <h3 className="font-display font-bold text-[15px] text-[color:var(--texto)]">
-                  {categoriaTop.etiqueta} se lleva {Math.round(categoriaTop.porcentaje)} de cada 100
-                </h3>
-                <p className="text-xs text-[color:var(--texto-2)] mt-1">
-                  Llevas {formatearCOP(totalGastado)} de los{' '}
-                  {formatearCOP(reparto.gastosProyectados)} que proyectas gastar este mes.
+        {/* ---------- Columna 2: el ritmo y la dona ---------- */}
+        <Columna ordenMovil={3} borde={!cajonEmpuja}>
+          <Zona crece>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
+                  Tu ritmo de gasto
                 </p>
-
-                <div className="mt-4 flex items-center gap-4">
-                  <GraficoDonut datos={categorias} tamano={128} grosor={17}>
-                    <span className="font-display font-black text-[15px] tabular-nums text-[color:var(--texto)] leading-none">
-                      {formatearCOP(totalGastado)}
-                    </span>
-                    <span className="text-[9px] uppercase tracking-wide text-[color:var(--texto-3)] mt-1">
-                      llevas gastados
-                    </span>
-                  </GraficoDonut>
-
-                  <div className="flex-1 min-w-0 divide-y divide-[var(--hairline)]">
-                    {categorias.map((c) => {
-                      const delta = leerDelta(c.delta, false, contexto.nombreAnterior.toLowerCase());
-                      return (
-                        <div key={c.etiqueta} className="flex items-center gap-2.5 py-1.5">
-                          <span
-                            className="w-2.5 h-2.5 rounded-[3px] flex-none"
-                            style={{ background: c.color }}
-                          />
-                          <span className="flex-1 text-xs text-[color:var(--texto-2)] truncate">
-                            {c.etiqueta}
-                          </span>
-                          <span className="text-right">
-                            <span className="block font-display font-bold text-[13px] tabular-nums text-[color:var(--texto)]">
-                              {formatearCOP(c.valor)}
-                            </span>
-                            <span className={`block text-[10px] ${delta.clase}`}>{delta.texto}</span>
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center text-center gap-2 py-10">
-                <TrendingDown className="w-7 h-7 text-[color:var(--texto-3)]" />
-                <p className="text-sm font-semibold text-[color:var(--texto)]">
-                  Todavía no has gastado nada
-                </p>
-                <p className="text-xs text-[color:var(--texto-2)] max-w-[26ch]">
-                  Cuando registres gastos te muestro en qué se va y qué cambió contra{' '}
-                  {contexto.nombreAnterior.toLowerCase()}.
-                </p>
+                {ritmo.hayAnterior ? (
+                  <>
+                    <h3 className="font-display font-bold text-[15px] text-[color:var(--texto)] mt-1.5">
+                      Vas{' '}
+                      <span
+                        className={
+                          ritmo.diferenciaHoy >= 0
+                            ? 'text-[color:var(--positivo)]'
+                            : 'text-[color:var(--alerta)]'
+                        }
+                      >
+                        {formatearCOP(Math.abs(ritmo.diferenciaHoy))}
+                      </span>{' '}
+                      {ritmo.diferenciaHoy >= 0 ? 'más suave' : 'más rápido'} que en{' '}
+                      {contexto.nombreAnterior.toLowerCase()}
+                    </h3>
+                    <p className="text-[11px] text-[color:var(--texto-3)] mt-1 leading-relaxed">
+                      Llevas {formatearCOP(ritmo.gastadoHoy)} gastados en {contexto.dia} días. A la
+                      misma altura, {contexto.nombreAnterior.toLowerCase()} iba en{' '}
+                      {formatearCOP(ritmo.gastadoAnteriorMismoDia)}.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="font-display font-bold text-[15px] text-[color:var(--texto)] mt-1.5">
+                      Llevas {formatearCOP(ritmo.gastadoHoy)} gastados en {contexto.dia} días
+                    </h3>
+                    <p className="text-[11px] text-[color:var(--texto-3)] mt-1 leading-relaxed">
+                      Cuando tengas un mes completo te pongo la curva del mes pasado al lado para
+                      comparar.
+                    </p>
+                  </>
+                )}
               </div>
-            )}
-          </Tarjeta>
-        </section>
+              <div className="hidden lg:flex items-center gap-3 text-[10px] text-[color:var(--texto-3)] flex-none pt-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-0.5 bg-[var(--acento)] block" />
+                  {contexto.nombre.toLowerCase()}
+                </span>
+                {ritmo.hayAnterior && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-3 border-t-2 border-dashed border-[var(--texto-3)] block" />
+                    {contexto.nombreAnterior.toLowerCase()}
+                  </span>
+                )}
+              </div>
+            </div>
 
-        {/* ---------- Tu ritmo de gasto ---------- */}
-        <section className="order-4 lg:order-3 lg:col-span-7 lg:self-stretch flex flex-col gap-2.5">
-          <EncabezadoBloque
-            titulo="Tu ritmo de gasto"
-            dato={
-              ritmo.hayAnterior
-                ? `Acumulado · ${contexto.nombre.toLowerCase()} vs ${contexto.nombreAnterior.toLowerCase()}`
-                : 'Acumulado del mes'
-            }
-            datoSoloEscritorio
-          />
-          <Tarjeta padding="lg" className="lg:h-full flex flex-col">
-            {ritmo.hayAnterior ? (
-              <>
-                <h3 className="font-display font-bold text-[15px] text-[color:var(--texto)]">
-                  Vas{' '}
-                  <span
-                    className={
-                      ritmo.diferenciaHoy >= 0
-                        ? 'text-[color:var(--positivo)]'
-                        : 'text-[color:var(--alerta)]'
-                    }
-                  >
-                    {formatearCOP(Math.abs(ritmo.diferenciaHoy))}
-                  </span>{' '}
-                  {ritmo.diferenciaHoy >= 0 ? 'más suave' : 'más rápido'} que en{' '}
-                  {contexto.nombreAnterior.toLowerCase()}
-                </h3>
-                <p className="text-xs text-[color:var(--texto-2)] mt-1">
-                  Llevas {formatearCOP(ritmo.gastadoHoy)} gastados en {contexto.dia} días. A la misma
-                  altura, {contexto.nombreAnterior.toLowerCase()} iba en{' '}
-                  {formatearCOP(ritmo.gastadoAnteriorMismoDia)}.
-                </p>
-              </>
-            ) : (
-              <>
-                <h3 className="font-display font-bold text-[15px] text-[color:var(--texto)]">
-                  Llevas {formatearCOP(ritmo.gastadoHoy)} gastados en {contexto.dia} días
-                </h3>
-                <p className="text-xs text-[color:var(--texto-2)] mt-1">
-                  Cuando tengas un mes completo te pongo la curva del mes pasado al lado para
-                  comparar.
-                </p>
-              </>
-            )}
-
-            <div className="mt-3 flex-1 hidden sm:flex items-center">
-              <div className="w-full">
+            <div className="mt-3 xl:flex-1 xl:min-h-0 xl:overflow-hidden hidden sm:flex items-center">
+              <div className="w-full xl:h-full xl:flex xl:items-center">
                 <GraficoRitmo
+                  className="xl:h-full"
                   puntosMes={ritmo.puntosMes}
                   puntosAnterior={ritmo.puntosAnterior}
                   proyeccion={ritmo.proyeccion}
@@ -949,17 +930,16 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
               />
             </div>
 
-            <p className="mt-3 pt-3 border-t border-[var(--hairline)] text-xs text-[color:var(--texto-2)]">
-              <span className="font-bold text-[color:var(--acento)]">Lo que dice: </span>
-              si sigues así cierras {contexto.nombre.toLowerCase()} en{' '}
-              <strong className="text-[color:var(--texto)] tabular-nums">
+            <p className="mt-3 pt-3 border-t border-[var(--hairline)] text-[11px] text-[color:var(--texto-3)] leading-relaxed flex-none">
+              Si sigues así cierras {contexto.nombre.toLowerCase()} en{' '}
+              <strong className="text-[color:var(--texto-2)] tabular-nums">
                 {formatearCOP(ritmo.proyeccion)}
               </strong>
               {ritmo.hayAnterior && (
                 <>
                   {' '}
                   —{' '}
-                  <strong className="text-[color:var(--texto)] tabular-nums">
+                  <strong className="text-[color:var(--texto-2)] tabular-nums">
                     {formatearCOP(Math.abs(ritmo.diferenciaCierre))}
                   </strong>{' '}
                   {ritmo.diferenciaCierre >= 0 ? 'menos' : 'más'} que{' '}
@@ -968,46 +948,115 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
               )}
               .
             </p>
-          </Tarjeta>
-        </section>
+          </Zona>
 
-        {/* ---------- Lo que se te viene ---------- */}
-        <section className="order-2 lg:order-4 lg:col-span-5 flex flex-col gap-2.5">
-          <EncabezadoBloque
-            titulo="Lo que se te viene"
-            dato={
-              agenda.length > 0 ? (
-                <>
-                  <strong className="text-[color:var(--texto-2)] tabular-nums">
-                    {formatearCOP(totalAgenda)}
-                  </strong>{' '}
-                  en 14 días
-                </>
-              ) : (
-                'próximos 14 días'
-              )
-            }
-          />
-          <Tarjeta padding="lg">
-            {agenda.length > 0 ? (
-              <>
-                <div className="divide-y divide-[var(--hairline)] -my-2.5">
-                  {eventosVisibles.map((ev) => {
-                    const deuda =
-                      ev.origen === 'deuda' && ev.esHoy
-                        ? deudasActivas.find((d) => d.id === ev.deudaId)
-                        : undefined;
+          <Zona>
+            <div className="flex items-baseline justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
+                  En qué se va
+                </p>
+                {totalGastado > 0 && (
+                  <h3 className="font-display font-bold text-[15px] text-[color:var(--texto)] mt-1.5">
+                    {categoriaTop.etiqueta} se lleva {Math.round(categoriaTop.porcentaje)} de cada 100
+                  </h3>
+                )}
+              </div>
+              <span className="text-[11px] text-[color:var(--texto-3)] whitespace-nowrap">
+                vs. {contexto.nombreAnterior.toLowerCase()}
+              </span>
+            </div>
+
+            {totalGastado > 0 ? (
+              <div className="mt-3 flex items-center gap-4">
+                <GraficoDonut datos={categorias} tamano={124} grosor={17}>
+                  <span className="font-display font-black text-[15px] tabular-nums text-[color:var(--texto)] leading-none">
+                    {formatearCOP(totalGastado)}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-wide text-[color:var(--texto-3)] mt-1">
+                    llevas gastados
+                  </span>
+                </GraficoDonut>
+
+                <div className="flex-1 min-w-0 divide-y divide-[var(--hairline)]">
+                  {categorias.map((c) => {
+                    const delta = leerDelta(c.delta, false, contexto.nombreAnterior.toLowerCase());
                     return (
-                      <FilaEvento
-                        key={ev.id}
-                        evento={ev}
-                        onPagar={deuda ? () => setDeudaAbono(deuda) : undefined}
-                      />
+                      <div key={c.etiqueta} className="flex items-center gap-2.5 py-1.5">
+                        <span
+                          className="w-2.5 h-2.5 rounded-[3px] flex-none"
+                          style={{ background: c.color }}
+                        />
+                        <span className="flex-1 text-xs text-[color:var(--texto-2)] truncate">
+                          {c.etiqueta}
+                        </span>
+                        <span className="text-right">
+                          <span className="block font-display font-bold text-[13px] tabular-nums text-[color:var(--texto)]">
+                            {formatearCOP(c.valor)}
+                          </span>
+                          <span className={`block text-[10px] ${delta.clase}`}>{delta.texto}</span>
+                        </span>
+                      </div>
                     );
                   })}
                 </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center text-center gap-2 py-10">
+                <TrendingDown className="w-7 h-7 text-[color:var(--texto-3)]" />
+                <p className="text-sm font-semibold text-[color:var(--texto)]">
+                  Todavía no has gastado nada
+                </p>
+                <p className="text-xs text-[color:var(--texto-2)] max-w-[26ch]">
+                  Cuando registres gastos te muestro en qué se va y qué cambió contra{' '}
+                  {contexto.nombreAnterior.toLowerCase()}.
+                </p>
+              </div>
+            )}
+          </Zona>
+        </Columna>
 
-                <div className="mt-3.5 pt-3 border-t border-[var(--hairline)] flex items-center justify-between gap-3">
+        {/* ---------- Columna 3: la agenda ---------- */}
+        {/* Sobra en escritorio cuando el cajón está abierto: muestra lo mismo. */}
+        <Columna ordenMovil={2} className={cajonEmpuja ? 'xl:hidden' : ''}>
+          <Zona>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
+              Lo que se te viene
+            </p>
+            <div className="flex items-baseline justify-between gap-3 mt-1.5">
+              <span className="font-display font-bold text-[22px] tabular-nums text-[color:var(--texto)] leading-none">
+                {agenda.length > 0 ? formatearCOP(totalAgenda) : '—'}
+              </span>
+              <span className="text-[11px] text-[color:var(--texto-3)]">
+                en 14 días{agenda.length > 0 ? ` · ${agenda.length} eventos` : ''}
+              </span>
+            </div>
+          </Zona>
+
+          {agenda.length > 0 ? (
+            <>
+              <Zona crece sinPadding>
+                <Scroll className="px-4 xl:px-[17px]">
+                  <div className="divide-y divide-[var(--hairline)]">
+                    {eventosVisibles.map((ev) => {
+                      const deuda =
+                        ev.origen === 'deuda' && ev.esHoy
+                          ? deudasActivas.find((d) => d.id === ev.deudaId)
+                          : undefined;
+                      return (
+                        <FilaEvento
+                          key={ev.id}
+                          evento={ev}
+                          onPagar={deuda ? () => setDeudaAbono(deuda) : undefined}
+                        />
+                      );
+                    })}
+                  </div>
+                </Scroll>
+              </Zona>
+
+              <Zona>
+                <div className="flex items-center justify-between gap-3">
                   <span className="text-[11px] text-[color:var(--texto-3)]">
                     {faltanCantidad > 0
                       ? `Falta${faltanCantidad > 1 ? 'n' : ''} ${faltanCantidad} más este mes · ${formatearCOP(faltanMonto)}`
@@ -1021,8 +1070,10 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
                     Ver el plan <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </>
-            ) : (
+              </Zona>
+            </>
+          ) : (
+            <Zona crece>
               <div className="flex flex-col items-center text-center gap-2 py-10">
                 <CalendarClock className="w-7 h-7 text-[color:var(--positivo)]" />
                 <p className="text-sm font-semibold text-[color:var(--texto)]">
@@ -1032,25 +1083,49 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
                   Ni pagos de deuda, ni cobros con fecha. Aprovecha para adelantar.
                 </p>
               </div>
-            )}
-          </Tarjeta>
-        </section>
+            </Zona>
+          )}
+        </Columna>
+      </Marco>
 
-        {/* ---------- Cómo van tus frentes ---------- */}
-        {celdasFrentes > 1 && (
-          <section className="order-5 lg:col-span-12 flex flex-col gap-2.5">
+      {/* ---------- El zócalo: cómo van tus frentes ---------- */}
+      {celdasFrentes > 1 && (
+        <>
+          {/* Escritorio: rieles idénticos bajo el marco */}
+          <Zocalo columnas={celdasFrentes}>
+            {frentes.map((f) => (
+              <TarjetaFrente key={f.id} frente={f} onClick={() => onNavegar(f.destino)} />
+            ))}
+            {!esPro && (
+              <button
+                type="button"
+                onClick={() => onNavegar('crecer')}
+                className="bg-[var(--superficie)] hover:bg-[var(--elevada)] transition-colors cursor-pointer text-left px-4 py-3.5 flex flex-col gap-2"
+              >
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-[color:var(--acento)]">
+                  Crecer
+                </span>
+                <div className="font-display font-black text-[17px] tracking-tight text-[color:var(--texto)] leading-tight">
+                  5 módulos más
+                </div>
+                <p className="text-[11px] text-[color:var(--texto-3)] leading-snug">
+                  Topes, sobres, retos, suscripciones y días de corte.
+                </p>
+              </button>
+            )}
+          </Zocalo>
+
+          {/* Móvil: la rejilla de siempre */}
+          <section className="xl:hidden flex flex-col gap-2.5 order-5">
             <EncabezadoBloque
               titulo="Cómo van tus frentes"
               dato="Un vistazo a cada módulo · toca para entrar"
               datoSoloEscritorio
             />
-            <div
-              className={`grid grid-cols-2 ${columnasFrentes} gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-2xl overflow-hidden`}
-            >
+            <div className="grid grid-cols-2 gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-2xl overflow-hidden">
               {frentes.map((f) => (
                 <TarjetaFrente key={f.id} frente={f} onClick={() => onNavegar(f.destino)} />
               ))}
-
               {!esPro && (
                 <button
                   type="button"
@@ -1065,7 +1140,7 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
                       5 módulos
                     </span>
                   </div>
-                  <div className="font-display font-black text-[17px] sm:text-[19px] tracking-tight text-[color:var(--texto)] leading-tight">
+                  <div className="font-display font-black text-[17px] tracking-tight text-[color:var(--texto)] leading-tight">
                     Presupuesto, sobres y más
                   </div>
                   <p className="text-[11.5px] text-[color:var(--texto-3)] leading-snug">
@@ -1076,8 +1151,8 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
               )}
             </div>
           </section>
-        )}
-      </div>
+        </>
+      )}
 
       {/* ===================== Modales ===================== */}
       <ModalAbonarDeuda

@@ -10,6 +10,7 @@ import { RielNavegacion } from './components/layout/RielNavegacion';
 import { BarraContexto } from './components/layout/BarraContexto';
 import { CajonHoy } from './components/layout/CajonHoy';
 import { useCajonHoy } from './hooks/useCajonHoy';
+import { ProveedorShell } from './components/layout/shell';
 import { PantallaInicio } from './screens/PantallaInicio';
 import { PantallaBilleteras } from './screens/PantallaBilleteras';
 import { PantallaDeudas } from './screens/PantallaDeudas';
@@ -103,6 +104,14 @@ export default function App() {
   // En escritorio el que scrollea es el contenedor del contenido, no la ventana.
   const contenidoRef = React.useRef<HTMLDivElement>(null);
 
+  // Huecos de la barra de contexto. Cada pantalla los llena por portal.
+  const [slotBarra, setSlotBarra] = useState<HTMLElement | null>(null);
+  const [slotAcciones, setSlotAcciones] = useState<HTMLElement | null>(null);
+  const shell = React.useMemo(
+    () => ({ slotBarra, slotAcciones, cajonEmpuja: cajon.abierto && !cajon.flotante }),
+    [slotBarra, slotAcciones, cajon.abierto, cajon.flotante]
+  );
+
   const handleNavegar = (seccion: SeccionApp) => {
     setSeccionActiva(seccion);
     setNavTick((t) => t + 1);
@@ -125,6 +134,7 @@ export default function App() {
       {/* EL SHELL: riel · área de trabajo · cajón de Hoy           */}
       {/* En escritorio la página no scrollea: lo hace el contenido. */}
       {/* ========================================================= */}
+      <ProveedorShell value={shell}>
       <div className="min-h-screen md:h-screen md:overflow-hidden flex">
         {/* Riel de escritorio (68px) */}
         {conShell && (
@@ -190,6 +200,8 @@ export default function App() {
           {conShell && (
             <div className="hidden md:block px-5 pt-4 pb-1 flex-none">
               <BarraContexto
+                refTitulo={setSlotBarra}
+                refAcciones={setSlotAcciones}
                 cajonAbierto={cajon.abierto}
                 pendientes={cobrosPendientes}
                 onAlternarCajon={cajon.alternar}
@@ -206,7 +218,7 @@ export default function App() {
           >
             {/* Pantalla 1: Termómetro de la Deuda (Gancho Demo) */}
             {mostrarTermometro && (
-              <div key="termometro" className="animate-screen-enter">
+              <div key="termometro" className="animate-screen-enter xl:h-full">
                 <PantallaTermometro
                   onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
                 />
@@ -215,7 +227,7 @@ export default function App() {
 
             {/* Pantalla 2: Activar Código de Acceso */}
             {!mostrarTermometro && seccionActiva === 'activar_codigo' && (
-              <div key="activar_codigo" className="animate-screen-enter">
+              <div key="activar_codigo" className="animate-screen-enter xl:h-full">
                 <PantallaActivarCodigo
                   onVolver={() => setSeccionActiva(nivelAcceso === 'demo' ? 'termometro' : 'perfil')}
                   onExito={() => setSeccionActiva('inicio')}
@@ -225,7 +237,7 @@ export default function App() {
 
             {/* Pantalla 3: Inicio (Mi Dinero) */}
             {!mostrarTermometro && seccionActiva === 'inicio' && (
-              <div key="inicio" className="animate-screen-enter">
+              <div key="inicio" className="animate-screen-enter xl:h-full">
                 <PantallaInicio
                   resumen={resumen}
                   billeteras={billeteras}
@@ -250,7 +262,7 @@ export default function App() {
 
             {/* Pantalla 4: Billeteras & Movimientos */}
             {!mostrarTermometro && seccionActiva === 'billeteras' && (
-              <div key="billeteras" className="animate-screen-enter">
+              <div key="billeteras" className="animate-screen-enter xl:h-full">
                 <PantallaBilleteras
                   billeteras={billeteras}
                   saldoTotal={saldoTotal}
@@ -269,7 +281,7 @@ export default function App() {
 
             {/* Pantalla 5: Plan Deuda Cero */}
             {!mostrarTermometro && seccionActiva === 'deudas' && (
-              <div key="deudas" className="animate-screen-enter">
+              <div key="deudas" className="animate-screen-enter xl:h-full">
                 <PantallaDeudas
                   deudas={deudas}
                   deudaTotal={resumen.deudaTotal}
@@ -285,7 +297,7 @@ export default function App() {
 
             {/* Pantalla: Crecer (módulos Pro). En entrada muestra la vitrina; en Pro, el hub. */}
             {!mostrarTermometro && seccionActiva === 'crecer' && (
-              <div key="crecer" className="animate-screen-enter">
+              <div key="crecer" className="animate-screen-enter xl:h-full">
                 {nivelAcceso === 'pro' ? (
                   <PantallaCrecer
                     resetToken={navTick}
@@ -329,7 +341,7 @@ export default function App() {
 
             {/* Pantalla 6: Perfil & Ajustes (Reemplaza a "Más") */}
             {!mostrarTermometro && seccionActiva === 'perfil' && (
-              <div key="perfil" className="animate-screen-enter">
+              <div key="perfil" className="animate-screen-enter xl:h-full">
                 <PantallaPerfil
                   usuario={resumen.usuario}
                   nivelAcceso={nivelAcceso}
@@ -341,7 +353,7 @@ export default function App() {
 
             {/* Pantalla 7: Bolsillo Pro (Aspiracional, 1 sola puerta) */}
             {!mostrarTermometro && seccionActiva === 'pro' && (
-              <div key="pro" className="animate-screen-enter">
+              <div key="pro" className="animate-screen-enter xl:h-full">
                 <PantallaPro
                   onVolver={() => setSeccionActiva('perfil')}
                   onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
@@ -363,6 +375,7 @@ export default function App() {
           />
         )}
       </div>
+      </ProveedorShell>
     </div>
   );
 }
