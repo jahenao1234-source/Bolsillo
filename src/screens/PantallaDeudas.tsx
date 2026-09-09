@@ -57,6 +57,8 @@ import {
 import { ModalAgregarDeuda } from '../components/deudas/ModalAgregarDeuda';
 import { ModalAbonarDeuda } from '../components/deudas/ModalAbonarDeuda';
 import { SimuladorAbonoExtra } from '../components/deudas/SimuladorAbonoExtra';
+import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
+import { BarraTitulo, BarraAcciones, useCajonEmpuja } from '../components/layout/shell';
 import { CelebracionLogro } from '../components/ui/CelebracionLogro';
 import { AvisoContextualPro } from '../components/ui/AvisoContextualPro';
 import { registrarVictoria } from '../utils/victorias';
@@ -288,6 +290,9 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
   esPro = false,
 }) => {
   const { esPapel } = useTema();
+  // Con el cajón abierto, el camino se pliega bajo la tabla.
+  const cajonEmpuja = useCajonEmpuja();
+
   const [estrategia, setEstrategia] = useState<EstrategiaPago>('bola_de_nieve');
   const [modalAgregarAbierto, setModalAgregarAbierto] = useState(false);
   const [modalAbonarAbierto, setModalAbonarAbierto] = useState(false);
@@ -459,8 +464,68 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
 
   const secH = 'text-xs font-bold uppercase tracking-wider text-[color:var(--texto-2)] px-1';
 
+  /**
+   * A dónde llegas: el camino de estaciones y el simulador de abono extra.
+   * Vive en su propia columna, y cuando el cajón de Hoy empuja se pliega
+   * debajo de la tabla en vez de desaparecer.
+   */
+  const panelResultado = (
+    <>
+        {plan.ordenSaldado.length > 0 && (
+          <div className="space-y-3">
+            <h2 className={secH}>Tu camino</h2>
+            <Tarjeta padding="lg">
+              <div className="relative pl-8 pb-5">
+                <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />
+                <span className="absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 border-[var(--accion)] bg-[var(--superficie)]" />
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--accion)]">Hoy · estás aquí</span>
+                <div className="text-sm font-bold text-[color:var(--texto)] mt-0.5">Debes {formatearCOP(totalSaldosActivos)}</div>
+                <div className="text-[11px] text-[color:var(--texto-2)]">{deudasActivas.length} deudas activas</div>
+              </div>
+              {plan.ordenSaldado.map((item, idx) => {
+                const esUltimo = idx === plan.ordenSaldado.length - 1;
+                const severe = item.tipo === 'gota_a_gota';
+                const restante = tabla.filas.find((f) => f.mes === item.mesSaldado)?.total ?? 0;
+                const pagadoPct = totalSaldosActivos > 0
+                  ? Math.min(100, Math.round(((totalSaldosActivos - restante) / totalSaldosActivos) * 100))
+                  : 100;
+                return (
+                  <div key={item.id} className="relative pl-8 pb-5 last:pb-0">
+                    {!esUltimo && <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />}
+                    <span className={`absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 ${esUltimo ? 'bg-[var(--positivo)] border-[var(--positivo)]' : severe ? 'border-[var(--alerta)] bg-[var(--superficie)]' : 'border-[var(--positivo)] bg-[var(--superficie)]'}`} />
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">{item.fechaEstimada}</span>
+                      {!esUltimo && <span className="text-[11px] tabular-nums text-[color:var(--texto-3)]">quedan {formatearCOP(restante)}</span>}
+                    </div>
+                    <div className="text-sm font-bold mt-0.5">
+                      <span className={severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--positivo)]'}>✓ {item.nombre} — libre</span>
+                      {esUltimo && ' 🎉'}
+                    </div>
+                    <div className="text-[11px] text-[color:var(--texto-2)]">
+                      {esUltimo ? '¡Libre de deudas!' : idx === 0 ? 'Tu primera victoria' : severe ? 'La más cara, ¡fuera!' : `Intereses pagados: ${formatearCOP(item.interesesPagados)}`}
+                    </div>
+                    <div className="mt-2 h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(3, pagadoPct)}%`, background: esUltimo ? 'var(--positivo)' : 'var(--acento)' }} />
+                    </div>
+                    <div className="text-[10px] text-[color:var(--texto-3)] mt-1">{pagadoPct}% del camino recorrido</div>
+                  </div>
+                );
+              })}
+            </Tarjeta>
+          </div>
+        )}
+
+        <SimuladorAbonoExtra
+          deudas={deudasActivas}
+          disponibleMensual={disponibleMensual}
+          estrategia={estrategia}
+          onSubirAbono={(n) => setDisponibleMensual(n)}
+        />
+    </>
+  );
+
   return (
-    <div className="space-y-5 pb-24 md:pb-12 max-w-6xl mx-auto animate-screen-enter">
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
       <ModalAgregarDeuda
         abierto={modalAgregarAbierto}
         deudaAEditar={deudaAEditar}
@@ -471,8 +536,36 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         onGuardar={handleGuardarNuevaDeuda}
       />
 
-      {/* Cabecera */}
-      <header className="flex items-center justify-between gap-3 pt-1">
+      {/* ===================== Barra de contexto (escritorio) ===================== */}
+      <BarraTitulo>
+        <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)] whitespace-nowrap">
+          Plan Deuda Cero
+        </h1>
+        <span className="w-px h-4 bg-[var(--linea)]" />
+        <Chip variante="alerta">{deudasActivas.length} activas</Chip>
+        {deudasSaldadas.length > 0 && (
+          <Chip variante="aqua">
+            {deudasSaldadas.length} saldada{deudasSaldadas.length > 1 ? 's' : ''}
+          </Chip>
+        )}
+      </BarraTitulo>
+
+      <BarraAcciones>
+        <Boton
+          variante="primario"
+          tamano="sm"
+          icono={<Plus className="w-4 h-4" />}
+          onClick={() => {
+            setDeudaAEditar(null);
+            setModalAgregarAbierto(true);
+          }}
+        >
+          Agregar deuda
+        </Boton>
+      </BarraAcciones>
+
+      {/* ===================== Cabecera de móvil ===================== */}
+      <header className="md:hidden flex items-center justify-between gap-3 pt-1">
         <div className="flex items-center gap-3">
           <button
             onClick={onVolver}
@@ -482,24 +575,24 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[color:var(--alerta)] uppercase tracking-wider">Plan Deuda Cero</span>
-              {deudasSaldadas.length > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--positivo)]/15 text-[color:var(--positivo)]">
-                  {deudasSaldadas.length} saldada{deudasSaldadas.length > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            <h1 className="text-2xl font-bold font-display tracking-tight text-[color:var(--texto)]">Deudas</h1>
+            <span className="text-xs font-semibold text-[color:var(--alerta)] uppercase tracking-wider">
+              Plan Deuda Cero
+            </span>
+            <h1 className="text-2xl font-bold font-display tracking-tight text-[color:var(--texto)]">
+              Deudas
+            </h1>
           </div>
         </div>
         <Boton
           variante="primario"
           tamano="sm"
           icono={<Plus className="w-4 h-4" />}
-          onClick={() => { setDeudaAEditar(null); setModalAgregarAbierto(true); }}
+          onClick={() => {
+            setDeudaAEditar(null);
+            setModalAgregarAbierto(true);
+          }}
         >
-          Agregar deuda
+          Agregar
         </Boton>
       </header>
 
@@ -584,201 +677,177 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
             </div>
           )}
 
-          {/* ===== Grid 2 columnas: jugada | resultado ===== */}
-          <div className="grid gap-4 lg:grid-cols-[1.55fr_1fr] items-start">
-            {/* IZQUIERDA — tu jugada */}
-            <div className="space-y-4">
-              <h2 className={secH}>Tu jugada de este mes</h2>
+          <Marco
+            columnas={
+              cajonEmpuja ? '376px minmax(0,1fr)' : '376px minmax(0,1fr) 336px'
+            }
+          >
+            {/* ---------- Columna 1: tu jugada de este mes ---------- */}
+            <Columna ordenMovil={1} borde>
+              <Zona crece sinPadding>
+                <Scroll className="px-4 xl:px-[17px] py-3">
+                  <h2 className={secH}>Tu jugada de este mes</h2>
+                  <div className="space-y-4">
+                    <h2 className={secH}>Tu jugada de este mes</h2>
 
-              {prioridad && (
-                <Tarjeta padding="lg" className="relative overflow-hidden border-[var(--accion)]">
-                  <div
-                    className="pointer-events-none absolute inset-x-0 top-0 h-28"
-                    style={{ background: 'radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--accion) 12%, transparent) 0%, transparent 55%)' }}
-                  />
-                  <div className="relative">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[color:var(--accion)]">
-                        ★ Tu foco de este mes
-                      </span>
-                      {caeEsteMes && (
-                        <span className="text-[11px] font-bold text-[color:var(--accion)] bg-[var(--accion)]/12 border border-[var(--accion)]/30 rounded-full px-2.5 py-0.5">🔥 cae este mes</span>
-                      )}
-                    </div>
-                    <h3 className="font-display font-black text-xl text-[color:var(--texto)] mt-2">{prioridad.nombre}</h3>
-                    <p className="text-xs text-[color:var(--texto-2)] mt-0.5">
-                      La atacas primero porque es {ESTRATEGIA_INFO[estrategia].por}. Saldo {formatearCOP(saldoPrio)}.
-                    </p>
+                    {prioridad && (
+                      <Tarjeta padding="lg" className="relative overflow-hidden border-[var(--accion)]">
+                        <div
+                          className="pointer-events-none absolute inset-x-0 top-0 h-28"
+                          style={{ background: 'radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--accion) 12%, transparent) 0%, transparent 55%)' }}
+                        />
+                        <div className="relative">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[color:var(--accion)]">
+                              ★ Tu foco de este mes
+                            </span>
+                            {caeEsteMes && (
+                              <span className="text-[11px] font-bold text-[color:var(--accion)] bg-[var(--accion)]/12 border border-[var(--accion)]/30 rounded-full px-2.5 py-0.5">🔥 cae este mes</span>
+                            )}
+                          </div>
+                          <h3 className="font-display font-black text-xl text-[color:var(--texto)] mt-2">{prioridad.nombre}</h3>
+                          <p className="text-xs text-[color:var(--texto-2)] mt-0.5">
+                            La atacas primero porque es {ESTRATEGIA_INFO[estrategia].por}. Saldo {formatearCOP(saldoPrio)}.
+                          </p>
 
-                    {/* Desglose base + extra */}
-                    <div className="mt-4 grid grid-cols-3 gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-xl overflow-hidden">
-                      <div className="bg-[var(--superficie)] p-3">
-                        <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--texto-2)]">Mínimo (base)</div>
-                        <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--texto)] mt-0.5">{formatearCOP(baseFoco)}</div>
-                      </div>
-                      <div className="p-3" style={{ background: 'color-mix(in srgb, var(--accion) 12%, transparent)' }}>
-                        <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--accion)]">+ Tu extra</div>
-                        <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--accion)] mt-0.5">{formatearCOP(extraFoco)}</div>
-                      </div>
-                      <div className="bg-[var(--superficie-2)] p-3">
-                        <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--texto-2)]">Págale</div>
-                        <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--texto)] mt-0.5">{formatearCOP(abonoPrioridad)}</div>
-                      </div>
-                    </div>
+                          {/* Desglose base + extra */}
+                          <div className="mt-4 grid grid-cols-3 gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-xl overflow-hidden">
+                            <div className="bg-[var(--superficie)] p-3">
+                              <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--texto-2)]">Mínimo (base)</div>
+                              <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--texto)] mt-0.5">{formatearCOP(baseFoco)}</div>
+                            </div>
+                            <div className="p-3" style={{ background: 'color-mix(in srgb, var(--accion) 12%, transparent)' }}>
+                              <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--accion)]">+ Tu extra</div>
+                              <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--accion)] mt-0.5">{formatearCOP(extraFoco)}</div>
+                            </div>
+                            <div className="bg-[var(--superficie-2)] p-3">
+                              <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--texto-2)]">Págale</div>
+                              <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--texto)] mt-0.5">{formatearCOP(abonoPrioridad)}</div>
+                            </div>
+                          </div>
 
-                    <button
-                      type="button"
-                      onClick={() => { setDeudaSeleccionadaAbono(prioridad); setModalAbonarAbierto(true); }}
-                      className="mt-4 w-full py-3.5 rounded-xl bg-accion-gradient text-[color:var(--on-accion)] font-display font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:opacity-95 transition-opacity"
-                    >
-                      Registrar mi pago de este mes <ArrowRight className="w-4 h-4" />
-                    </button>
-                    {extraFoco > 0 && (
-                      <p className="text-[11px] text-[color:var(--texto-3)] text-center mt-2">
-                        El extra ({formatearCOP(extraFoco)}) va aquí por tu estrategia. Cuando esta caiga, su cuota impulsa a la siguiente.
-                      </p>
+                          <button
+                            type="button"
+                            onClick={() => { setDeudaSeleccionadaAbono(prioridad); setModalAbonarAbierto(true); }}
+                            className="mt-4 w-full py-3.5 rounded-xl bg-accion-gradient text-[color:var(--on-accion)] font-display font-bold text-sm flex items-center justify-center gap-2 cursor-pointer hover:opacity-95 transition-opacity"
+                          >
+                            Registrar mi pago de este mes <ArrowRight className="w-4 h-4" />
+                          </button>
+                          {extraFoco > 0 && (
+                            <p className="text-[11px] text-[color:var(--texto-3)] text-center mt-2">
+                              El extra ({formatearCOP(extraFoco)}) va aquí por tu estrategia. Cuando esta caiga, su cuota impulsa a la siguiente.
+                            </p>
+                          )}
+                        </div>
+                      </Tarjeta>
+                    )}
+
+                    {demas.length > 0 && (
+                      <div className="space-y-3">
+                        <h2 className={secH}>Y el mínimo de las demás este mes</h2>
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                          <SortableContext items={demas.map((d) => d.id)} strategy={verticalListSortingStrategy}>
+                            <div className="space-y-3">
+                              {demas.map((deuda, i) => (
+                                <TarjetaDeudaItem
+                                  key={deuda.id}
+                                  deuda={deuda}
+                                  idx={i + 1}
+                                  totalDeudas={deudasOrdenadas.length}
+                                  esPersonalizado={estrategia === 'personalizado'}
+                                  onAbrirAbono={handleAbrirAbono}
+                                  onMarcarSaldada={handleMarcarSaldada}
+                                  onEditarDeuda={handleEditarDeuda}
+                                  onEliminarDeuda={handleEliminarDeuda}
+                                  onMover={handleMover}
+                                  getTipoInfo={getTipoInfo}
+                                />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      </div>
                     )}
                   </div>
-                </Tarjeta>
-              )}
+                </Scroll>
+              </Zona>
+            </Columna>
 
-              {demas.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className={secH}>Y el mínimo de las demás este mes</h2>
-                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                    <SortableContext items={demas.map((d) => d.id)} strategy={verticalListSortingStrategy}>
-                      <div className="space-y-3">
-                        {demas.map((deuda, i) => (
-                          <TarjetaDeudaItem
-                            key={deuda.id}
-                            deuda={deuda}
-                            idx={i + 1}
-                            totalDeudas={deudasOrdenadas.length}
-                            esPersonalizado={estrategia === 'personalizado'}
-                            onAbrirAbono={handleAbrirAbono}
-                            onMarcarSaldada={handleMarcarSaldada}
-                            onEditarDeuda={handleEditarDeuda}
-                            onEliminarDeuda={handleEliminarDeuda}
-                            onMover={handleMover}
-                            getTipoInfo={getTipoInfo}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              )}
-            </div>
-
-            {/* DERECHA — a dónde llegas */}
-            <div className="space-y-4">
-              {plan.ordenSaldado.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className={secH}>Tu camino</h2>
-                  <Tarjeta padding="lg">
-                    <div className="relative pl-8 pb-5">
-                      <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />
-                      <span className="absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 border-[var(--accion)] bg-[var(--superficie)]" />
-                      <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--accion)]">Hoy · estás aquí</span>
-                      <div className="text-sm font-bold text-[color:var(--texto)] mt-0.5">Debes {formatearCOP(totalSaldosActivos)}</div>
-                      <div className="text-[11px] text-[color:var(--texto-2)]">{deudasActivas.length} deudas activas</div>
+            {/* ---------- Columna 2: el detalle mes a mes ---------- */}
+            <Columna ordenMovil={3} borde={!cajonEmpuja}>
+              <Zona crece sinPadding>
+                <Scroll className="px-4 xl:px-[17px] py-3">
+                            {tabla.filas.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="px-1">
+                      <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Detalle mes a mes</h2>
+                      <p className="text-xs text-[color:var(--texto-2)] mt-0.5">El saldo de cada deuda y el interés que se achica mes a mes, hasta $0.</p>
                     </div>
-                    {plan.ordenSaldado.map((item, idx) => {
-                      const esUltimo = idx === plan.ordenSaldado.length - 1;
-                      const severe = item.tipo === 'gota_a_gota';
-                      const restante = tabla.filas.find((f) => f.mes === item.mesSaldado)?.total ?? 0;
-                      const pagadoPct = totalSaldosActivos > 0
-                        ? Math.min(100, Math.round(((totalSaldosActivos - restante) / totalSaldosActivos) * 100))
-                        : 100;
-                      return (
-                        <div key={item.id} className="relative pl-8 pb-5 last:pb-0">
-                          {!esUltimo && <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />}
-                          <span className={`absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 ${esUltimo ? 'bg-[var(--positivo)] border-[var(--positivo)]' : severe ? 'border-[var(--alerta)] bg-[var(--superficie)]' : 'border-[var(--positivo)] bg-[var(--superficie)]'}`} />
-                          <div className="flex items-baseline justify-between gap-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">{item.fechaEstimada}</span>
-                            {!esUltimo && <span className="text-[11px] tabular-nums text-[color:var(--texto-3)]">quedan {formatearCOP(restante)}</span>}
-                          </div>
-                          <div className="text-sm font-bold mt-0.5">
-                            <span className={severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--positivo)]'}>✓ {item.nombre} — libre</span>
-                            {esUltimo && ' 🎉'}
-                          </div>
-                          <div className="text-[11px] text-[color:var(--texto-2)]">
-                            {esUltimo ? '¡Libre de deudas!' : idx === 0 ? 'Tu primera victoria' : severe ? 'La más cara, ¡fuera!' : `Intereses pagados: ${formatearCOP(item.interesesPagados)}`}
-                          </div>
-                          <div className="mt-2 h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(3, pagadoPct)}%`, background: esUltimo ? 'var(--positivo)' : 'var(--acento)' }} />
-                          </div>
-                          <div className="text-[10px] text-[color:var(--texto-3)] mt-1">{pagadoPct}% del camino recorrido</div>
-                        </div>
-                      );
-                    })}
-                  </Tarjeta>
-                </div>
+                    <Tarjeta padding="md">
+                      <div className="overflow-x-auto -mx-1">
+                        <table className="w-full text-xs border-collapse">
+                          <thead>
+                            <tr>
+                              <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Mes</th>
+                              {tabla.columnas.map((c) => (
+                                <th key={c.id} className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">
+                                  {c.nombre.length > 12 ? c.nombre.slice(0, 11) + '…' : c.nombre}
+                                </th>
+                              ))}
+                              <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Restante</th>
+                              <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--alerta)] font-bold whitespace-nowrap">Interés/mes</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(tablaAbierta ? tabla.filas : tabla.filas.slice(0, 6)).map((f) => (
+                              <tr key={f.mes} className="border-t border-[var(--hairline)]">
+                                <td className="py-2 px-2 text-[color:var(--texto)] font-semibold whitespace-nowrap">{f.etiqueta}</td>
+                                {tabla.columnas.map((c) => {
+                                  const s = f.saldos[c.id] ?? 0;
+                                  const severe = c.tipo === 'gota_a_gota';
+                                  return (
+                                    <td key={c.id} className={`py-2 px-2 text-right tabular-nums whitespace-nowrap ${s <= 0 ? 'text-[color:var(--positivo)]' : severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--texto-2)]'}`}>
+                                      {s <= 0 ? '✓' : formatearCOP(s)}
+                                    </td>
+                                  );
+                                })}
+                                <td className="py-2 px-2 text-right tabular-nums font-semibold text-[color:var(--texto)] whitespace-nowrap">{formatearCOP(f.total)}</td>
+                                <td className="py-2 px-2 text-right tabular-nums whitespace-nowrap text-[color:var(--alerta)]">{f.interes > 0 ? formatearCOP(f.interes) : '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {tabla.filas.length > 6 && (
+                        <button
+                          type="button"
+                          onClick={() => setTablaAbierta((v) => !v)}
+                          className="mt-2 w-full text-center text-xs font-semibold text-[color:var(--acento)] cursor-pointer py-1"
+                        >
+                          {tablaAbierta ? 'Ver menos ▴' : `Ver los ${tabla.filas.length} meses ▾`}
+                        </button>
+                      )}
+                    </Tarjeta>
+                  </div>
+                            )}
+                </Scroll>
+              </Zona>
+
+              {/* Con el cajón abierto, el camino se pliega aquí debajo */}
+              {cajonEmpuja && (
+                <Zona sinPadding className="xl:max-h-[260px] xl:flex xl:flex-col">
+                  <Scroll className="px-4 xl:px-[17px] py-3">{panelResultado}</Scroll>
+                </Zona>
               )}
+            </Columna>
 
-              <SimuladorAbonoExtra
-                deudas={deudasActivas}
-                disponibleMensual={disponibleMensual}
-                estrategia={estrategia}
-                onSubirAbono={(n) => setDisponibleMensual(n)}
-              />
-            </div>
-          </div>
-
-          {/* ===== Detalle mes a mes ===== */}
-          {tabla.filas.length > 0 && (
-            <div className="space-y-3">
-              <div className="px-1">
-                <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Detalle mes a mes</h2>
-                <p className="text-xs text-[color:var(--texto-2)] mt-0.5">El saldo de cada deuda y el interés que se achica mes a mes, hasta $0.</p>
-              </div>
-              <Tarjeta padding="md">
-                <div className="overflow-x-auto -mx-1">
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr>
-                        <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Mes</th>
-                        {tabla.columnas.map((c) => (
-                          <th key={c.id} className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">
-                            {c.nombre.length > 12 ? c.nombre.slice(0, 11) + '…' : c.nombre}
-                          </th>
-                        ))}
-                        <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Restante</th>
-                        <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--alerta)] font-bold whitespace-nowrap">Interés/mes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(tablaAbierta ? tabla.filas : tabla.filas.slice(0, 6)).map((f) => (
-                        <tr key={f.mes} className="border-t border-[var(--hairline)]">
-                          <td className="py-2 px-2 text-[color:var(--texto)] font-semibold whitespace-nowrap">{f.etiqueta}</td>
-                          {tabla.columnas.map((c) => {
-                            const s = f.saldos[c.id] ?? 0;
-                            const severe = c.tipo === 'gota_a_gota';
-                            return (
-                              <td key={c.id} className={`py-2 px-2 text-right tabular-nums whitespace-nowrap ${s <= 0 ? 'text-[color:var(--positivo)]' : severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--texto-2)]'}`}>
-                                {s <= 0 ? '✓' : formatearCOP(s)}
-                              </td>
-                            );
-                          })}
-                          <td className="py-2 px-2 text-right tabular-nums font-semibold text-[color:var(--texto)] whitespace-nowrap">{formatearCOP(f.total)}</td>
-                          <td className="py-2 px-2 text-right tabular-nums whitespace-nowrap text-[color:var(--alerta)]">{f.interes > 0 ? formatearCOP(f.interes) : '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {tabla.filas.length > 6 && (
-                  <button
-                    type="button"
-                    onClick={() => setTablaAbierta((v) => !v)}
-                    className="mt-2 w-full text-center text-xs font-semibold text-[color:var(--acento)] cursor-pointer py-1"
-                  >
-                    {tablaAbierta ? 'Ver menos ▴' : `Ver los ${tabla.filas.length} meses ▾`}
-                  </button>
-                )}
-              </Tarjeta>
-            </div>
-          )}
+            {/* ---------- Columna 3: a dónde llegas ---------- */}
+            <Columna ordenMovil={2} className={cajonEmpuja ? 'xl:hidden' : ''}>
+              <Zona crece sinPadding>
+                <Scroll className="px-4 xl:px-[17px] py-3">{panelResultado}</Scroll>
+              </Zona>
+            </Columna>
+          </Marco>
         </>
       )}
 
