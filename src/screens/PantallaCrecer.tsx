@@ -11,7 +11,14 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Presupuesto, Sobre, RetoAhorro, Suscripcion, TarjetaCredito, Billetera, Movimiento, Deuda } from '../types';
-import { Tarjeta } from '../components/ui/Tarjeta';
+import { Chip } from '../components/ui/Chip';
+import { TarjetaModulo } from '../components/ui/TarjetaModulo';
+import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
+import { BarraTitulo, BarraAcciones, useCajonEmpuja } from '../components/layout/shell';
+import { getContextoMes } from '../logic/resumenMes';
+import { calcularHallazgos, historial } from '../logic/reportes';
+import { cicloDe, montoVigente } from '../logic/suscripciones';
+import { mejorTarjetaHoy, cupoDeTarjeta, deudaDeTarjeta } from '../logic/tarjetas';
 import { formatearCOP } from '../utils/format';
 import { PantallaPresupuesto } from './PantallaPresupuesto';
 import { PantallaSobres } from './PantallaSobres';
@@ -82,6 +89,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     onEliminarTarjeta,
   } = props;
 
+  const cajonEmpuja = useCajonEmpuja();
   const [modulo, setModulo] = useState<Modulo>('hub');
 
   // Al re-seleccionar "Crecer" en la nav, vuelve al hub.
@@ -187,193 +195,554 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     );
   }
 
+  // ------------------------------------------------------------------
+  // El tablero de Pro. Cada módulo trae su cifra, su forma y lo que toca
+  // hacer ahora: seis tarjetas iguales y mudas eran un menú disfrazado.
+  // ------------------------------------------------------------------
+  const hoy = useMemo(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }, []);
+
+  const contexto = useMemo(() => getContextoMes(), []);
+
+  /** El tope que va a reventar primero: el que más porcentaje lleva. */
+  const topeApretado = useMemo(() => {
+    const conUso = presupuestos
+      .map((p) => ({
+        categoria: p.categoria,
+        tope: p.tope,
+        gastado: gastoPorCategoria[p.categoria] || 0,
+        pct: p.tope > 0 ? ((gastoPorCategoria[p.categoria] || 0) / p.tope) * 100 : 0,
+      }))
+      .sort((a, b) => b.pct - a.pct);
+    return conUso[0] ?? null;
+  }, [presupuestos, gastoPorCategoria]);
+
+  const retoActivo = useMemo(() => retos.find((r) => !r.completado) ?? null, [retos]);
+
+  /** Los próximos cobros de suscripción, para que la tarjeta diga cuándo. */
+  const proximosCobros = useMemo(
+    () =>
+      suscripciones
+        .filter((s) => s.activa)
+        .map((s) => ({ sus: s, ciclo: cicloDe(s, hoy), monto: montoVigente(s, hoy) }))
+        .sort((a, b) => a.ciclo.faltan - b.ciclo.faltan)
+        .slice(0, 4),
+    [suscripciones, hoy]
+  );
+
+  const mejorTarjeta = useMemo(() => mejorTarjetaHoy(tarjetas, hoy), [tarjetas, hoy]);
+
+  const cuposTarjetas = useMemo(
+    () =>
+      tarjetas.map((tc) => ({
+        tc,
+        cupo: cupoDeTarjeta(tc, deudaDeTarjeta(tc, props.deudas)),
+      })),
+    [tarjetas, props.deudas]
+  );
+
+  const entradaCierre = useMemo(
+    () => ({
+      movimientos: props.movimientos,
+      retos,
+      deudas: props.deudas,
+      suscripciones,
+      disponibleMensual: props.disponibleMensual,
+      esPro: true,
+    }),
+    [props.movimientos, retos, props.deudas, suscripciones, props.disponibleMensual]
+  );
+
+  const cierres = useMemo(() => historial(entradaCierre, hoy, 6), [entradaCierre, hoy]);
+  const cerrados = useMemo(() => cierres.filter((c) => !c.enCurso), [cierres]);
+  const ultimoCierre = cerrados[cerrados.length - 1] ?? null;
+
+  const hallazgos = useMemo(
+    () =>
+      ultimoCierre
+        ? calcularHallazgos({
+            movimientos: props.movimientos,
+            deudas: props.deudas,
+            suscripciones,
+            cierres,
+            cierre: ultimoCierre,
+            esPro: true,
+            formato: formatearCOP,
+          })
+        : [],
+    [props.movimientos, props.deudas, suscripciones, cierres, ultimoCierre]
+  );
+
+  /** Lo apartado, repartido entre sobres y retos, para la cinta de la izquierda. */
+  const repartoApartado = useMemo(() => {
+    const partes = [
+      ...sobres.map((s) => ({
+        nombre: `Sobre · ${s.nombre}`,
+        monto: s.apartado,
+        color: s.color || 'var(--positivo)',
+      })),
+      ...retos.map((r) => ({
+        nombre: `Reto · ${r.nombre}`,
+        monto: r.acumulado,
+        color: r.color || 'var(--accion)',
+      })),
+    ].filter((p) => p.monto > 0);
+    const total = partes.reduce((s, p) => s + p.monto, 0);
+    return { partes, total };
+  }, [sobres, retos]);
+
   return (
-    <div className="space-y-6 pb-24 md:pb-12 max-w-5xl mx-auto animate-screen-enter">
-      {/* Cabecera */}
-      <header className="flex items-center justify-between gap-3 pt-1">
-        <div>
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[color:var(--acento)] uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
-            Bolsillo Pro
-          </span>
-          <h1 className="text-2xl font-bold font-display tracking-tight text-[color:var(--texto)]">
-            Crecer
-          </h1>
-        </div>
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
+      {/* ===================== Barra de contexto (escritorio) ===================== */}
+      <BarraTitulo>
+        <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)]">Crecer</h1>
+        <span className="w-px h-4 bg-[var(--linea)]" />
+        <Chip variante="aqua">✦ Bolsillo Pro</Chip>
+        <Chip>6 herramientas · nada bloqueado</Chip>
+      </BarraTitulo>
+
+      <BarraAcciones>
+        <Chip>
+          {contexto.nombre} · día {contexto.dia} de {contexto.diasDelMes}
+        </Chip>
+      </BarraAcciones>
+
+      {/* ===================== Cabecera de móvil ===================== */}
+      <header className="md:hidden pt-1 mb-1">
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[color:var(--acento)] uppercase tracking-wider">
+          <Sparkles className="w-3.5 h-3.5" />
+          Bolsillo Pro
+        </span>
+        <h1 className="text-2xl font-bold font-display tracking-tight text-[color:var(--texto)]">
+          Crecer
+        </h1>
       </header>
 
-      {/* Hero */}
-      <Tarjeta padding="lg" className="overflow-hidden relative">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-40"
-          style={{ background: 'radial-gradient(60% 100% at 20% 0%, color-mix(in srgb, var(--acento) 16%, transparent) 0%, transparent 70%)' }}
-        />
-        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-          <div className="max-w-md">
-            <h2 className="font-display font-black text-xl sm:text-2xl text-[color:var(--texto)] tracking-tight text-balance">
-              {usuario ? `${usuario}, ya` : 'Ya'} controlas tu plata.{' '}
-              <span className="text-platinum-gradient">Ahora hazla crecer.</span>
-            </h2>
-            <p className="mt-2 text-sm text-[color:var(--texto-2)] leading-relaxed">
-              Ponle topes, aparta lo intocable y convierte lo que te sobra en metas cumplidas.
+      <Marco columnas={cajonEmpuja ? '300px minmax(0,1fr)' : '336px minmax(0,1fr)'}>
+        {/* ---------- Columna 1: lo apartado y lo que Bolsillo notó ---------- */}
+        <Columna ordenMovil={1} borde>
+          <Zona className="xl:!py-[18px]">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
+              Apartado en total
             </p>
-          </div>
-          <div className="flex gap-3 flex-shrink-0">
-            <div className="text-center px-4 py-3 rounded-2xl bg-[var(--superficie-2)] border border-[var(--linea)]">
-              <div className="font-display font-bold text-xl tabular-nums text-[color:var(--acento)]">
-                {formatearCOP(totalApartado)}
-              </div>
-              <div className="text-[11px] text-[color:var(--texto-2)] mt-0.5">apartado</div>
-            </div>
-            <div className="text-center px-4 py-3 rounded-2xl bg-[var(--superficie-2)] border border-[var(--linea)]">
-              <div className="font-display font-bold text-xl tabular-nums text-[color:var(--texto)]">
-                {resumenPresupuesto.pct}%
-              </div>
-              <div className="text-[11px] text-[color:var(--texto-2)] mt-0.5">del presupuesto</div>
-            </div>
-          </div>
-        </div>
-      </Tarjeta>
+            <p className="font-display font-black text-[38px] leading-none tabular-nums text-[color:var(--positivo)] mt-2">
+              {formatearCOP(repartoApartado.total)}
+            </p>
+            <p className="text-[11.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+              {sobres.length > 0 && `${formatearCOP(totalApartado)} en sobres`}
+              {sobres.length > 0 && resumenRetos.acumulado > 0 && ' y '}
+              {resumenRetos.acumulado > 0 && `${formatearCOP(resumenRetos.acumulado)} en retos`}
+              {repartoApartado.total === 0 && 'Todavía no has apartado nada.'}
+            </p>
+          </Zona>
 
-      {/* Módulos */}
-      <div>
-        <div className="flex items-baseline justify-between px-1 mb-3">
-          <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Tus herramientas</h2>
-          <span className="text-xs text-[color:var(--texto-3)]">5 herramientas</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {/* Presupuesto */}
-          <button
-            onClick={() => setModulo('presupuesto')}
-            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-                <PieChart className="w-5 h-5 text-[color:var(--acento)]" />
-              </div>
-              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
-            </div>
-            <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Presupuesto</h3>
-              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
-                {resumenPresupuesto.n > 0
-                  ? `${resumenPresupuesto.pct}% usado · ${resumenPresupuesto.n} topes activos`
-                  : 'Ponle un tope a cada categoría'}
+          {repartoApartado.partes.length > 0 && (
+            <Zona>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
+                Dónde está apartado
               </p>
-            </div>
-          </button>
-
-          {/* Sobres */}
-          <button
-            onClick={() => setModulo('sobres')}
-            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-                <Mail className="w-5 h-5 text-[color:var(--acento)]" />
+              <div className="flex h-[22px] rounded-md overflow-hidden gap-0.5 mt-2.5 mb-2">
+                {repartoApartado.partes.map((p) => (
+                  <span
+                    key={p.nombre}
+                    style={{
+                      width: `${(p.monto / repartoApartado.total) * 100}%`,
+                      background: p.color,
+                    }}
+                  />
+                ))}
               </div>
-              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
-            </div>
-            <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Sobres digitales</h3>
-              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
-                {sobres.length > 0
-                  ? `${formatearCOP(totalApartado)} apartado · ${sobres.length} sobres`
-                  : 'Aparta lo intocable antes de gastarlo'}
+              <div className="flex flex-col">
+                {repartoApartado.partes.map((p) => (
+                  <div
+                    key={p.nombre}
+                    className="flex items-center gap-2.5 py-1.5 border-b border-[var(--hairline)] last:border-b-0"
+                  >
+                    <span
+                      className="w-2 h-2 rounded-[2px] flex-none"
+                      style={{ background: p.color }}
+                    />
+                    <span className="flex-1 text-[11.5px] text-[color:var(--texto-2)] truncate">
+                      {p.nombre}
+                    </span>
+                    <span className="font-display font-bold text-[12px] tabular-nums text-[color:var(--texto)]">
+                      {formatearCOP(p.monto)}
+                    </span>
+                    <span className="text-[10px] text-[color:var(--texto-3)] tabular-nums w-9 text-right">
+                      {Math.round((p.monto / repartoApartado.total) * 100)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Zona>
+          )}
+
+          <Zona crece sinPadding>
+            <div className="p-4 xl:px-[17px] xl:py-[13px] xl:pb-1.5 flex items-baseline justify-between gap-3">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
+                Lo que Bolsillo notó
               </p>
+              {ultimoCierre && (
+                <span className="text-[10.5px] text-[color:var(--texto-3)]">
+                  {ultimoCierre.etiqueta}
+                </span>
+              )}
             </div>
-          </button>
 
-          {/* Retos de ahorro (activo) */}
-          <button
-            onClick={() => setModulo('retos')}
-            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-                <Trophy className="w-5 h-5 text-[color:var(--acento)]" />
-              </div>
-              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
+            {hallazgos.length > 0 ? (
+              <Scroll className="px-4 xl:px-[17px] pb-2">
+                <div className="flex flex-col">
+                  {hallazgos.map((h) => (
+                    <div
+                      key={h.id}
+                      className="py-2.5 border-b border-[var(--hairline)] last:border-b-0"
+                    >
+                      <p className="text-[12px] font-medium text-[color:var(--texto)] leading-snug">
+                        {h.titulo}
+                      </p>
+                      <p className="text-[10.5px] text-[color:var(--texto-3)] leading-relaxed mt-1">
+                        {h.detalle}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </Scroll>
+            ) : (
+              <p className="px-4 xl:px-[17px] pb-3 text-[11px] text-[color:var(--texto-3)] leading-relaxed">
+                Con un mes cerrado empiezan a salir los hallazgos que solo se ven con historia.
+              </p>
+            )}
+
+            <div className="px-4 xl:px-[17px] pt-2 pb-3 xl:pb-[13px]">
+              <button
+                type="button"
+                onClick={() => setModulo('reportes')}
+                className="text-[11px] font-semibold text-[color:var(--acento)] hover:underline cursor-pointer flex items-center gap-1"
+              >
+                Abrir Reportes <ArrowRight className="w-3 h-3" />
+              </button>
             </div>
-            <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Retos de ahorro</h3>
-              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed flex items-center gap-1">
-                {resumenRetos.activos > 0 ? (
+          </Zona>
+        </Columna>
+
+        {/* ---------- Columna 2: las seis herramientas ---------- */}
+        <Columna ordenMovil={2}>
+          <Zona>
+            <div className="flex items-baseline justify-between gap-3">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
+                  Tus herramientas
+                </p>
+                <h2 className="font-display font-bold text-[15px] text-[color:var(--texto)] mt-1.5">
+                  Cada una con lo que{' '}
+                  <span className="text-[color:var(--acento)]">toca hacer ahora</span>
+                </h2>
+              </div>
+              <span className="text-[11px] text-[color:var(--texto-3)] whitespace-nowrap">
+                Toca una para abrirla
+              </span>
+            </div>
+          </Zona>
+
+          <Zona crece sinPadding>
+            <div
+              className={`grid gap-3 p-4 xl:p-[17px] xl:h-full ${
+                cajonEmpuja ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3'
+              } xl:auto-rows-fr`}
+            >
+              {/* --- Presupuesto --- */}
+              <TarjetaModulo
+                color="var(--azul)"
+                icono={<PieChart className="w-3.5 h-3.5" />}
+                nombre="Presupuesto"
+                etiqueta={resumenPresupuesto.n > 0 ? `${resumenPresupuesto.n} topes` : undefined}
+                cifra={resumenPresupuesto.n > 0 ? `${resumenPresupuesto.pct}%` : '—'}
+                sufijo={resumenPresupuesto.n > 0 ? 'usado' : undefined}
+                accion={
+                  topeApretado && topeApretado.pct >= 80
+                    ? `Subir el tope de ${topeApretado.categoria}`
+                    : 'Revisar tus topes'
+                }
+                onClick={() => setModulo('presupuesto')}
+              >
+                {resumenPresupuesto.n > 0 ? (
                   <>
-                    {formatearCOP(resumenRetos.acumulado)} juntado ·
-                    <Flame className="w-3 h-3 text-[color:var(--accion)]" />
-                    <span className="text-[color:var(--accion)] font-semibold">{resumenRetos.mejorRacha}</span>
+                    <span className="block h-[7px] rounded bg-[var(--hairline)] overflow-hidden mt-2">
+                      <span
+                        className="block h-full rounded"
+                        style={{
+                          width: `${Math.min(100, resumenPresupuesto.pct)}%`,
+                          background: 'var(--azul)',
+                        }}
+                      />
+                    </span>
+                    <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                      {formatearCOP(resumenPresupuesto.totalGastado)} de{' '}
+                      {formatearCOP(resumenPresupuesto.totalTope)} en topes.
+                    </p>
+                    {topeApretado && (
+                      <div className="flex justify-between gap-2 text-[10.5px] mt-2">
+                        <span className="text-[color:var(--texto-3)] truncate">
+                          {topeApretado.categoria}
+                        </span>
+                        <span
+                          className={`font-display font-semibold tabular-nums ${
+                            topeApretado.pct >= 80
+                              ? 'text-[color:var(--alerta)]'
+                              : 'text-[color:var(--texto-2)]'
+                          }`}
+                        >
+                          {Math.round(topeApretado.pct)}% del tope
+                        </span>
+                      </div>
+                    )}
                   </>
                 ) : (
-                  'Junta tu primer millón con retos guiados'
+                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                    Ponle un tope a cada categoría y te aviso antes de que se acabe.
+                  </p>
                 )}
-              </p>
-            </div>
-          </button>
+              </TarjetaModulo>
 
-          {/* Suscripciones */}
-          <button
-            onClick={() => setModulo('suscripciones')}
-            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-                <Repeat className="w-5 h-5 text-[color:var(--acento)]" />
-              </div>
-              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
-            </div>
-            <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Suscripciones</h3>
-              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
-                {suscripciones.length > 0
-                  ? `${formatearCOP(sangradoMensual)}/mes · ${suscripciones.filter((s) => s.activa).length} activas`
-                  : 'Caza los cobros que se comen tu sueldo'}
-              </p>
-            </div>
-          </button>
+              {/* --- Sobres --- */}
+              <TarjetaModulo
+                color="var(--positivo)"
+                icono={<Mail className="w-3.5 h-3.5" />}
+                nombre="Sobres digitales"
+                etiqueta={sobres.length > 0 ? `${sobres.length} sobres` : undefined}
+                cifra={formatearCOP(totalApartado)}
+                accion={sobres.length > 0 ? 'Mandar lo libre a un sobre' : 'Crear tu primer sobre'}
+                onClick={() => setModulo('sobres')}
+              >
+                {sobres.length > 0 ? (
+                  <div className="flex flex-col gap-1.5 mt-2.5">
+                    {sobres.slice(0, 3).map((s) => (
+                      <div key={s.id}>
+                        <div className="flex justify-between gap-2 text-[10.5px]">
+                          <span className="text-[color:var(--texto-3)] truncate">{s.nombre}</span>
+                          <span className="font-display font-semibold tabular-nums text-[color:var(--texto-2)]">
+                            {formatearCOP(s.apartado)}
+                          </span>
+                        </div>
+                        {s.meta && s.meta > 0 && (
+                          <span className="block h-[3px] rounded-sm bg-[var(--hairline)] overflow-hidden mt-1">
+                            <span
+                              className="block h-full rounded-sm bg-[var(--positivo)]"
+                              style={{ width: `${Math.min(100, (s.apartado / s.meta) * 100)}%` }}
+                            />
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                    Aparta lo intocable antes de gastarlo.
+                  </p>
+                )}
+              </TarjetaModulo>
 
-          {/* Tarjetas y corte */}
-          <button
-            onClick={() => setModulo('tarjetas')}
-            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-                <CreditCard className="w-5 h-5 text-[color:var(--acento)]" />
-              </div>
-              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
-            </div>
-            <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Tarjetas y corte</h3>
-              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
-                {tarjetas.length > 0
-                  ? `${tarjetas.length} tarjeta${tarjetas.length === 1 ? '' : 's'} · con cuál pagar hoy`
-                  : 'Sabe con cuál pagar para no pagar intereses'}
-              </p>
-            </div>
-          </button>
+              {/* --- Retos --- */}
+              <TarjetaModulo
+                color="var(--accion)"
+                icono={<Trophy className="w-3.5 h-3.5" />}
+                nombre="Retos de ahorro"
+                etiqueta={
+                  resumenRetos.mejorRacha > 0 ? `🔥 racha ${resumenRetos.mejorRacha}` : undefined
+                }
+                etiquetaTono="ok"
+                cifra={formatearCOP(resumenRetos.acumulado)}
+                sufijo={retoActivo ? `de ${formatearCOP(retoActivo.metaTotal)}` : undefined}
+                accion={retoActivo ? `Aportar la semana ${retoActivo.semanaActual}` : 'Crear un reto'}
+                onClick={() => setModulo('retos')}
+              >
+                {retoActivo ? (
+                  <>
+                    <div className="flex items-end gap-[3px] h-[26px] mt-2.5">
+                      {Array.from({ length: 10 }).map((_, i) => {
+                        const bloques = Math.max(1, Math.ceil(retoActivo.semanasTotales / 10));
+                        const hechos = Math.floor((retoActivo.semanaActual - 1) / bloques);
+                        return (
+                          <span
+                            key={i}
+                            className="flex-1 rounded-t-[2px]"
+                            style={{
+                              height: '100%',
+                              background: 'var(--accion)',
+                              opacity: i < hechos ? 1 : 0.3,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                      {retoActivo.nombre} · semana {retoActivo.semanaActual} de{' '}
+                      {retoActivo.semanasTotales}.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                    Junta tu primer millón con un reto guiado.
+                  </p>
+                )}
+              </TarjetaModulo>
 
-          {/* Reportes */}
-          <button
-            onClick={() => setModulo('reportes')}
-            className="text-left flex flex-col gap-3 p-5 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] transition-all hover:border-[var(--acento)]/50 hover:bg-[var(--superficie-2)] active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-11 h-11 rounded-xl grid place-items-center border border-[var(--hairline)]" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-                <BarChart3 className="w-5 h-5 text-[color:var(--acento)]" />
-              </div>
-              <ArrowRight className="w-4 h-4 text-[color:var(--texto-3)]" />
+              {/* --- Suscripciones --- */}
+              <TarjetaModulo
+                color="var(--acento-2)"
+                icono={<Repeat className="w-3.5 h-3.5" />}
+                nombre="Suscripciones"
+                etiqueta={
+                  suscripciones.length > 0
+                    ? `${suscripciones.filter((s) => s.activa).length} activas`
+                    : undefined
+                }
+                cifra={formatearCOP(sangradoMensual)}
+                sufijo="/mes"
+                accion={
+                  proximosCobros[0]
+                    ? proximosCobros[0].ciclo.esFinDePromo
+                    ? `A ${proximosCobros[0].sus.nombre} se le acaba la promo en ${proximosCobros[0].ciclo.faltan} días`
+                    : proximosCobros[0].ciclo.esFinDePromo
+                    ? `A ${proximosCobros[0].sus.nombre} se le acaba la promo en ${proximosCobros[0].ciclo.faltan} días`
+                    : `${proximosCobros[0].sus.nombre} se cobra en ${proximosCobros[0].ciclo.faltan} días`
+                    : 'Registrar tus suscripciones'
+                }
+                onClick={() => setModulo('suscripciones')}
+              >
+                {proximosCobros.length > 0 ? (
+                  <div className="flex flex-col gap-1.5 mt-2.5">
+                    {proximosCobros.map(({ sus, ciclo, monto }) => (
+                      <div key={sus.id} className="flex justify-between gap-2 text-[10.5px]">
+                        <span className="text-[color:var(--texto-3)] truncate">
+                          {ciclo.faltan === 0
+                            ? 'hoy'
+                            : `en ${ciclo.faltan}d`}{' '}
+                          · {sus.nombre}
+                        </span>
+                        <span className="font-display font-semibold tabular-nums text-[color:var(--texto-2)]">
+                          {formatearCOP(monto)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                    Caza los cobros que se comen tu sueldo.
+                  </p>
+                )}
+              </TarjetaModulo>
+
+              {/* --- Tarjetas --- */}
+              <TarjetaModulo
+                color="var(--alerta)"
+                icono={<CreditCard className="w-3.5 h-3.5" />}
+                nombre="Tarjetas y corte"
+                etiqueta={
+                  tarjetas.length > 0
+                    ? `${tarjetas.length} tarjeta${tarjetas.length === 1 ? '' : 's'}`
+                    : undefined
+                }
+                cifra={mejorTarjeta ? String(mejorTarjeta.plazo.dias) : '—'}
+                sufijo={mejorTarjeta ? 'días sin interés' : undefined}
+                accion={
+                  tarjetas.length > 0 ? '¿A cuántas cuotas la difiero?' : 'Agregar tu tarjeta'
+                }
+                onClick={() => setModulo('tarjetas')}
+              >
+                {mejorTarjeta ? (
+                  <>
+                    <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                      Si compras hoy con {mejorTarjeta.tc.nombre}.
+                    </p>
+                    <div className="flex flex-col gap-1.5 mt-2.5">
+                      {cuposTarjetas.slice(0, 2).map(({ tc, cupo }) => (
+                        <div key={tc.id}>
+                          <div className="flex justify-between gap-2 text-[10.5px]">
+                            <span className="text-[color:var(--texto-3)] truncate">{tc.nombre}</span>
+                            <span
+                              className={`font-display font-semibold tabular-nums ${
+                                cupo.estado === 'riesgo'
+                                  ? 'text-[color:var(--alerta)]'
+                                  : 'text-[color:var(--texto-2)]'
+                              }`}
+                            >
+                              {Math.round(cupo.pct)}% del cupo
+                            </span>
+                          </div>
+                          <span className="block h-[3px] rounded-sm bg-[var(--hairline)] overflow-hidden mt-1">
+                            <span
+                              className="block h-full rounded-sm"
+                              style={{
+                                width: `${Math.min(100, cupo.pct)}%`,
+                                background:
+                                  cupo.estado === 'riesgo' ? 'var(--alerta)' : 'var(--acento)',
+                              }}
+                            />
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                    Sabe con cuál pagar para no pagar intereses.
+                  </p>
+                )}
+              </TarjetaModulo>
+
+              {/* --- Reportes --- */}
+              <TarjetaModulo
+                color="var(--acento)"
+                icono={<BarChart3 className="w-3.5 h-3.5" />}
+                nombre="Reportes"
+                etiqueta={ultimoCierre ? `${ultimoCierre.etiqueta} cerrado` : undefined}
+                cifra={ultimoCierre ? formatearCOP(ultimoCierre.queda) : '—'}
+                sufijo={ultimoCierre ? 'te sobraron' : undefined}
+                accion="Ver el mes cerrado · exportar"
+                onClick={() => setModulo('reportes')}
+              >
+                {cerrados.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-[3px] h-[30px] mt-2.5">
+                      {cerrados.slice(-5).map((c) => {
+                        const tope = Math.max(
+                          ...cerrados.slice(-5).map((x) => Math.abs(x.queda)),
+                          1
+                        );
+                        const alto = Math.max(8, (Math.abs(c.queda) / tope) * 100);
+                        return (
+                          <span
+                            key={`${c.anio}-${c.mes}`}
+                            className="flex-1 rounded-[2px]"
+                            style={{
+                              height: `${alto}%`,
+                              alignSelf: c.queda < 0 ? 'flex-start' : 'flex-end',
+                              background: c.queda < 0 ? 'var(--alerta)' : 'var(--acento)',
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                      {cerrados.length} meses cerrados
+                      {ultimoCierre &&
+                        ` · ${ultimoCierre.pctQueda} de cada 100 pesos te quedaron`}
+                      .
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
+                    Lo que solo se ve con varios meses · exportable.
+                  </p>
+                )}
+              </TarjetaModulo>
             </div>
-            <div>
-              <h3 className="font-display font-bold text-sm text-[color:var(--texto)]">Reportes</h3>
-              <p className="mt-1 text-xs text-[color:var(--texto-2)] leading-relaxed">
-                Lo que solo se ve con varios meses · exportable
-              </p>
-            </div>
-          </button>
-        </div>
-      </div>
+          </Zona>
+        </Columna>
+      </Marco>
     </div>
   );
 };
