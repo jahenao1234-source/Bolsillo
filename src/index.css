@@ -263,6 +263,28 @@ h1, h2, h3, h4, .stat-value {
 
   main { padding: 0 !important; }
 
+
+  /* El marco de columnas no existe en papel: todo cae en una sola columna. */
+  .hoja-reporte.marco,
+  .hoja-reporte .marco {
+    display: block !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+  }
+
+  .hoja-reporte .marco-col {
+    border: none !important;
+    display: block !important;
+  }
+
+  /* Nada scrollea en papel: se imprime entero */
+  .hoja-reporte .scroll-fino {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
   /* Nada se parte a la mitad */
   .hoja-reporte > * { break-inside: avoid; page-break-inside: avoid; }
 
