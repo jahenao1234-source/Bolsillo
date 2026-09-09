@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { formatearCOPCorto } from '../../utils/format';
 import { PuntoRitmo } from '../../logic/resumenMes';
 
@@ -57,17 +57,40 @@ export const GraficoRitmo: React.FC<GraficoRitmoProps> = ({
   const hueco = useRef<HTMLDivElement>(null);
   const [medida, setMedida] = useState<{ w: number; h: number } | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = hueco.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
+    if (!el) return;
+
+    const anotar = (w: number, h: number) => {
+      if (w > 40 && h > 40) setMedida({ w: Math.round(w), h: Math.round(h) });
+    };
+
+    // Medimos YA, antes de pintar. Si esperamos al observer, el primer cuadro
+    // sale con el respaldo 900x200 y el texto nace estirado: una unidad del
+    // viewBox deja de valer un pixel cuando el hueco no mide 900 de ancho.
+    const r = el.getBoundingClientRect();
+    anotar(r.width, r.height);
+
+    // Respaldo por 'resize': hay contextos donde el observer no dispara y el
+    // dibujo se quedaria con la medida del montaje, estirando el texto.
+    const alRedimensionar = () => {
+      const c = el.getBoundingClientRect();
+      anotar(c.width, c.height);
+    };
+    window.addEventListener('resize', alRedimensionar);
+
+    if (typeof ResizeObserver === 'undefined') {
+      return () => window.removeEventListener('resize', alRedimensionar);
+    }
     const ro = new ResizeObserver((entradas) => {
-      const r = entradas[0]?.contentRect;
-      if (r && r.width > 40 && r.height > 40) {
-        setMedida({ w: Math.round(r.width), h: Math.round(r.height) });
-      }
+      const c = entradas[0]?.contentRect;
+      if (c) anotar(c.width, c.height);
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      window.removeEventListener('resize', alRedimensionar);
+      ro.disconnect();
+    };
   }, []);
 
   // La medida real manda; el respaldo es una proporcion ancha y baja, parecida
