@@ -664,7 +664,7 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
   };
 
   return (
-    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
       {/* ===================== Barra de contexto (escritorio) ===================== */}
       <BarraTitulo>
         <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)] whitespace-nowrap">

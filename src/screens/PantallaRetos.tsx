@@ -77,7 +77,7 @@ export const PantallaRetos: React.FC<PantallaRetosProps> = ({
   };
 
   return (
-    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
       <ConfetiCelebracion
         activo={confeti.activo}
         mensaje={confeti.mensaje}

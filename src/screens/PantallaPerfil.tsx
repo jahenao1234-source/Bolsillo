@@ -71,7 +71,7 @@ export const PantallaPerfil: React.FC<PantallaPerfilProps> = ({
   const enlaceWhatsApp = 'https://wa.me/573001234567?text=Hola%20Bolsillo,%20quiero%20hacer%20una%20consulta';
 
   return (
-    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
       {/* ===================== Barra de contexto (escritorio) ===================== */}
       <BarraTitulo>
         <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)]">Perfil</h1>

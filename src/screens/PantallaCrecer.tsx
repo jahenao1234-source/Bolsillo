@@ -295,7 +295,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
 
 
   return (
-    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
       {/* ===================== Barra de contexto (escritorio) ===================== */}
       <BarraTitulo>
         <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)]">Crecer</h1>

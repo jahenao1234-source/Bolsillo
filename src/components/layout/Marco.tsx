@@ -17,7 +17,7 @@ interface MarcoProps {
 
 export const Marco: React.FC<MarcoProps> = ({ columnas, children, className = '' }) => (
   <div
-    className={`marco flex flex-col gap-4 xl:gap-0 xl:flex-1 xl:min-h-0 xl:bg-[var(--superficie)] xl:border xl:border-[var(--linea)] xl:rounded-[15px] xl:overflow-hidden ${className}`}
+    className={`marco flex flex-col gap-4 xl:gap-0 xl:flex-1 xl:bg-[var(--superficie)] xl:border xl:border-[var(--linea)] xl:rounded-[15px] ${className}`}
     style={{ ['--cols' as string]: columnas }}
   >
     {children}
@@ -64,7 +64,7 @@ export const Columna: React.FC<ColumnaProps> = ({
    * sobre otros. Con container queries el bloque mira el ancho real que tiene.
    */
   <div
-    className={`marco-col @container flex flex-col gap-4 xl:gap-0 min-w-0 xl:min-h-0 xl:overflow-y-auto scroll-fino ${
+    className={`marco-col @container flex flex-col gap-4 xl:gap-0 min-w-0 ${
       ordenMovil !== undefined ? ORDEN_MOVIL[ordenMovil] ?? '' : ''
     } ${borde ? 'xl:border-r xl:border-[var(--hairline)]' : ''} ${className}`}
   >
@@ -92,7 +92,7 @@ export const Zona: React.FC<ZonaProps> = ({
       rounded-2xl border border-[var(--linea)] bg-[var(--superficie)]
       xl:rounded-none xl:border-0 xl:border-b xl:border-[var(--hairline)] xl:bg-transparent
       ${sinPadding ? 'p-0' : 'p-4 xl:px-[17px] xl:py-[13px]'}
-      ${crece ? 'xl:flex-1 xl:min-h-0 xl:flex xl:flex-col' : 'xl:flex-none'}
+      ${crece ? 'xl:flex-1 xl:flex xl:flex-col' : 'xl:flex-none'}
       ${className}
     `}
   >
@@ -100,12 +100,12 @@ export const Zona: React.FC<ZonaProps> = ({
   </div>
 );
 
-/** Lo que scrollea dentro de una zona: la lista larga, la tabla de 14 meses. */
+/** Reparte el alto sobrante de una zona. Ya no scrollea: la pagina lo hace. */
 export const Scroll: React.FC<{ children: React.ReactNode; className?: string }> = ({
   children,
   className = '',
 }) => (
-  <div className={`xl:overflow-y-auto xl:min-h-0 xl:flex-1 scroll-fino ${className}`}>
+  <div className={`xl:flex-1 ${className}`}>
     {children}
   </div>
 );

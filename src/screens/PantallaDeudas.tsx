@@ -525,7 +525,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
   );
 
   return (
-    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:h-full xl:flex xl:flex-col xl:gap-2.5">
+    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
       <ModalAgregarDeuda
         abierto={modalAgregarAbierto}
         deudaAEditar={deudaAEditar}
@@ -873,7 +873,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
 
               {/* Con el cajón abierto, el camino se pliega aquí debajo */}
               {cajonEmpuja && (
-                <Zona sinPadding className="xl:max-h-[260px] xl:flex xl:flex-col">
+                <Zona sinPadding className="xl:flex xl:flex-col">
                   <Scroll className="px-4 xl:px-[17px] py-3">{panelResultado}</Scroll>
                 </Zona>
               )}

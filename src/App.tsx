@@ -135,7 +135,7 @@ export default function App() {
       {/* En escritorio la página no scrollea: lo hace el contenido. */}
       {/* ========================================================= */}
       <ProveedorShell value={shell}>
-      <div className="app-shell min-h-screen md:h-screen md:overflow-hidden flex">
+      <div className="app-shell min-h-screen flex">
         {/* Riel de escritorio (68px) */}
         {conShell && (
           <RielNavegacion
@@ -156,7 +156,7 @@ export default function App() {
         )}
 
         {/* Área de contenido principal */}
-        <main className="app-main flex-1 flex flex-col min-w-0 min-h-screen md:min-h-0 md:h-screen relative z-10">
+        <main className="app-main flex-1 flex flex-col min-w-0 min-h-screen relative z-10">
           {/* Barra superior en móvil solo cuando no estamos en gancho o pantalla de código */}
           {conShell && (
             <header className="md:hidden sticky top-0 z-20 bg-[var(--fondo)]/90 backdrop-blur-md px-4 py-3 border-b border-[var(--linea)] flex items-center justify-between">
@@ -209,16 +209,16 @@ export default function App() {
             </div>
           )}
 
-          {/* El contenido. En escritorio scrollea aquí, no la página entera. */}
+          {/* El contenido crece con lo que lleva: baja la página, no una caja. */}
           <div
             ref={contenidoRef}
-            className={`app-contenido flex-1 min-h-0 md:overflow-y-auto px-4 sm:px-6 md:px-5 py-5 md:pt-3 w-full ${
+            className={`app-contenido flex-1 xl:flex xl:flex-col px-4 sm:px-6 md:px-5 py-5 md:pt-3 w-full ${
               conShell ? 'pb-24 md:pb-5' : ''
             }`}
           >
             {/* Pantalla 1: Termómetro de la Deuda (Gancho Demo) */}
             {mostrarTermometro && (
-              <div key="termometro" className="animate-screen-enter xl:h-full">
+              <div key="termometro" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 <PantallaTermometro
                   onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
                 />
@@ -227,7 +227,7 @@ export default function App() {
 
             {/* Pantalla 2: Activar Código de Acceso */}
             {!mostrarTermometro && seccionActiva === 'activar_codigo' && (
-              <div key="activar_codigo" className="animate-screen-enter xl:h-full">
+              <div key="activar_codigo" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 <PantallaActivarCodigo
                   onVolver={() => setSeccionActiva(nivelAcceso === 'demo' ? 'termometro' : 'perfil')}
                   onExito={() => setSeccionActiva('inicio')}
@@ -237,7 +237,7 @@ export default function App() {
 
             {/* Pantalla 3: Inicio (Mi Dinero) */}
             {!mostrarTermometro && seccionActiva === 'inicio' && (
-              <div key="inicio" className="animate-screen-enter xl:h-full">
+              <div key="inicio" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 <PantallaInicio
                   resumen={resumen}
                   billeteras={billeteras}
@@ -262,7 +262,7 @@ export default function App() {
 
             {/* Pantalla 4: Billeteras & Movimientos */}
             {!mostrarTermometro && seccionActiva === 'billeteras' && (
-              <div key="billeteras" className="animate-screen-enter xl:h-full">
+              <div key="billeteras" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 <PantallaBilleteras
                   billeteras={billeteras}
                   saldoTotal={saldoTotal}
@@ -281,7 +281,7 @@ export default function App() {
 
             {/* Pantalla 5: Plan Deuda Cero */}
             {!mostrarTermometro && seccionActiva === 'deudas' && (
-              <div key="deudas" className="animate-screen-enter xl:h-full">
+              <div key="deudas" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 <PantallaDeudas
                   deudas={deudas}
                   deudaTotal={resumen.deudaTotal}
@@ -297,7 +297,7 @@ export default function App() {
 
             {/* Pantalla: Crecer (módulos Pro). En entrada muestra la vitrina; en Pro, el hub. */}
             {!mostrarTermometro && seccionActiva === 'crecer' && (
-              <div key="crecer" className="animate-screen-enter xl:h-full">
+              <div key="crecer" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 {nivelAcceso === 'pro' ? (
                   <PantallaCrecer
                     resetToken={navTick}
@@ -341,7 +341,7 @@ export default function App() {
 
             {/* Pantalla 6: Perfil & Ajustes (Reemplaza a "Más") */}
             {!mostrarTermometro && seccionActiva === 'perfil' && (
-              <div key="perfil" className="animate-screen-enter xl:h-full">
+              <div key="perfil" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 <PantallaPerfil
                   usuario={resumen.usuario}
                   nivelAcceso={nivelAcceso}
@@ -353,7 +353,7 @@ export default function App() {
 
             {/* Pantalla 7: Bolsillo Pro (Aspiracional, 1 sola puerta) */}
             {!mostrarTermometro && seccionActiva === 'pro' && (
-              <div key="pro" className="animate-screen-enter xl:h-full">
+              <div key="pro" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 <PantallaPro
                   onVolver={() => setSeccionActiva('perfil')}
                   onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
