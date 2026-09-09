@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { formatearCOPCorto } from '../../utils/format';
 import { PuntoRitmo } from '../../logic/resumenMes';
 
@@ -47,8 +47,33 @@ export const GraficoRitmo: React.FC<GraficoRitmoProps> = ({
   compacto = false,
   className = '',
 }) => {
-  const W = compacto ? 340 : 620;
-  const H = compacto ? 156 : 250;
+  /*
+   * El viewBox se ajusta al tamano real del hueco. Con un viewBox fijo el
+   * dibujo se encajaba dentro de la caja manteniendo su proporcion: en una zona
+   * ancha y baja quedaba un grafico pequeno y centrado, con margenes muertos a
+   * los lados. Midiendo el contenedor, una unidad del viewBox es un pixel: el
+   * grafico llena el hueco y el texto no se deforma.
+   */
+  const hueco = useRef<HTMLDivElement>(null);
+  const [medida, setMedida] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    const el = hueco.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entradas) => {
+      const r = entradas[0]?.contentRect;
+      if (r && r.width > 40 && r.height > 40) {
+        setMedida({ w: Math.round(r.width), h: Math.round(r.height) });
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // La medida real manda; el respaldo es una proporcion ancha y baja, parecida
+  // a la del hueco, para que aun sin medicion el dibujo no quede encajonado.
+  const W = compacto ? 340 : medida?.w ?? 900;
+  const H = compacto ? 156 : medida?.h ?? 200;
   const padIzq = compacto ? 44 : 58;
   const padDer = compacto ? 8 : 10;
   const padArriba = compacto ? 10 : 14;
@@ -102,133 +127,135 @@ export const GraficoRitmo: React.FC<GraficoRitmoProps> = ({
   );
 
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className={`block w-full h-auto ${className}`}
-      role="img"
-      aria-label={`Gasto acumulado del mes: llevas ${formatearCOPCorto(gastadoHoy)} y a este ritmo cierras en ${formatearCOPCorto(proyeccion)}${hayAnterior ? `, contra ${formatearCOPCorto(cierreAnterior)} del mes pasado` : ''}.`}
-    >
-      <defs>
-        <linearGradient id="ritmoFade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--acento)" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="var(--acento)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
+    <div ref={hueco} className={`w-full ${compacto ? '' : 'h-full min-h-0'}`}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className={`block w-full ${compacto ? 'h-auto' : 'h-full'} ${className}`}
+        role="img"
+        aria-label={`Gasto acumulado del mes: llevas ${formatearCOPCorto(gastadoHoy)} y a este ritmo cierras en ${formatearCOPCorto(proyeccion)}${hayAnterior ? `, contra ${formatearCOPCorto(cierreAnterior)} del mes pasado` : ''}.`}
+      >
+        <defs>
+          <linearGradient id="ritmoFade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--acento)" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="var(--acento)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
 
-      {/* Rejilla y eje vertical */}
-      <g stroke="var(--hairline)" strokeWidth="1" fill="none">
-        {lineas.map((l) => (
-          <line key={l.valor} x1={x0} y1={l.y} x2={x1} y2={l.y} />
-        ))}
-      </g>
-      <g fill="var(--texto-3)" fontFamily={fuente} fontSize={tamEje} textAnchor="end">
-        {lineas.map((l) => (
-          <text key={l.valor} x={x0 - 8} y={l.y + 3.5}>
-            {l.valor === 0 ? '$0' : formatearCOPCorto(l.valor)}
-          </text>
-        ))}
-      </g>
+        {/* Rejilla y eje vertical */}
+        <g stroke="var(--hairline)" strokeWidth="1" fill="none">
+          {lineas.map((l) => (
+            <line key={l.valor} x1={x0} y1={l.y} x2={x1} y2={l.y} />
+          ))}
+        </g>
+        <g fill="var(--texto-3)" fontFamily={fuente} fontSize={tamEje} textAnchor="end">
+          {lineas.map((l) => (
+            <text key={l.valor} x={x0 - 8} y={l.y + 3.5}>
+              {l.valor === 0 ? '$0' : formatearCOPCorto(l.valor)}
+            </text>
+          ))}
+        </g>
 
-      {/* Hoy */}
-      <line
-        x1={xHoy} y1={y0} x2={xHoy} y2={y1}
-        stroke="var(--accion)" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 4"
-      />
+        {/* Hoy */}
+        <line
+          x1={xHoy} y1={y0} x2={xHoy} y2={y1}
+          stroke="var(--accion)" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 4"
+        />
 
-      {/* Mes pasado (fantasma) */}
-      {hayAnterior && (
-        <>
-          <polyline
-            fill="none"
-            stroke="var(--texto-3)"
-            strokeWidth={compacto ? 1.4 : 1.6}
-            strokeDasharray="5 4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            points={aPuntos(puntosAnterior, diasDelMesAnterior)}
-          />
+        {/* Mes pasado (fantasma) */}
+        {hayAnterior && (
+          <>
+            <polyline
+              fill="none"
+              stroke="var(--texto-3)"
+              strokeWidth={compacto ? 1.4 : 1.6}
+              strokeDasharray="5 4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              points={aPuntos(puntosAnterior, diasDelMesAnterior)}
+            />
+            <text
+              x={x1 - 4}
+              y={yValor(cierreAnterior) - 8}
+              fill="var(--texto-2)"
+              fontFamily={fuente}
+              fontSize={tamSerie}
+              fontWeight="600"
+              textAnchor="end"
+            >
+              {etiquetaAnterior}
+            </text>
+          </>
+        )}
+
+        {/* Mes en curso */}
+        {hayMes && (
+          <>
+            <path d={areaMes} fill="url(#ritmoFade)" />
+            <polyline
+              fill="none"
+              stroke="var(--acento)"
+              strokeWidth={compacto ? 2.4 : 2.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              points={aPuntos(puntosMes, diasDelMes)}
+            />
+          </>
+        )}
+
+        {/* Proyección */}
+        {diaActual < diasDelMes && (
+          <>
+            <line
+              x1={xHoy} y1={yHoy} x2={xFin} y2={yFin}
+              stroke="var(--acento)" strokeWidth={compacto ? 1.6 : 1.8}
+              strokeDasharray="6 5" strokeLinecap="round" opacity="0.75"
+            />
+            <text
+              x={x1 - 4}
+              y={yFin + (hayAnterior && Math.abs(yFin - yValor(cierreAnterior)) < 22 ? 16 : -8)}
+              fill="var(--acento)"
+              fontFamily={fuente}
+              fontSize={tamSerie}
+              fontWeight="700"
+              textAnchor="end"
+            >
+              a este ritmo
+            </text>
+            <circle cx={xFin} cy={yFin} r={compacto ? 3.4 : 4} fill="var(--superficie)" stroke="var(--acento)" strokeWidth="2" />
+          </>
+        )}
+
+        {/* Punto de hoy */}
+        {hayMes && (
+          <>
+            <circle cx={xHoy} cy={yHoy} r={compacto ? 6 : 7} fill="var(--acento)" opacity="0.2" />
+            <circle cx={xHoy} cy={yHoy} r={compacto ? 3.2 : 3.8} fill="var(--acento)" />
+          </>
+        )}
+
+        {/* Eje horizontal */}
+        <g fill="var(--texto-3)" fontFamily={fuente} fontSize={tamEje}>
+          {marcasX.map((d) => (
+            <text
+              key={d}
+              x={xDia(d, diasDelMes)}
+              y={y1 + (compacto ? 16 : 20)}
+              textAnchor={d === 1 ? 'start' : d === diasDelMes ? 'end' : 'middle'}
+            >
+              {d}
+            </text>
+          ))}
           <text
-            x={x1 - 4}
-            y={yValor(cierreAnterior) - 8}
-            fill="var(--texto-2)"
-            fontFamily={fuente}
-            fontSize={tamSerie}
-            fontWeight="600"
-            textAnchor="end"
-          >
-            {etiquetaAnterior}
-          </text>
-        </>
-      )}
-
-      {/* Mes en curso */}
-      {hayMes && (
-        <>
-          <path d={areaMes} fill="url(#ritmoFade)" />
-          <polyline
-            fill="none"
-            stroke="var(--acento)"
-            strokeWidth={compacto ? 2.4 : 2.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            points={aPuntos(puntosMes, diasDelMes)}
-          />
-        </>
-      )}
-
-      {/* Proyección */}
-      {diaActual < diasDelMes && (
-        <>
-          <line
-            x1={xHoy} y1={yHoy} x2={xFin} y2={yFin}
-            stroke="var(--acento)" strokeWidth={compacto ? 1.6 : 1.8}
-            strokeDasharray="6 5" strokeLinecap="round" opacity="0.75"
-          />
-          <text
-            x={x1 - 4}
-            y={yFin + (hayAnterior && Math.abs(yFin - yValor(cierreAnterior)) < 22 ? 16 : -8)}
-            fill="var(--acento)"
-            fontFamily={fuente}
-            fontSize={tamSerie}
-            fontWeight="700"
-            textAnchor="end"
-          >
-            a este ritmo
-          </text>
-          <circle cx={xFin} cy={yFin} r={compacto ? 3.4 : 4} fill="var(--superficie)" stroke="var(--acento)" strokeWidth="2" />
-        </>
-      )}
-
-      {/* Punto de hoy */}
-      {hayMes && (
-        <>
-          <circle cx={xHoy} cy={yHoy} r={compacto ? 6 : 7} fill="var(--acento)" opacity="0.2" />
-          <circle cx={xHoy} cy={yHoy} r={compacto ? 3.2 : 3.8} fill="var(--acento)" />
-        </>
-      )}
-
-      {/* Eje horizontal */}
-      <g fill="var(--texto-3)" fontFamily={fuente} fontSize={tamEje}>
-        {marcasX.map((d) => (
-          <text
-            key={d}
-            x={xDia(d, diasDelMes)}
+            x={xHoy}
             y={y1 + (compacto ? 16 : 20)}
-            textAnchor={d === 1 ? 'start' : d === diasDelMes ? 'end' : 'middle'}
+            textAnchor={xHoy < x0 + 28 ? 'start' : xHoy > x1 - 28 ? 'end' : 'middle'}
+            fill="var(--accion)"
+            fontWeight="700"
           >
-            {d}
+            hoy · {diaActual}
           </text>
-        ))}
-        <text
-          x={xHoy}
-          y={y1 + (compacto ? 16 : 20)}
-          textAnchor={xHoy < x0 + 28 ? 'start' : xHoy > x1 - 28 ? 'end' : 'middle'}
-          fill="var(--accion)"
-          fontWeight="700"
-        >
-          hoy · {diaActual}
-        </text>
-      </g>
-    </svg>
+        </g>
+      </svg>
+    </div>
   );
 };

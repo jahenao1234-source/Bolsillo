@@ -64,7 +64,7 @@ export const Columna: React.FC<ColumnaProps> = ({
    * sobre otros. Con container queries el bloque mira el ancho real que tiene.
    */
   <div
-    className={`marco-col @container flex flex-col gap-4 xl:gap-0 min-w-0 xl:min-h-0 ${
+    className={`marco-col @container flex flex-col gap-4 xl:gap-0 min-w-0 xl:min-h-0 xl:overflow-y-auto scroll-fino ${
       ordenMovil !== undefined ? ORDEN_MOVIL[ordenMovil] ?? '' : ''
     } ${borde ? 'xl:border-r xl:border-[var(--hairline)]' : ''} ${className}`}
   >

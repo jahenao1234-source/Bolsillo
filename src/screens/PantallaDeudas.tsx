@@ -710,7 +710,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                           </p>
 
                           {/* Desglose base + extra */}
-                          <div className="mt-4 grid grid-cols-1 @sm:grid-cols-3 gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-xl overflow-hidden">
+                          <div className="mt-4 grid grid-cols-2 @2xl:grid-cols-3 gap-px bg-[var(--linea)] border border-[var(--linea)] rounded-xl overflow-hidden">
                             <div className="bg-[var(--superficie)] p-3">
                               <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--texto-2)]">Mínimo (base)</div>
                               <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--texto)] mt-0.5">{formatearCOP(baseFoco)}</div>
@@ -719,7 +719,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                               <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--accion)]">+ Tu extra</div>
                               <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--accion)] mt-0.5">{formatearCOP(extraFoco)}</div>
                             </div>
-                            <div className="bg-[var(--superficie-2)] p-3">
+                            <div className="bg-[var(--superficie-2)] p-3 col-span-2 @2xl:col-span-1 flex items-baseline justify-between gap-2 @2xl:block">
                               <div className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--texto-2)]">Págale</div>
                               <div className="font-display font-bold text-[17px] tabular-nums text-[color:var(--texto)] mt-0.5">{formatearCOP(abonoPrioridad)}</div>
                             </div>
@@ -768,6 +768,45 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                       </div>
                     )}
                   </div>
+                  {/* Deudas saldadas */}
+                  {deudasSaldadas.length > 0 && (
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between px-1">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[color:var(--texto-2)] flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[color:var(--positivo)]" />
+                          Deudas liquidadas ({deudasSaldadas.length})
+                        </h3>
+                        <span className="text-[11px] text-[color:var(--positivo)] font-semibold">¡Libertad conseguida!</span>
+                      </div>
+                      <div className="space-y-2">
+                        {deudasSaldadas.map((deuda) => (
+                          <Tarjeta key={deuda.id} padding="sm" className="opacity-70 hover:opacity-100 transition-opacity bg-[var(--superficie)] border-[var(--linea)]">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-7 h-7 rounded-lg bg-[var(--superficie-2)] flex items-center justify-center text-[color:var(--positivo)]">✓</div>
+                                <div>
+                                  <h4 className="text-xs font-semibold text-[color:var(--texto)] line-through truncate">{deuda.nombre}</h4>
+                                  <p className="text-[10px] text-[color:var(--texto-2)]">{deuda.tipo} &bull; Liquidada al 100%</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Chip variante="aqua">Saldada</Chip>
+                                <button
+                                  type="button"
+                                  onClick={() => handleReactivarDeuda(deuda)}
+                                  className="p-1.5 rounded text-[color:var(--texto-2)] hover:text-[color:var(--acento)] cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center"
+                                  title="Reactivar si fue error"
+                                  aria-label={`Reactivar deuda ${deuda.nombre}`}
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </Tarjeta>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </Scroll>
               </Zona>
             </Columna>
@@ -860,45 +899,6 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
         />
       )}
 
-      {/* Deudas saldadas */}
-      {deudasSaldadas.length > 0 && (
-        <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[color:var(--texto-2)] flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[color:var(--positivo)]" />
-              Deudas liquidadas ({deudasSaldadas.length})
-            </h3>
-            <span className="text-[11px] text-[color:var(--positivo)] font-semibold">¡Libertad conseguida!</span>
-          </div>
-          <div className="space-y-2">
-            {deudasSaldadas.map((deuda) => (
-              <Tarjeta key={deuda.id} padding="sm" className="opacity-70 hover:opacity-100 transition-opacity bg-[var(--superficie)] border-[var(--linea)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-[var(--superficie-2)] flex items-center justify-center text-[color:var(--positivo)]">✓</div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-[color:var(--texto)] line-through truncate">{deuda.nombre}</h4>
-                      <p className="text-[10px] text-[color:var(--texto-2)]">{deuda.tipo} &bull; Liquidada al 100%</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Chip variante="aqua">Saldada</Chip>
-                    <button
-                      type="button"
-                      onClick={() => handleReactivarDeuda(deuda)}
-                      className="p-1.5 rounded text-[color:var(--texto-2)] hover:text-[color:var(--acento)] cursor-pointer min-w-[32px] min-h-[32px] flex items-center justify-center"
-                      title="Reactivar si fue error"
-                      aria-label={`Reactivar deuda ${deuda.nombre}`}
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </Tarjeta>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Selector de estrategia */}
       {selectorEstrategiaAbierto && (

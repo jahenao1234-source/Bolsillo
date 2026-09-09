@@ -903,10 +903,9 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
               </div>
             </div>
 
-            <div className="mt-3 xl:flex-1 xl:min-h-0 xl:overflow-hidden hidden sm:flex items-center">
-              <div className="w-full xl:h-full xl:flex xl:items-center">
+            <div className="mt-3 xl:flex-1 xl:min-h-[168px] xl:overflow-hidden hidden sm:block">
+              <div className="w-full h-full">
                 <GraficoRitmo
-                  className="xl:h-full"
                   puntosMes={ritmo.puntosMes}
                   puntosAnterior={ritmo.puntosAnterior}
                   proyeccion={ritmo.proyeccion}

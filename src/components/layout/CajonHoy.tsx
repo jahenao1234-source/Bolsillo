@@ -70,21 +70,43 @@ export const CajonHoy: React.FC<CajonHoyProps> = ({
   onCerrar,
   onNavegar,
 }) => {
-  const hoy = eventos.length > 0 ? eventos[0].fecha : new Date();
+  // La fecha de hoy, no la del primer evento: si lo primero cae el 11, el cajón
+  // decía "11 de septiembre" aunque estuvieras a 9.
+  const hoy = new Date();
 
-  // La jugada del día: lo primero que vence hoy y cuesta plata.
-  const jugada = eventos.find((e) => e.esHoy && e.monto > 0) ?? null;
+  /*
+   * El bloque de arriba es el ancla del cajón y nunca puede faltar: si hoy vence
+   * algo, es tu jugada; si no, es lo primero que se te viene. Antes, un día sin
+   * vencimientos dejaba el cajón como una lista suelta, sin nada que hacer.
+   */
+  const deHoy = eventos.find((e) => e.esHoy && e.monto > 0) ?? null;
+  const ancla = deHoy ?? eventos.find((e) => e.monto > 0) ?? null;
+  const anclaEsHoy = ancla !== null && ancla === deHoy;
+
   // El aviso: una promoción que se acaba dentro de la ventana.
   const aviso = eventos.find((e) => e.origen === 'promo') ?? null;
   // La lista no repite lo que ya está arriba en grande.
-  const resto = eventos.filter((e) => e !== jugada);
+  const resto = eventos.filter((e) => e !== ancla);
   const totalResto = resto.reduce((acc, e) => acc + e.monto, 0);
   const cobros = eventos.filter((e) => e.monto > 0).length;
 
-  const destinoJugada: SeccionApp =
-    jugada?.origen === 'deuda' || jugada?.origen === 'pago_tarjeta'
+  /** "en 2 días", "mañana", "hoy". */
+  const cuandoAncla = (() => {
+    if (!ancla) return '';
+    if (anclaEsHoy) return 'vence hoy';
+    const dias = Math.round(
+      (new Date(ancla.fecha.getFullYear(), ancla.fecha.getMonth(), ancla.fecha.getDate()).getTime() -
+        new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime()) /
+        86400000
+    );
+    if (dias <= 1) return 'vence mañana';
+    return `vence en ${dias} días`;
+  })();
+
+  const destinoAncla: SeccionApp =
+    ancla?.origen === 'deuda' || ancla?.origen === 'pago_tarjeta'
       ? 'deudas'
-      : jugada?.origen === 'reto' || jugada?.origen === 'suscripcion'
+      : ancla?.origen === 'reto' || ancla?.origen === 'suscripcion'
       ? 'crecer'
       : 'billeteras';
 
@@ -149,27 +171,27 @@ export const CajonHoy: React.FC<CajonHoyProps> = ({
             </button>
           </div>
 
-          {jugada && (
+          {ancla && (
             <div className="mx-[15px] mt-3.5 rounded-xl bg-[var(--superficie)] border border-[var(--accion)]/34 px-3.5 pt-3.5 pb-3">
               <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-[color:var(--accion)]">
-                Tu jugada de hoy
+                {anclaEsHoy ? 'Tu jugada de hoy' : 'Lo primero que se te viene'}
               </p>
               <p className="font-display font-bold text-[14.5px] mt-1.5 text-[color:var(--texto)]">
-                {jugada.titulo}
+                {ancla.titulo}
               </p>
               <p className="text-[11px] text-[color:var(--texto-3)] leading-snug mt-0.5">
-                {jugada.detalle}
+                {ancla.detalle} · {cuandoAncla}
               </p>
               <div className="flex items-end justify-between gap-3 mt-2.5">
                 <span className="font-display font-bold text-2xl tabular-nums leading-none text-[color:var(--accion)]">
-                  {formatearCOP(jugada.monto)}
+                  {formatearCOP(ancla.monto)}
                 </span>
                 <button
                   type="button"
-                  onClick={() => onNavegar(destinoJugada)}
+                  onClick={() => onNavegar(destinoAncla)}
                   className="px-2.5 py-1.5 rounded-lg bg-accion-gradient text-[color:var(--on-accion)] font-display font-bold text-[10.5px] cursor-pointer hover:opacity-95 transition-opacity"
                 >
-                  Registrar pago
+                  {anclaEsHoy ? 'Registrar pago' : 'Ver el plan'}
                 </button>
               </div>
             </div>
