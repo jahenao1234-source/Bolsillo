@@ -490,6 +490,8 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
   const [selectorEstrategiaAbierto, setSelectorEstrategiaAbierto] = useState(false);
   const [tablaAbierta, setTablaAbierta] = useState(false);
   const [mesElegido, setMesElegido] = useState<number | null>(null);
+  // Las liquidadas son historia, no decision: plegadas por defecto.
+  const [liquidadasAbiertas, setLiquidadasAbiertas] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -1207,15 +1209,22 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                   </div>
                   {/* Deudas saldadas */}
                   {deudasSaldadas.length > 0 && (
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between px-1">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-[color:var(--texto-2)] flex items-center gap-1.5">
+                    <div className="space-y-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setLiquidadasAbiertas((v) => !v)}
+                        aria-expanded={liquidadasAbiertas}
+                        className="w-full flex items-center justify-between gap-2 px-1 py-1.5 cursor-pointer group"
+                      >
+                        <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--texto-2)] group-hover:text-[color:var(--texto)] flex items-center gap-1.5 transition-colors">
                           <CheckCircle2 className="w-3.5 h-3.5 text-[color:var(--positivo)]" />
-                          Deudas liquidadas ({deudasSaldadas.length})
-                        </h3>
-                        <span className="text-[11px] text-[color:var(--positivo)] font-semibold">¡Libertad conseguida!</span>
-                      </div>
-                      <div className="space-y-2">
+                          {deudasSaldadas.length} liquidada{deudasSaldadas.length > 1 ? 's' : ''}
+                        </span>
+                        <span className="text-[11px] text-[color:var(--positivo)] font-semibold">
+                          ¡Libertad conseguida! {liquidadasAbiertas ? '▴' : '▾'}
+                        </span>
+                      </button>
+                      <div className={liquidadasAbiertas ? 'space-y-2' : 'hidden'}>
                         {deudasSaldadas.map((deuda) => (
                           <Tarjeta key={deuda.id} padding="sm" className="opacity-70 hover:opacity-100 transition-opacity bg-[var(--superficie)] border-[var(--linea)]">
                             <div className="flex items-center justify-between gap-3">
