@@ -148,17 +148,61 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
 
   const totalSalidas = salidas.reduce((acc, m) => acc + Math.abs(m.monto), 0);
 
-  /** Cuántas salidas hacen falta para llegar al 70% del mes. Ahí va la marca. */
+  /**
+   * Las salidas, agrupadas por concepto.
+   *
+   * Tres abonos al carro de $450.000 son el carro llevándose $1.350.000, no
+   * tres cosas distintas. Sin agrupar, la lista se alarga y el porcentaje
+   * miente: reparte en tres el peso de uno.
+   */
+  const salidasAgrupadas = useMemo(() => {
+    const mapa = new Map<
+      string,
+      { clave: string; etiqueta: string; categoria: string; billetera: string; monto: number; veces: number; fecha: string }
+    >();
+    for (const m of salidas) {
+      const etiqueta = m.nota || m.descripcion || m.categoria;
+      const clave = `${etiqueta}|${m.categoria}`;
+      const monto = Math.abs(m.monto);
+      const previo = mapa.get(clave);
+      if (previo) {
+        previo.monto += monto;
+        previo.veces += 1;
+      } else {
+        mapa.set(clave, {
+          clave,
+          etiqueta,
+          categoria: m.categoria,
+          billetera: m.billeteraNombre || '',
+          monto,
+          veces: 1,
+          fecha: m.fecha,
+        });
+      }
+    }
+    return [...mapa.values()].sort((a, b) => b.monto - a.monto);
+  }, [salidas]);
+
+  /** Cuántos conceptos hacen falta para llegar al 70% del mes. Ahí se corta. */
   const corteSetenta = useMemo(() => {
     let suma = 0;
-    for (let i = 0; i < salidas.length; i++) {
-      suma += Math.abs(salidas[i].monto);
+    for (let i = 0; i < salidasAgrupadas.length; i++) {
+      suma += salidasAgrupadas[i].monto;
       if (totalSalidas > 0 && suma / totalSalidas >= 0.7) {
         return { indice: i, suma, porcentaje: Math.round((suma / totalSalidas) * 100) };
       }
     }
     return null;
-  }, [salidas, totalSalidas]);
+  }, [salidasAgrupadas, totalSalidas]);
+
+  // El resto se pliega: no informa del porcentaje, solo alarga la columna.
+  const [colaAbierta, setColaAbierta] = useState(false);
+  const cabeza =
+    corteSetenta && !colaAbierta
+      ? salidasAgrupadas.slice(0, corteSetenta.indice + 1)
+      : salidasAgrupadas;
+  const cola = corteSetenta ? salidasAgrupadas.slice(corteSetenta.indice + 1) : [];
+  const montoCola = cola.reduce((a, x) => a + x.monto, 0);
 
   /** Entró y salió de cada billetera este mes. */
   const flujoPorBilletera = useMemo(
@@ -228,11 +272,11 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
         <Zona crece sinPadding>
           <div className="p-4 xl:px-[17px] xl:py-[13px] xl:pb-2">
             <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
-              Todas las salidas, de mayor a menor
+              En qué se te va, de mayor a menor
             </p>
             {corteSetenta && (
               <h3 className="font-display font-bold text-[13.5px] text-[color:var(--texto)] mt-1.5">
-                Las {corteSetenta.indice + 1} primeras se llevan{' '}
+                {corteSetenta.indice + 1 === 1 ? 'Una sola cosa se lleva' : `${corteSetenta.indice + 1} cosas se llevan`}{' '}
                 <span className="text-[color:var(--acento)]">
                   {corteSetenta.porcentaje} de cada 100
                 </span>
@@ -241,30 +285,58 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
           </div>
           <Scroll className="px-4 xl:px-[17px] pb-2">
             <div className="flex flex-col">
-              {salidas.map((m, i) => (
-                <React.Fragment key={m.id}>
-                  <div className="flex items-center justify-between gap-3 py-[7px] border-b border-[var(--hairline)]">
-                    <span className="min-w-0">
-                      <span className="block text-xs font-medium text-[color:var(--texto)] truncate">
-                        {m.nota || m.descripcion || m.categoria}
+              {cabeza.map((g) => {
+                const pct = totalSalidas > 0 ? (g.monto / totalSalidas) * 100 : 0;
+                return (
+                  <div key={g.clave} className="py-[7px] border-b border-[var(--hairline)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="min-w-0 flex items-center gap-1.5">
+                        <span className="text-xs font-medium text-[color:var(--texto)] truncate">
+                          {g.etiqueta}
+                        </span>
+                        {g.veces > 1 && (
+                          <span className="flex-none text-[9.5px] font-bold tabular-nums px-1 py-px rounded bg-[var(--superficie-2)] border border-[var(--linea)] text-[color:var(--texto-3)]">
+                            ×{g.veces}
+                          </span>
+                        )}
                       </span>
-                      <span className="block text-[10px] text-[color:var(--texto-3)] truncate">
-                        {m.fecha} · {m.categoria}
-                        {m.billeteraNombre ? ` · ${m.billeteraNombre}` : ''}
+                      <span className="flex items-baseline gap-2 flex-none">
+                        <span className="font-display font-bold text-[13px] tabular-nums text-[color:var(--texto)]">
+                          {formatearCOP(g.monto)}
+                        </span>
+                        <span className="text-[10px] font-semibold tabular-nums text-[color:var(--acento)] w-[30px] text-right">
+                          {pct >= 1 ? Math.round(pct) : '<1'}%
+                        </span>
                       </span>
-                    </span>
-                    <span className="font-display font-bold text-[13px] tabular-nums text-[color:var(--texto)] whitespace-nowrap">
-                      {formatearCOP(Math.abs(m.monto))}
-                    </span>
-                  </div>
-                  {corteSetenta && i === corteSetenta.indice && i < salidas.length - 1 && (
-                    <div className="py-1.5 px-2 my-0.5 rounded-md bg-[var(--superficie-2)] text-[10px] text-[color:var(--texto-3)]">
-                      Hasta aquí: {formatearCOP(corteSetenta.suma)} · el {corteSetenta.porcentaje}%
-                      del mes
                     </div>
-                  )}
-                </React.Fragment>
-              ))}
+                    {/* La barra es el porcentaje, que es el objetivo del bloque. */}
+                    <div className="mt-1 h-[3px] rounded-full bg-[var(--superficie-2)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[var(--acento)]"
+                        style={{ width: `${Math.max(1, pct)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {cola.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setColaAbierta((v) => !v)}
+                  aria-expanded={colaAbierta}
+                  className="flex items-center justify-between gap-3 py-2 text-left cursor-pointer group"
+                >
+                  <span className="text-[11px] text-[color:var(--texto-3)] group-hover:text-[color:var(--texto-2)] transition-colors">
+                    {colaAbierta
+                      ? 'Ver menos ▴'
+                      : `y ${cola.length} ${cola.length === 1 ? 'cosa' : 'cosas'} más ▾`}
+                  </span>
+                  <span className="text-[11px] tabular-nums text-[color:var(--texto-3)] flex-none">
+                    {formatearCOP(montoCola)} · el {100 - (corteSetenta?.porcentaje ?? 0)}% restante
+                  </span>
+                </button>
+              )}
             </div>
           </Scroll>
         </Zona>
