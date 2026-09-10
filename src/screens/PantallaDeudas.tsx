@@ -540,6 +540,13 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
     [deudasActivas, disponibleMensual, estrategia]
   );
 
+  /*
+   * Si el plan no cierra, la simulacion llega al tope de 360 meses. Enseniar
+   * 30 anios de un saldo que no baja no dice nada: se corta en 12 y la pantalla
+   * explica por que.
+   */
+  const filasTabla = plan.esViable ? tabla.filas : tabla.filas.slice(0, 12);
+
   const prioridad = deudasOrdenadas[0] || null;
   const demas = deudasOrdenadas.slice(1);
   const minimosTotal = plan.pagoMinimoTotal;
@@ -1067,7 +1074,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                             </tr>
                           </thead>
                           <tbody>
-                            {(tablaAbierta ? tabla.filas : tabla.filas.slice(0, 6)).map((f) => (
+                            {(tablaAbierta ? filasTabla : filasTabla.slice(0, 6)).map((f) => (
                               <tr key={f.mes} className="border-t border-[var(--hairline)]">
                                 <td className="py-2 px-2 text-[color:var(--texto)] font-semibold whitespace-nowrap">{f.etiqueta}</td>
                                 {tabla.columnas.map((c) => {
@@ -1086,14 +1093,20 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                           </tbody>
                         </table>
                       </div>
-                      {tabla.filas.length > 6 && (
+                      {filasTabla.length > 6 && (
                         <button
                           type="button"
                           onClick={() => setTablaAbierta((v) => !v)}
                           className="mt-2 w-full text-center text-xs font-semibold text-[color:var(--acento)] cursor-pointer py-1"
                         >
-                          {tablaAbierta ? 'Ver menos ▴' : `Ver los ${tabla.filas.length} meses ▾`}
+                          {tablaAbierta ? 'Ver menos ▴' : `Ver los ${filasTabla.length} meses ▾`}
                         </button>
+                      )}
+                      {!plan.esViable && (
+                        <p className="mt-2 text-[11px] text-[color:var(--alerta)] leading-relaxed">
+                          Con este abono el saldo no baja, así que no hay un último mes que mostrar.
+                          Estos son los próximos 12.
+                        </p>
                       )}
                     </Tarjeta>
                   </div>

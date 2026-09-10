@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Wallet,
   ArrowLeft,
@@ -89,6 +89,23 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
       return true;
     });
   }, [movimientos, filtroTipo, filtroBilleteraId]);
+
+  /*
+   * La lista de movimientos crece para siempre: a los 94 ya estiraba la columna
+   * y con un anio de uso seria impracticable. De diez en diez, y el alto de la
+   * pantalla deja de depender de cuanto lleve registrado.
+   */
+  const POR_PAGINA = 10;
+  const [pagina, setPagina] = useState(1);
+  const totalPaginas = Math.max(1, Math.ceil(movimientosFiltrados.length / POR_PAGINA));
+
+  // Al cambiar de filtro, la pagina 7 puede no existir: se vuelve al principio.
+  useEffect(() => {
+    setPagina(1);
+  }, [filtroTipo, filtroBilleteraId]);
+
+  const desde = (pagina - 1) * POR_PAGINA;
+  const movimientosPagina = movimientosFiltrados.slice(desde, desde + POR_PAGINA);
 
   const abrirModalMovimientoConBilletera = (billeteraId?: string) => {
     setBilleteraSeleccionadaParaMov(billeteraId);
@@ -336,7 +353,7 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
             </p>
             <p
               className={`font-display font-black text-[40px] leading-none tabular-nums mt-2 ${
-                saldoTotal >= 0 ? 'text-[color:var(--acento)]' : 'text-[color:var(--alerta)]'
+                saldoTotal >= 0 ? 'text-[color:var(--accion)]' : 'text-[color:var(--alerta)]'
               }`}
             >
               {formatearCOP(saldoTotal)}
@@ -516,10 +533,18 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
                   Movimientos
                 </p>
                 <p className="text-[11.5px] text-[color:var(--texto-3)] mt-1.5">
-                  <span className="text-[color:var(--texto-2)] font-semibold">
-                    {movimientosFiltrados.length}
-                  </span>{' '}
-                  de {movimientos.length} en total
+                  {movimientosFiltrados.length > 0 ? (
+                    <>
+                      <span className="text-[color:var(--texto-2)] font-semibold tabular-nums">
+                        {desde + 1}–{Math.min(desde + POR_PAGINA, movimientosFiltrados.length)}
+                      </span>{' '}
+                      de {movimientosFiltrados.length}
+                      {movimientosFiltrados.length !== movimientos.length &&
+                        ` · ${movimientos.length} en total`}
+                    </>
+                  ) : (
+                    <>0 de {movimientos.length} en total</>
+                  )}
                 </p>
               </div>
 
@@ -565,7 +590,7 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
             {movimientosFiltrados.length > 0 ? (
               <Scroll className="px-4 xl:px-[17px] py-1">
                 <div className="flex flex-col">
-                  {movimientosFiltrados.map((mov) => {
+                  {movimientosPagina.map((mov) => {
                     const esIngreso = mov.tipo === 'ingreso';
                     const esAbonoDeuda = Boolean(mov.deudaId) || mov.categoria === 'Deudas';
                     return (
@@ -620,6 +645,30 @@ export const PantallaBilleteras: React.FC<PantallaBilleterasProps> = ({
                     );
                   })}
                 </div>
+
+                {totalPaginas > 1 && (
+                  <div className="flex items-center justify-between gap-3 py-2.5 mt-1 border-t border-[var(--hairline)]">
+                    <button
+                      type="button"
+                      onClick={() => setPagina((n) => Math.max(1, n - 1))}
+                      disabled={pagina === 1}
+                      className="px-2.5 py-1 rounded-lg border border-[var(--linea)] text-[11px] font-semibold text-[color:var(--texto-2)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                    >
+                      ‹ Anteriores
+                    </button>
+                    <span className="text-[11px] text-[color:var(--texto-3)] tabular-nums">
+                      Página {pagina} de {totalPaginas}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPagina((n) => Math.min(totalPaginas, n + 1))}
+                      disabled={pagina === totalPaginas}
+                      className="px-2.5 py-1 rounded-lg border border-[var(--linea)] text-[11px] font-semibold text-[color:var(--texto-2)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] disabled:opacity-30 disabled:pointer-events-none cursor-pointer transition-colors"
+                    >
+                      Siguientes ›
+                    </button>
+                  </div>
+                )}
               </Scroll>
             ) : movimientos.length === 0 ? (
               <div className="p-4">
