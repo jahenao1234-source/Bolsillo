@@ -420,7 +420,7 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
         cifra: formatearCOP(saldo),
         sufijo: 'te faltan',
         segmentos: [{ ancho: resumen.porcentajeDeudaPagada, color: 'var(--acento)' }],
-        pie: (
+        pie: plan.esViable ? (
           <>
             Vas <strong className="text-[color:var(--texto-2)] font-semibold">
               {resumen.porcentajeDeudaPagada}% del camino
@@ -429,6 +429,12 @@ export const PantallaInicio: React.FC<PantallaInicioProps> = ({
             <strong className="text-[color:var(--texto-2)] font-semibold">
               {plan.fechaLibertad}
             </strong>
+          </>
+        ) : (
+          <>
+            Con lo que le abonas, el saldo{' '}
+            <strong className="text-[color:var(--alerta)] font-semibold">no baja</strong>: el interés
+            se come el pago. Sube el abono o el plan no arranca.
           </>
         ),
         etiqueta:

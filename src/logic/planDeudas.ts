@@ -115,7 +115,7 @@ export function calcularPlan(
   if (disponibleMensual <= 0) {
     return {
       mesesTotales: 999,
-      fechaLibertad: 'Indefinida',
+      fechaLibertad: 'Sin fecha',
       interesesTotales: 0,
       ordenSaldado: [],
       deudaTotalActual,

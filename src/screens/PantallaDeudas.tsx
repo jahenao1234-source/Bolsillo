@@ -897,9 +897,42 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[color:var(--accion)]">
                               ★ Tu foco de este mes
                             </span>
-                            {caeEsteMes && (
-                              <span className="text-[11px] font-bold text-[color:var(--accion)] bg-[var(--accion)]/12 border border-[var(--accion)]/30 rounded-full px-2.5 py-0.5">🔥 cae este mes</span>
-                            )}
+                            <div className="flex items-center gap-2 flex-none">
+                              {caeEsteMes && (
+                                <span className="text-[11px] font-bold text-[color:var(--accion)] bg-[var(--accion)]/12 border border-[var(--accion)]/30 rounded-full px-2.5 py-0.5">🔥 cae este mes</span>
+                              )}
+                              <MenuAcciones
+                                nombre={prioridad.nombre}
+                                acciones={[
+                                  ...(estrategia === 'personalizado' && deudasActivas.length > 1
+                                    ? [
+                                        {
+                                          etiqueta: 'Quitar del foco',
+                                          icono: <ChevronDown className="w-3.5 h-3.5" />,
+                                          onClick: () => handleMover(prioridad.id, 'abajo'),
+                                        },
+                                      ]
+                                    : []),
+                                  {
+                                    etiqueta: 'Marcar saldada',
+                                    icono: <CheckCircle2 className="w-3.5 h-3.5" />,
+                                    onClick: () => handleMarcarSaldada(prioridad),
+                                    tono: 'positivo' as const,
+                                  },
+                                  {
+                                    etiqueta: 'Editar deuda',
+                                    icono: <Pencil className="w-3.5 h-3.5" />,
+                                    onClick: () => handleEditarDeuda(prioridad),
+                                  },
+                                  {
+                                    etiqueta: 'Quitar del plan',
+                                    icono: <Trash2 className="w-3.5 h-3.5" />,
+                                    onClick: () => handleEliminarDeuda(prioridad.id, prioridad.nombre),
+                                    tono: 'alerta' as const,
+                                  },
+                                ]}
+                              />
+                            </div>
                           </div>
                           <h3 className="font-display font-black text-xl text-[color:var(--texto)] mt-2">{prioridad.nombre}</h3>
                           <p className="text-xs text-[color:var(--texto-2)] mt-0.5">
