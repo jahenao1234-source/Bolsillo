@@ -489,6 +489,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
   const [deudaAEditar, setDeudaAEditar] = useState<Deuda | null>(null);
   const [selectorEstrategiaAbierto, setSelectorEstrategiaAbierto] = useState(false);
   const [tablaAbierta, setTablaAbierta] = useState(false);
+  const [mesElegido, setMesElegido] = useState<number | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -546,6 +547,11 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
    * explica por que.
    */
   const filasTabla = plan.esViable ? tabla.filas : tabla.filas.slice(0, 12);
+
+  // El mes que se esta mirando en el grafico. Por defecto, el primero.
+  const filaElegida =
+    filasTabla.find((f) => f.mes === mesElegido) ?? filasTabla[0] ?? null;
+  const maxSaldoTabla = filasTabla.reduce((a, f) => Math.max(a, f.total), 0);
 
   const prioridad = deudasOrdenadas[0] || null;
   const demas = deudasOrdenadas.slice(1);
@@ -665,52 +671,185 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
    * cuando el cajón de Hoy empuja se pliega debajo de la tabla en vez de
    * desaparecer.
    */
+  /**
+   * La bola de nieve, estación por estación.
+   *
+   * En cada tramo el ataque es toda tu plata menos los mínimos de las deudas
+   * que siguen vivas. Por eso cuando una cae su cuota no se pierde: se suma a
+   * la siguiente, y cada deuda tarda menos que la anterior. El plan ya lo
+   * calculaba; lo que faltaba era decirlo.
+   */
+  const camino = useMemo(() => {
+    const orden = plan.ordenSaldado;
+    const minimosDesde = (i: number) =>
+      orden.slice(i).reduce((a, d) => a + (d.pagoMinimo || 0), 0);
+    const ataqueEn = (i: number) => Math.max(0, disponibleMensual - minimosDesde(i + 1));
+
+    return orden.map((item, i) => ({
+      item,
+      ataque: ataqueEn(i),
+      siguiente: orden[i + 1] ?? null,
+      ataqueSiguiente: orden[i + 1] ? ataqueEn(i + 1) : 0,
+      restante: tabla.filas.find((f) => f.mes === item.mesSaldado)?.total ?? 0,
+      esUltimo: i === orden.length - 1,
+    }));
+  }, [plan.ordenSaldado, disponibleMensual, tabla.filas]);
+
+  /**
+   * Un color por deuda, estable entre el gráfico y el desglose. Se evita el
+   * naranja a propósito: en esta app significa "acción", no "dato".
+   */
+  const COLORES_DEUDA = [
+    'var(--alerta)',
+    'var(--azul)',
+    'var(--acento)',
+    'var(--positivo)',
+    'var(--texto-3)',
+  ];
+  const colorDeuda = (i: number) => COLORES_DEUDA[i % COLORES_DEUDA.length];
+
+  const enMeses = (n: number) => `en ${n} ${n === 1 ? 'mes' : 'meses'}`;
+
+  /** Cuánto de la plata total se está concentrando en una sola deuda. */
+  const anchoAtaque = (monto: number) =>
+    disponibleMensual > 0 ? Math.max(3, Math.round((monto / disponibleMensual) * 100)) : 0;
+
   const panelCamino = (
     <>
-        {plan.ordenSaldado.length > 0 && (
-          <div className="space-y-3">
-            <h2 className={secH}>Tu camino</h2>
-            <Tarjeta padding="lg">
-              <div className="relative pl-8 pb-5">
-                <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />
-                <span className="absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 border-[var(--accion)] bg-[var(--superficie)]" />
-                <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--accion)]">Hoy · estás aquí</span>
-                <div className="text-sm font-bold text-[color:var(--texto)] mt-0.5">Debes {formatearCOP(totalSaldosActivos)}</div>
-                <div className="text-[11px] text-[color:var(--texto-2)]">{deudasActivas.length} deudas activas</div>
+      {camino.length > 0 && (
+        <div className="space-y-3">
+          <h2 className={secH}>Tu camino</h2>
+          <Tarjeta padding="lg">
+            {/* Hoy: contra cuál vas, y con cuánto */}
+            <div className="relative pl-8 pb-5">
+              <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />
+              <span className="absolute left-0 top-1 w-3.5 h-3.5 rounded-full bg-[var(--accion)] border-2 border-[var(--accion)]" />
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--accion)]">
+                  Hoy · estás aquí
+                </span>
+                <span className="text-[11px] tabular-nums text-[color:var(--texto-3)]">
+                  debes {formatearCOP(totalSaldosActivos)}
+                </span>
               </div>
-              {plan.ordenSaldado.map((item, idx) => {
-                const esUltimo = idx === plan.ordenSaldado.length - 1;
-                const severe = item.tipo === 'gota_a_gota';
-                const restante = tabla.filas.find((f) => f.mes === item.mesSaldado)?.total ?? 0;
-                const pagadoPct = totalSaldosActivos > 0
-                  ? Math.min(100, Math.round(((totalSaldosActivos - restante) / totalSaldosActivos) * 100))
-                  : 100;
-                return (
-                  <div key={item.id} className="relative pl-8 pb-5 last:pb-0">
-                    {!esUltimo && <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />}
-                    <span className={`absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 ${esUltimo ? 'bg-[var(--positivo)] border-[var(--positivo)]' : severe ? 'border-[var(--alerta)] bg-[var(--superficie)]' : 'border-[var(--positivo)] bg-[var(--superficie)]'}`} />
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">{item.fechaEstimada}</span>
-                      {!esUltimo && <span className="text-[11px] tabular-nums text-[color:var(--texto-3)]">quedan {formatearCOP(restante)}</span>}
-                    </div>
-                    <div className="text-sm font-bold mt-0.5">
-                      <span className={severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--positivo)]'}>✓ {item.nombre} — libre</span>
-                      {esUltimo && ' 🎉'}
-                    </div>
-                    <div className="text-[11px] text-[color:var(--texto-2)]">
-                      {esUltimo ? '¡Libre de deudas!' : idx === 0 ? 'Tu primera victoria' : severe ? 'La más cara, ¡fuera!' : `Intereses pagados: ${formatearCOP(item.interesesPagados)}`}
-                    </div>
-                    <div className="mt-2 h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(3, pagadoPct)}%`, background: esUltimo ? 'var(--positivo)' : 'var(--acento)' }} />
-                    </div>
-                    <div className="text-[10px] text-[color:var(--texto-3)] mt-1">{pagadoPct}% del camino recorrido</div>
-                  </div>
-                );
-              })}
-            </Tarjeta>
-          </div>
-        )}
+              <div className="text-sm font-bold text-[color:var(--texto)] mt-0.5">
+                Atacas <span className="text-[color:var(--accion)]">{camino[0].item.nombre}</span>
+              </div>
+              <div className="mt-1.5 rounded-lg border border-[var(--accion)]/25 bg-[var(--accion)]/8 px-2.5 py-1.5 text-[11px] text-[color:var(--texto-2)] leading-relaxed">
+                Recibe su mínimo de{' '}
+                <strong className="text-[color:var(--accion)] font-bold tabular-nums">
+                  {formatearCOP(camino[0].item.pagoMinimo)}
+                </strong>
+                {extraMensual > 0 ? (
+                  <>
+                    {' '}más tus{' '}
+                    <strong className="text-[color:var(--accion)] font-bold tabular-nums">
+                      {formatearCOP(extraMensual)}
+                    </strong>{' '}
+                    de extra ={' '}
+                    <strong className="text-[color:var(--accion)] font-bold tabular-nums">
+                      {formatearCOP(camino[0].ataque)}
+                    </strong>{' '}
+                    al mes.
+                  </>
+                ) : (
+                  <> al mes. Sin extra, el plan avanza a su paso más lento.</>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[color:var(--texto-3)]">
+                <span>ataque</span>
+                <div className="flex-1 h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[var(--accion)] transition-all duration-500"
+                    style={{ width: `${anchoAtaque(camino[0].ataque)}%` }}
+                  />
+                </div>
+                <strong className="tabular-nums text-[color:var(--texto-2)] font-bold">
+                  {formatearCOP(camino[0].ataque)}
+                </strong>
+              </div>
+            </div>
 
+            {/* Cada caída empuja a la siguiente */}
+            {camino.map((e) => (
+              <div key={e.item.id} className="relative pl-8 pb-5 last:pb-0">
+                {!e.esUltimo && (
+                  <span className="absolute left-[7px] top-4 bottom-0 w-0.5 bg-[var(--hairline)]" />
+                )}
+                <span
+                  className={`absolute left-0 top-1 w-3.5 h-3.5 rounded-full border-2 ${
+                    e.esUltimo
+                      ? 'bg-[var(--positivo)] border-[var(--positivo)]'
+                      : 'border-[var(--positivo)] bg-[var(--superficie)]'
+                  }`}
+                />
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">
+                    {e.item.fechaEstimada} · {enMeses(e.item.mesSaldado)}
+                  </span>
+                  <span
+                    className={`text-[11px] tabular-nums ${
+                      e.esUltimo
+                        ? 'text-[color:var(--positivo)] font-semibold'
+                        : 'text-[color:var(--texto-3)]'
+                    }`}
+                  >
+                    {e.esUltimo ? 'te queda $0' : `te quedan ${formatearCOP(e.restante)}`}
+                  </span>
+                </div>
+
+                <div className="text-sm font-bold mt-0.5">
+                  {e.esUltimo ? (
+                    <span className="text-[color:var(--positivo)]">Libre de deudas 🎉</span>
+                  ) : (
+                    <>
+                      Te quitas <span className="text-[color:var(--positivo)]">{e.item.nombre}</span>{' '}
+                      de encima
+                    </>
+                  )}
+                </div>
+
+                {!e.esUltimo && e.siguiente && (
+                  <div className="mt-1.5 rounded-lg border border-[var(--accion)]/25 bg-[var(--accion)]/8 px-2.5 py-1.5 text-[11px] text-[color:var(--texto-2)] leading-relaxed">
+                    Sus{' '}
+                    <strong className="text-[color:var(--accion)] font-bold tabular-nums">
+                      {formatearCOP(e.item.pagoMinimo)}
+                    </strong>{' '}
+                    quedan libres y se suman al extra:{' '}
+                    <strong className="text-[color:var(--texto)] font-semibold">{e.siguiente.nombre}</strong>{' '}
+                    pasa a recibir{' '}
+                    <strong className="text-[color:var(--accion)] font-bold tabular-nums">
+                      {formatearCOP(e.ataqueSiguiente)}
+                    </strong>
+                    .
+                  </div>
+                )}
+
+                {!e.esUltimo && (
+                  <div className="flex items-center gap-2 mt-1.5 text-[10px] text-[color:var(--texto-3)]">
+                    <span>ataque</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[var(--accion)] transition-all duration-500"
+                        style={{ width: `${anchoAtaque(e.ataqueSiguiente)}%` }}
+                      />
+                    </div>
+                    <strong className="tabular-nums text-[color:var(--texto-2)] font-bold">
+                      {formatearCOP(e.ataqueSiguiente)}
+                    </strong>
+                  </div>
+                )}
+
+                {e.esUltimo && (
+                  <p className="text-[11px] text-[color:var(--texto-2)] mt-1">
+                    Toda tu plata —{formatearCOP(disponibleMensual)} al mes— vuelve a ser tuya.
+                  </p>
+                )}
+              </div>
+            ))}
+          </Tarjeta>
+        </div>
+      )}
     </>
   );
 
@@ -837,7 +976,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
             </button>
 
             <div className="bg-[var(--superficie)] p-4">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--texto-2)]">Tu plata este mes</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--texto-2)]">Le metes a las deudas</span>
               {editandoDisponible ? (
                 <form onSubmit={handleGuardarDisponible} className="mt-1 flex items-center gap-1.5">
                   <input
@@ -861,6 +1000,7 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                   className="mt-1 flex items-center gap-1.5 font-display font-bold text-[15px] text-[color:var(--texto)] hover:text-[color:var(--acento)] cursor-pointer transition-colors"
                 >
                   <span className="tabular-nums">{formatearCOP(disponibleMensual)}</span>
+                  <span className="text-[10px] font-semibold text-[color:var(--texto-3)]">al mes</span>
                   <Edit3 className="w-3.5 h-3.5 text-[color:var(--acento)]" />
                 </button>
               )}
@@ -873,6 +1013,66 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
               </div>
             </div>
           </div>
+
+          {/* En qué se parte esa plata: lo obligatorio y lo que de verdad acelera */}
+          {disponibleMensual > 0 && (
+            <div className="rounded-2xl border border-[var(--linea)] bg-[var(--superficie)] px-4 py-3">
+              <div className="flex h-2 rounded-full overflow-hidden bg-[var(--superficie-2)]">
+                <span
+                  className="block h-full bg-[var(--texto-3)]"
+                  style={{ width: `${Math.min(100, (minimosTotal / disponibleMensual) * 100)}%` }}
+                />
+                <span
+                  className="block h-full bg-[var(--accion)]"
+                  style={{ width: `${Math.max(0, (extraMensual / disponibleMensual) * 100)}%` }}
+                />
+              </div>
+
+              <div className="mt-2 flex items-center justify-between gap-3 flex-wrap text-[11px]">
+                <span className="text-[color:var(--texto-3)]">
+                  <span className="inline-block w-[7px] h-[7px] rounded-[2px] bg-[var(--texto-3)] mr-1.5" />
+                  Mínimos ·{' '}
+                  <strong className="text-[color:var(--texto-2)] font-semibold tabular-nums">
+                    {formatearCOP(minimosTotal)}
+                  </strong>
+                </span>
+                <span className="text-[color:var(--texto-3)]">
+                  <span className="inline-block w-[7px] h-[7px] rounded-[2px] bg-[var(--accion)] mr-1.5" />
+                  Tu extra ·{' '}
+                  <strong className="text-[color:var(--accion)] font-semibold tabular-nums">
+                    {formatearCOP(extraMensual)}
+                  </strong>
+                </span>
+              </div>
+
+              <p className="mt-2 pt-2 border-t border-[var(--hairline)] text-[11px] text-[color:var(--texto-2)] leading-relaxed">
+                {extraMensual > 0 ? (
+                  <>
+                    Los{' '}
+                    <strong className="text-[color:var(--texto)] font-semibold tabular-nums">
+                      {formatearCOP(minimosTotal)}
+                    </strong>{' '}
+                    son obligatorios: es lo que piden tus {deudasActivas.length}{' '}
+                    {deudasActivas.length === 1 ? 'deuda' : 'deudas'} para no atrasarte. Los{' '}
+                    <strong className="text-[color:var(--accion)] font-semibold tabular-nums">
+                      {formatearCOP(extraMensual)}
+                    </strong>{' '}
+                    son los únicos que acortan el plan
+                    {prioridad ? <> — van completos a {prioridad.nombre} hasta tumbarla</> : null}.
+                  </>
+                ) : (
+                  <>
+                    Todo se va en los mínimos, así que el plan avanza a su paso más lento. Cada peso
+                    que subas por encima de{' '}
+                    <strong className="text-[color:var(--texto)] font-semibold tabular-nums">
+                      {formatearCOP(minimosTotal)}
+                    </strong>{' '}
+                    ataca una sola deuda y te adelanta la fecha.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
 
           {plan.mensajeAdvertencia && (
             <div className="p-3 rounded-xl bg-[var(--alerta)]/12 border border-[var(--alerta)]/25 flex items-start gap-2.5 text-xs text-[color:var(--alerta)]">
@@ -1052,47 +1252,137 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
             <Columna ordenMovil={3} borde={!cajonEmpuja}>
               <Zona crece sinPadding>
                 <Scroll className="px-4 xl:px-[17px] py-3">
-                            {tabla.filas.length > 0 && (
+                            {filasTabla.length > 0 && (
                   <div className="space-y-3">
                     <div className="px-1">
-                      <h2 className="font-display font-bold text-base text-[color:var(--texto)]">Detalle mes a mes</h2>
-                      <p className="text-xs text-[color:var(--texto-2)] mt-0.5">El saldo de cada deuda y el interés que se achica mes a mes, hasta $0.</p>
+                      <h2 className="font-display font-bold text-base text-[color:var(--texto)]">
+                        Cómo se achica tu deuda
+                      </h2>
+                      <p className="text-xs text-[color:var(--texto-2)] mt-0.5">
+                        Cada barra es un mes. Toca una para ver el saldo deuda por deuda.
+                      </p>
                     </div>
+
                     <Tarjeta padding="md">
-                      <div className="overflow-x-auto -mx-1">
-                        <table className="w-full text-xs border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="text-left py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Mes</th>
-                              {tabla.columnas.map((c) => (
-                                <th key={c.id} className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">
-                                  {c.nombre.length > 12 ? c.nombre.slice(0, 11) + '…' : c.nombre}
-                                </th>
-                              ))}
-                              <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold whitespace-nowrap">Restante</th>
-                              <th className="text-right py-2 px-2 text-[10px] uppercase tracking-wide text-[color:var(--alerta)] font-bold whitespace-nowrap">Interés/mes</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(tablaAbierta ? filasTabla : filasTabla.slice(0, 6)).map((f) => (
-                              <tr key={f.mes} className="border-t border-[var(--hairline)]">
-                                <td className="py-2 px-2 text-[color:var(--texto)] font-semibold whitespace-nowrap">{f.etiqueta}</td>
-                                {tabla.columnas.map((c) => {
-                                  const s = f.saldos[c.id] ?? 0;
-                                  const severe = c.tipo === 'gota_a_gota';
+                      {/*
+                        Barras apiladas en vez de una tabla de 7 columnas: con 4 deudas
+                        ya no cabía y aparecía scroll horizontal. Esto entra igual con
+                        2 deudas que con 8, y enseña la forma del plan —que se dobla
+                        cada vez que una deuda cae— que la tabla no podía mostrar.
+                      */}
+                      <div className="flex items-end gap-[3px] h-[116px]">
+                        {filasTabla.map((f) => {
+                          const alto = maxSaldoTabla > 0 ? (f.total / maxSaldoTabla) * 100 : 0;
+                          const elegido = f.mes === filaElegida?.mes;
+                          return (
+                            <button
+                              key={f.mes}
+                              type="button"
+                              onClick={() => setMesElegido(f.mes)}
+                              title={`${f.etiqueta} · te quedan ${formatearCOP(f.total)}`}
+                              aria-label={`${f.etiqueta}, te quedan ${formatearCOP(f.total)}`}
+                              aria-pressed={elegido}
+                              className="flex-1 min-w-0 h-full flex flex-col justify-end cursor-pointer group"
+                            >
+                              <div
+                                className={`flex flex-col-reverse rounded-t-[3px] overflow-hidden transition-opacity ${
+                                  elegido ? 'opacity-100' : 'opacity-55 group-hover:opacity-85'
+                                }`}
+                                style={{ height: `${Math.max(2, alto)}%` }}
+                              >
+                                {tabla.columnas.map((c, i) => {
+                                  const saldo = f.saldos[c.id] ?? 0;
+                                  if (saldo <= 0) return null;
                                   return (
-                                    <td key={c.id} className={`py-2 px-2 text-right tabular-nums whitespace-nowrap ${s <= 0 ? 'text-[color:var(--positivo)]' : severe ? 'text-[color:var(--alerta)]' : 'text-[color:var(--texto-2)]'}`}>
-                                      {s <= 0 ? '✓' : formatearCOP(s)}
-                                    </td>
+                                    <span
+                                      key={c.id}
+                                      className="block w-full"
+                                      style={{
+                                        height: `${(saldo / f.total) * 100}%`,
+                                        background: colorDeuda(i),
+                                      }}
+                                    />
                                   );
                                 })}
-                                <td className="py-2 px-2 text-right tabular-nums font-semibold text-[color:var(--texto)] whitespace-nowrap">{formatearCOP(f.total)}</td>
-                                <td className="py-2 px-2 text-right tabular-nums whitespace-nowrap text-[color:var(--alerta)]">{f.interes > 0 ? formatearCOP(f.interes) : '—'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                              </div>
+                              <span
+                                className={`block h-[2px] mt-[3px] rounded-full ${
+                                  elegido ? 'bg-[var(--acento)]' : 'bg-transparent'
+                                }`}
+                              />
+                            </button>
+                          );
+                        })}
                       </div>
+
+                      <div className="flex justify-between text-[10px] text-[color:var(--texto-3)] mt-1">
+                        <span>{filasTabla[0]?.etiqueta}</span>
+                        <span className={plan.esViable ? 'text-[color:var(--positivo)] font-semibold' : ''}>
+                          {plan.esViable
+                            ? `${filasTabla[filasTabla.length - 1]?.etiqueta} · $0`
+                            : filasTabla[filasTabla.length - 1]?.etiqueta}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2.5 text-[10px] text-[color:var(--texto-3)]">
+                        {tabla.columnas.map((c, i) => (
+                          <span key={c.id} className="inline-flex items-center gap-1.5 min-w-0">
+                            <span
+                              className="w-[7px] h-[7px] rounded-[2px] flex-none"
+                              style={{ background: colorDeuda(i) }}
+                            />
+                            <span className="truncate">{c.nombre}</span>
+                          </span>
+                        ))}
+                      </div>
+
+                      {/*
+                        La tabla y el desglose van lado a lado: la columna mide 955px y
+                        apilarlos costaba 157px de alto para nada. Por debajo del ancho
+                        del contenedor vuelven a apilarse.
+                      */}
+                      <div className="mt-3 grid gap-4 @2xl:grid-cols-[minmax(0,1fr)_240px] @2xl:items-start">
+                        <div className="min-w-0">
+                      {/* Tres columnas fijas: caben siempre, con 2 deudas o con 8. */}
+                      <table className="w-full text-xs border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="text-left py-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold">
+                              Mes
+                            </th>
+                            <th className="text-right py-2 text-[10px] uppercase tracking-wide text-[color:var(--texto-3)] font-bold">
+                              Te queda
+                            </th>
+                            <th className="text-right py-2 text-[10px] uppercase tracking-wide text-[color:var(--alerta)] font-bold">
+                              Interés del mes
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(tablaAbierta ? filasTabla : filasTabla.slice(0, 6)).map((f) => (
+                            <tr
+                              key={f.mes}
+                              onClick={() => setMesElegido(f.mes)}
+                              className={`border-t border-[var(--hairline)] cursor-pointer transition-colors ${
+                                f.mes === filaElegida?.mes
+                                  ? 'bg-[var(--acento)]/8'
+                                  : 'hover:bg-[var(--superficie-2)]'
+                              }`}
+                            >
+                              <td className="py-2 text-[color:var(--texto)] font-semibold whitespace-nowrap">
+                                {f.etiqueta}
+                              </td>
+                              <td className="py-2 text-right tabular-nums font-semibold text-[color:var(--texto)] whitespace-nowrap">
+                                {f.total <= 0 ? '$0' : formatearCOP(f.total)}
+                              </td>
+                              <td className="py-2 text-right tabular-nums whitespace-nowrap text-[color:var(--alerta)]">
+                                {f.interes > 0 ? formatearCOP(f.interes) : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
                       {filasTabla.length > 6 && (
                         <button
                           type="button"
@@ -1102,12 +1392,49 @@ export const PantallaDeudas: React.FC<PantallaDeudasProps> = ({
                           {tablaAbierta ? 'Ver menos ▴' : `Ver los ${filasTabla.length} meses ▾`}
                         </button>
                       )}
+
                       {!plan.esViable && (
                         <p className="mt-2 text-[11px] text-[color:var(--alerta)] leading-relaxed">
                           Con este abono el saldo no baja, así que no hay un último mes que mostrar.
                           Estos son los próximos 12.
                         </p>
                       )}
+                        </div>
+
+                      {/* El desglose por deuda no se pierde: se pide. */}
+                      {filaElegida && (
+                        <div className="min-w-0 pt-3 border-t border-[var(--linea)] @2xl:pt-0 @2xl:border-t-0 @2xl:pl-4 @2xl:border-l @2xl:border-[var(--hairline)]">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--texto-3)]">
+                            {filaElegida.etiqueta}, deuda por deuda
+                          </p>
+                          <div className="mt-1.5 divide-y divide-[var(--hairline)]">
+                            {tabla.columnas.map((c, i) => {
+                              const saldo = filaElegida.saldos[c.id] ?? 0;
+                              return (
+                                <div key={c.id} className="flex items-center gap-2.5 py-1.5">
+                                  <span
+                                    className="w-[7px] h-[7px] rounded-[2px] flex-none"
+                                    style={{ background: colorDeuda(i) }}
+                                  />
+                                  <span className="flex-1 min-w-0 text-[11.5px] text-[color:var(--texto-2)] truncate">
+                                    {c.nombre}
+                                  </span>
+                                  <span
+                                    className={`text-[12px] font-display font-bold tabular-nums ${
+                                      saldo <= 0
+                                        ? 'text-[color:var(--positivo)]'
+                                        : 'text-[color:var(--texto)]'
+                                    }`}
+                                  >
+                                    {saldo <= 0 ? '✓ libre' : formatearCOP(saldo)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      </div>
                     </Tarjeta>
                   </div>
                             )}
