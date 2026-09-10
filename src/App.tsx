@@ -357,6 +357,9 @@ export default function App() {
                 <PantallaPro
                   onVolver={() => setSeccionActiva('perfil')}
                   onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
+                  movimientos={movimientos}
+                  deudas={deudas}
+                  disponibleMensual={disponibleMensual}
                 />
               </div>
             )}
