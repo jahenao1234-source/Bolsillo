@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, X, AlertTriangle, Check } from 'lucide-react';
 import { Sobre } from '../../types';
+import { ID_LIBRE_GUSTOS } from '../../logic/sistema';
 import { Boton } from '../ui/Boton';
 import { formatearCOP } from '../../utils/format';
 
@@ -19,7 +20,11 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
   const [nombre, setNombre] = useState(sobre?.nombre || '');
   const [metaStr, setMetaStr] = useState(sobre?.meta ? formatearCOP(sobre.meta) : '');
   const [montoStr, setMontoStr] = useState(
-    modo === 'editar' && sobre ? formatearCOP(sobre.apartado) : (modo === 'alimentar' ? '' : (sobre?.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : ''))
+    modo === 'editar' && sobre ? (
+      (sobre.grupo === 'basico' || sobre.id === ID_LIBRE_GUSTOS)
+        ? (sobre.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : '')
+        : formatearCOP(sobre.apartado)
+    ) : (modo === 'alimentar' ? '' : (sobre?.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : ''))
   );
   const [color, setColor] = useState(sobre?.color || COLORES_SOBRE[0]);
   const [error, setError] = useState('');
@@ -58,8 +63,8 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
     if (esSistema) {
       nuevo = {
         ...sobre!,
-        presupuestoMensual: esBasico || sobre?.id === 'libre-gustos' ? num(montoStr) : sobre!.presupuestoMensual,
-        meta: !esBasico && sobre?.id !== 'libre-gustos' && num(metaStr) > 0 ? num(metaStr) : sobre!.meta,
+        presupuestoMensual: esBasico || sobre?.id === ID_LIBRE_GUSTOS ? num(montoStr) : sobre!.presupuestoMensual,
+        meta: !esBasico && sobre?.id !== ID_LIBRE_GUSTOS && num(metaStr) > 0 ? num(metaStr) : sobre!.meta,
       };
     } else {
       nuevo = {
@@ -148,7 +153,7 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {(!esSistema || (!esBasico && sobre?.id !== 'libre-gustos')) && (
+                {(!esSistema || (!esBasico && sobre?.id !== ID_LIBRE_GUSTOS)) && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--texto-2)] block">
                     Meta (opcional)
@@ -164,7 +169,7 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
                 </div>
                 )}
                 
-                {esSistema && (esBasico || sobre?.id === 'libre-gustos') && (
+                {esSistema && (esBasico || sobre?.id === ID_LIBRE_GUSTOS) && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--texto-2)] block">
                     Presupuesto Mensual
