@@ -287,6 +287,14 @@ export default function App() {
 
                 {seccion === 'sobres' && (
                   <PantallaSobresBaseCero
+                    perfilFlujo={perfilFlujo}
+                    sobres={datos.sobres}
+                    deudas={deudas}
+                    movimientos={movimientos}
+                    onRepartirBasicos={datos.repartirBasicosDeNuevo}
+                    onGuardarSobre={datos.guardarSobre}
+                    onEliminarSobre={datos.eliminarSobre}
+                    onAportarASobre={datos.aportarASobre}
                     onVolver={() => navegar('pro_inicio')}
                     onIrAMiPlan={() => navegar('plan')}
                   />
