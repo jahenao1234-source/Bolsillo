@@ -266,7 +266,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({ 
                 <div className="font-semibold text-sm tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.gustos)} al mes</div>
               </div>
               <p className="text-xs text-[color:var(--texto-2)] tabular-nums">
-                {formatearCOP((gustos.presupuestoMensual || 0) - gastadoDelMes(gustos, movimientos, hoy))} disponible este mes
+                {formatearCOP(reparto.gustos - gastadoDelMes(gustos, movimientos, hoy))} disponible este mes
               </p>
             </div>
           )}
