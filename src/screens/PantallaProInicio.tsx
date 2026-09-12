@@ -47,7 +47,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
 
   const activas = useMemo(() => deudasActivas(deudas), [deudas]);
   const metaFondo = perfil ? metaFondoBlindado(perfil.gastosBasicos) : 0;
-  const fase = faseActual(deudas, sobres, metaFondo);
+  const fase = faseActual(deudas, sobres, perfil?.gastosBasicos ?? 0);
   const colchon = sobres.find((s) => s.id === ID_SOBRE_COLCHON);
   const inversion = sobres.find((s) => s.id === ID_SOBRE_INVERSION);
   const apartadoColchon = colchon?.apartado ?? 0;
