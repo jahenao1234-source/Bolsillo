@@ -64,19 +64,16 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({ 
         <Tarjeta padding="md" bordeInteractivo>
           <div className="flex flex-col gap-1">
             <div className="text-sm font-semibold tabular-nums text-[color:var(--texto)]">
-              {formatearCOP(totalBasicos)} básicos + {formatearCOP(estado.libre)} libre = {formatearCOP(estado.ingreso)}
+              {formatearCOP(totalBasicos)} lo básico + {formatearCOP(estado.deudasActivas ? estado.paraDeudas : estado.libre)} {estado.deudasActivas ? 'a tu plan de deudas' : 'lo libre'} = {formatearCOP(estado.ingreso)}
+              {!estado.deudasActivas && estado.porAsignar === 0 && ' · $0 sin dueño'}
             </div>
-            {estado.porAsignar === 0 ? (
-              <div className="flex items-center gap-2 text-[color:var(--positivo)] text-xs font-semibold">
-                <Check className="w-4 h-4" /> $0 sin dueño
-              </div>
-            ) : (
+            {estado.porAsignar !== 0 && (
               <div className="flex flex-col gap-2 mt-1">
                 <div className="flex items-center gap-2 text-[color:var(--alerta)] text-xs font-semibold">
                   <AlertTriangle className="w-4 h-4" /> 
                   {estado.porAsignar > 0 
-                    ? `Te faltan ${formatearCOP(estado.porAsignar)} por asignar`
-                    : `Asignaste ${formatearCOP(Math.abs(estado.porAsignar))} de más`}
+                    ? `Te faltan ${formatearCOP(estado.porAsignar)} por asignar en lo básico`
+                    : `Asignaste ${formatearCOP(Math.abs(estado.porAsignar))} de más en lo básico`}
                 </div>
                 <Boton
                   variante="secundario"

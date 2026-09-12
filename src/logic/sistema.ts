@@ -353,16 +353,18 @@ export function movidoEsteMes(sobre: Sobre, hoy: Date = new Date()): number {
 }
 
 export function estadoBaseCero(perfil: PerfilFlujo | null, sobres: Sobre[], deudas: Deuda[]) {
-  if (!perfil) return { ingreso: 0, basicosAsignado: 0, libre: 0, porAsignar: 0, deudasActivas: false };
+  if (!perfil) return { ingreso: 0, basicosAsignado: 0, libre: 0, porAsignar: 0, paraDeudas: 0, deudasActivas: false };
 
   const basicosAsignado = sobres
     .filter((s) => s.grupo === 'basico')
     .reduce((a, s) => a + (s.presupuestoMensual || 0), 0);
   const tieneDeudas = deudasActivas(deudas).length > 0;
-  const libre = tieneDeudas ? 0 : Math.max(0, perfil.ingresoMensual - basicosAsignado);
-  const porAsignar = perfil.ingresoMensual - basicosAsignado - libre;
+  const paraDeudasOLibre = Math.max(0, perfil.ingresoMensual - perfil.gastosBasicos);
+  const libre = tieneDeudas ? 0 : paraDeudasOLibre;
+  const paraDeudas = tieneDeudas ? paraDeudasOLibre : 0;
+  const porAsignar = perfil.gastosBasicos - basicosAsignado;
 
-  return { ingreso: perfil.ingresoMensual, basicosAsignado, libre, porAsignar, deudasActivas: tieneDeudas };
+  return { ingreso: perfil.ingresoMensual, basicosAsignado, libre, porAsignar, paraDeudas, deudasActivas: tieneDeudas };
 }
 
 export interface RepartoPro {
