@@ -40,6 +40,25 @@ export interface Deuda {
   creadoEn: string;
   entidad?: string;
   orden?: number;
+  /** Tasa efectiva anual tal como la da el banco. tasaMensual se deriva de aquí. */
+  tasaEA?: number;
+  /** Tarjetas: día del mes en que cierra el ciclo. */
+  diaCorte?: number;
+  /** Día del mes límite de pago. */
+  diaPago?: number;
+  /** Tarjetas: cupo total. */
+  cupo?: number;
+}
+
+/**
+ * El mes en limpio, lo que se pide al configurar el plan. Lo que queda después
+ * de lo básico es la plata para salir de deudas (y, sin deudas, lo libre de Pro).
+ */
+export interface PerfilFlujo {
+  ingresoMensual: number;
+  /** Techo, mercado, servicios y transporte de trabajo. */
+  gastosBasicos: number;
+  configuradoEn: string;
 }
 
 export type EstrategiaPago = 'bola_de_nieve' | 'avalancha' | 'personalizado';

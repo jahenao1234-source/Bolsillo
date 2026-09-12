@@ -20,8 +20,10 @@ import {
   RetoAhorro,
   Suscripcion,
   TarjetaCredito,
+  PerfilFlujo,
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
+import { mensualDesdeEA } from '../logic/sistema';
 import { aporteDeSemana } from '../logic/retos';
 import { sangradoVigente } from '../logic/suscripciones';
 
@@ -40,6 +42,7 @@ const STORAGE_KEYS = {
   RETOS: 'bolsillo_data_retos_v3',
   SUSCRIPCIONES: 'bolsillo_data_suscripciones_v3',
   TARJETAS_CREDITO: 'bolsillo_data_tarjetas_credito_v3',
+  PERFIL_FLUJO: 'bolsillo_data_perfil_flujo_v3',
 };
 
 /**
@@ -66,72 +69,68 @@ function ejemplo<T>(datos: T[]): T[] {
 // SEMILLA DE DATOS REALISTAS DE COLOMBIA
 // ==========================================
 
-const MOCK_DISPONIBLE_MENSUAL_INICIAL = 600000;
+/** Lo que queda para deudas: ingreso $3.200.000 menos lo básico $2.230.000. */
+const MOCK_DISPONIBLE_MENSUAL_INICIAL = 970000;
 
+const MOCK_PERFIL_FLUJO: PerfilFlujo = {
+  ingresoMensual: 3200000,
+  gastosBasicos: 2230000,
+  configuradoEn: '2026-09-12',
+};
+
+/**
+ * El perfil de ejemplo de la v3: dos tarjetas y un crédito. Con $970.000 al mes
+ * sale en agosto 2027; pagando solo mínimos, en enero 2029.
+ */
 const MOCK_DEUDAS_INICIAL: Deuda[] = [
   {
-    id: 'deuda-fiado',
-    nombre: 'Fiado tienda doña Rosa',
-    tipo: 'fiado',
-    saldo: 120000,
-    saldoTotal: 120000,
-    montoOriginal: 250000,
-    tasaMensual: 0,
-    tasaInteresEA: '0.0% (Sin interés)',
-    pagoMinimo: 30000,
-    proximoPagoMonto: 30000,
-    proximaFechaPago: '10 sep',
-    saldada: false,
-    creadoEn: '2026-08-15',
-    entidad: 'Tienda de barrio',
-  },
-  {
-    id: 'deuda-gota',
-    nombre: 'Gota a gota (Paga diario)',
-    tipo: 'gota_a_gota',
+    id: 'deuda-mastercard',
+    nombre: 'Mastercard Bancolombia',
+    tipo: 'tarjeta',
     saldo: 1200000,
     saldoTotal: 1200000,
-    montoOriginal: 1500000,
-    tasaMensual: 10,
-    tasaInteresEA: '213.8% E.A. (Tasa extrema)',
+    montoOriginal: 1200000,
+    tasaEA: 28,
+    tasaMensual: mensualDesdeEA(28),
     pagoMinimo: 180000,
-    proximoPagoMonto: 180000,
-    proximaFechaPago: '08 sep',
+    diaCorte: 16,
+    diaPago: 3,
+    cupo: 5000000,
     saldada: false,
-    creadoEn: '2026-08-01',
-    entidad: 'Cobro particular',
+    creadoEn: '2026-09-12',
+    entidad: 'Bancolombia',
   },
   {
-    id: 'deuda-exito',
-    nombre: 'Tarjeta Éxito',
+    id: 'deuda-nu',
+    nombre: 'Tarjeta Nu',
     tipo: 'tarjeta',
-    saldo: 1900000,
-    saldoTotal: 1900000,
-    montoOriginal: 3500000,
-    tasaMensual: 2.1,
-    tasaInteresEA: '28.3% E.A.',
-    pagoMinimo: 150000,
-    proximoPagoMonto: 150000,
-    proximaFechaPago: '15 sep',
+    saldo: 2500000,
+    saldoTotal: 2500000,
+    montoOriginal: 2500000,
+    tasaEA: 29,
+    tasaMensual: mensualDesdeEA(29),
+    pagoMinimo: 120000,
+    diaCorte: 25,
+    diaPago: 10,
+    cupo: 3000000,
     saldada: false,
-    creadoEn: '2026-06-10',
-    entidad: 'Tuya',
+    creadoEn: '2026-09-12',
+    entidad: 'Nu Colombia',
   },
   {
-    id: 'deuda-libranza',
-    nombre: 'Libranza Banco Popular',
-    tipo: 'libranza',
-    saldo: 3500000,
-    saldoTotal: 3500000,
-    montoOriginal: 5000000,
-    tasaMensual: 1.4,
-    tasaInteresEA: '18.2% E.A.',
-    pagoMinimo: 160000,
-    proximoPagoMonto: 160000,
-    proximaFechaPago: '30 sep',
+    id: 'deuda-libre',
+    nombre: 'Libre inversión Bancolombia',
+    tipo: 'prestamo',
+    saldo: 6100000,
+    saldoTotal: 6100000,
+    montoOriginal: 6100000,
+    tasaEA: 19.5,
+    tasaMensual: mensualDesdeEA(19.5),
+    pagoMinimo: 450000,
+    diaPago: 15,
     saldada: false,
-    creadoEn: '2026-01-20',
-    entidad: 'Banco Popular',
+    creadoEn: '2026-09-12',
+    entidad: 'Bancolombia',
   },
 ];
 
@@ -202,29 +201,28 @@ const SEMILLA_MOVIMIENTOS: MovimientoSemilla[] = [
   ['gasto', 164000, 'bil-bancolombia', 'Bancolombia', 'Servicios', '03 sep 2026', '2026-09-03T15:00:00.000Z', 'Luz y agua'],
   ['gasto', 120000, 'bil-efectivo', 'Efectivo', 'Comida', '02 sep 2026', '2026-09-02T15:00:00.000Z', 'Mercado'],
   ['gasto', 89900, 'bil-bancolombia', 'Bancolombia', 'Salud', '01 sep 2026', '2026-09-01T15:00:00.000Z', 'Gimnasio Smart Fit'],
-  ['ingreso', 900000, 'bil-nequi', 'Nequi', 'Salario', '01 sep 2026', '2026-09-01T14:00:00.000Z', 'Salario quincena'],
+  ['ingreso', 1600000, 'bil-nequi', 'Nequi', 'Salario', '01 sep 2026', '2026-09-01T14:00:00.000Z', 'Salario quincena'],
 
   // --- Agosto (mes cerrado, para comparar) ---
   ['gasto', 24000, 'bil-efectivo', 'Efectivo', 'Transporte', '30 ago 2026', '2026-08-30T15:00:00.000Z', 'Transporte de la semana'],
-  ['gasto', 160000, 'bil-bancolombia', 'Bancolombia', 'Deudas', '30 ago 2026', '2026-08-30T14:00:00.000Z', 'Abono a Libranza Banco Popular', 'deuda-libranza'],
+  ['gasto', 450000, 'bil-bancolombia', 'Bancolombia', 'Deudas', '30 ago 2026', '2026-08-30T14:00:00.000Z', 'Abono a Libre inversión Bancolombia', 'deuda-libre'],
   ['gasto', 48000, 'bil-nequi', 'Nequi', 'Servicios', '28 ago 2026', '2026-08-28T15:00:00.000Z', 'Datos del celu'],
   ['gasto', 112000, 'bil-efectivo', 'Efectivo', 'Comida', '25 ago 2026', '2026-08-25T15:00:00.000Z', 'Mercado'],
   ['gasto', 26000, 'bil-efectivo', 'Efectivo', 'Transporte', '22 ago 2026', '2026-08-22T15:00:00.000Z', 'Transporte de la semana'],
   ['gasto', 29900, 'bil-bancolombia', 'Bancolombia', 'Ocio', '20 ago 2026', '2026-08-20T15:00:00.000Z', 'Disney+'],
   ['gasto', 124000, 'bil-efectivo', 'Efectivo', 'Comida', '16 ago 2026', '2026-08-16T15:00:00.000Z', 'Mercado'],
-  ['ingreso', 900000, 'bil-nequi', 'Nequi', 'Salario', '16 ago 2026', '2026-08-16T14:00:00.000Z', 'Salario quincena'],
+  ['ingreso', 1600000, 'bil-nequi', 'Nequi', 'Salario', '16 ago 2026', '2026-08-16T14:00:00.000Z', 'Salario quincena'],
   ['gasto', 44900, 'bil-bancolombia', 'Bancolombia', 'Ocio', '15 ago 2026', '2026-08-15T15:00:00.000Z', 'Netflix'],
-  ['gasto', 150000, 'bil-bancolombia', 'Bancolombia', 'Deudas', '15 ago 2026', '2026-08-15T14:00:00.000Z', 'Abono a Tarjeta Éxito', 'deuda-exito'],
+  ['gasto', 120000, 'bil-bancolombia', 'Bancolombia', 'Deudas', '15 ago 2026', '2026-08-15T14:00:00.000Z', 'Abono a Tarjeta Nu', 'deuda-nu'],
   ['gasto', 28000, 'bil-efectivo', 'Efectivo', 'Transporte', '14 ago 2026', '2026-08-14T15:00:00.000Z', 'Transporte de la semana'],
   ['gasto', 62000, 'bil-nequi', 'Nequi', 'Comida', '10 ago 2026', '2026-08-10T15:00:00.000Z', 'Almuerzos'],
-  ['gasto', 30000, 'bil-efectivo', 'Efectivo', 'Deudas', '10 ago 2026', '2026-08-10T14:00:00.000Z', 'Abono a Fiado tienda doña Rosa', 'deuda-fiado'],
-  ['gasto', 180000, 'bil-nequi', 'Nequi', 'Deudas', '08 ago 2026', '2026-08-08T14:00:00.000Z', 'Abono a Gota a gota', 'deuda-gota'],
+  ['gasto', 180000, 'bil-nequi', 'Nequi', 'Deudas', '08 ago 2026', '2026-08-08T14:00:00.000Z', 'Abono a Mastercard Bancolombia', 'deuda-mastercard'],
   ['gasto', 32000, 'bil-efectivo', 'Efectivo', 'Transporte', '07 ago 2026', '2026-08-07T15:00:00.000Z', 'Transporte de la semana'],
   ['gasto', 16900, 'bil-bancolombia', 'Bancolombia', 'Ocio', '05 ago 2026', '2026-08-05T15:00:00.000Z', 'Spotify'],
   ['gasto', 178000, 'bil-bancolombia', 'Bancolombia', 'Servicios', '03 ago 2026', '2026-08-03T15:00:00.000Z', 'Luz y agua'],
   ['gasto', 138000, 'bil-efectivo', 'Efectivo', 'Comida', '02 ago 2026', '2026-08-02T15:00:00.000Z', 'Mercado'],
   ['gasto', 89900, 'bil-bancolombia', 'Bancolombia', 'Salud', '01 ago 2026', '2026-08-01T15:00:00.000Z', 'Gimnasio Smart Fit'],
-  ['ingreso', 900000, 'bil-nequi', 'Nequi', 'Salario', '01 ago 2026', '2026-08-01T14:00:00.000Z', 'Salario quincena'],
+  ['ingreso', 1600000, 'bil-nequi', 'Nequi', 'Salario', '01 ago 2026', '2026-08-01T14:00:00.000Z', 'Salario quincena'],
 ];
 
 /**
@@ -252,23 +250,22 @@ function movimientosDeHistoria(): MovimientoSemilla[] {
     const iso = (d: number, h = '15') => `2026-${mm}-${`${d}`.padStart(2, '0')}T${h}:00:00.000Z`;
 
     filas.push(
-      ['ingreso', 850000, 'bil-nequi', 'Nequi', 'Salario', dia(1), iso(1, '14'), 'Salario quincena'],
+      ['ingreso', 1600000, 'bil-nequi', 'Nequi', 'Salario', dia(1), iso(1, '14'), 'Salario quincena'],
       ['gasto', 89900, 'bil-bancolombia', 'Bancolombia', 'Salud', dia(1), iso(1), 'Gimnasio Smart Fit'],
       ['gasto', m.comida1, 'bil-efectivo', 'Efectivo', 'Comida', dia(2), iso(2), 'Mercado'],
       ['gasto', m.ocio, 'bil-nequi', 'Nequi', 'Ocio', dia(3), iso(3), 'Salida'],
       ['gasto', 16900, 'bil-bancolombia', 'Bancolombia', 'Ocio', dia(5), iso(5), 'Spotify'],
       ['gasto', m.servicios, 'bil-bancolombia', 'Bancolombia', 'Servicios', dia(6), iso(6), 'Luz y agua'],
-      ['gasto', 180000, 'bil-nequi', 'Nequi', 'Deudas', dia(8), iso(8, '14'), 'Abono a Gota a gota', 'deuda-gota'],
-      ['gasto', 30000, 'bil-efectivo', 'Efectivo', 'Deudas', dia(10), iso(10, '14'), 'Abono a Fiado tienda doña Rosa', 'deuda-fiado'],
+      ['gasto', 180000, 'bil-nequi', 'Nequi', 'Deudas', dia(8), iso(8, '14'), 'Abono a Mastercard Bancolombia', 'deuda-mastercard'],
       ['gasto', 44900, 'bil-bancolombia', 'Bancolombia', 'Ocio', dia(15), iso(15), 'Netflix'],
-      ['gasto', 150000, 'bil-bancolombia', 'Bancolombia', 'Deudas', dia(15), iso(15, '14'), 'Abono a Tarjeta Éxito', 'deuda-exito'],
-      ['ingreso', 850000, 'bil-nequi', 'Nequi', 'Salario', dia(16), iso(16, '14'), 'Salario quincena'],
+      ['gasto', 120000, 'bil-bancolombia', 'Bancolombia', 'Deudas', dia(15), iso(15, '14'), 'Abono a Tarjeta Nu', 'deuda-nu'],
+      ['ingreso', 1600000, 'bil-nequi', 'Nequi', 'Salario', dia(16), iso(16, '14'), 'Salario quincena'],
       ['gasto', m.comida2, 'bil-efectivo', 'Efectivo', 'Comida', dia(17), iso(17), 'Mercado'],
       ['gasto', 29900, 'bil-bancolombia', 'Bancolombia', 'Ocio', dia(20), iso(20), 'Disney+'],
       ['gasto', Math.round(m.transporte / 2), 'bil-efectivo', 'Efectivo', 'Transporte', dia(22), iso(22), 'Transporte de la quincena'],
       ['gasto', Math.round(m.transporte / 2), 'bil-efectivo', 'Efectivo', 'Transporte', dia(27), iso(27), 'Transporte de la quincena'],
       ['gasto', 48000, 'bil-nequi', 'Nequi', 'Servicios', dia(28), iso(28), 'Datos del celu'],
-      ['gasto', 160000, 'bil-bancolombia', 'Bancolombia', 'Deudas', dia(30), iso(30, '14'), 'Abono a Libranza Banco Popular', 'deuda-libranza']
+      ['gasto', 450000, 'bil-bancolombia', 'Bancolombia', 'Deudas', dia(30), iso(30, '14'), 'Abono a Libre inversión Bancolombia', 'deuda-libre']
     );
   }
 
@@ -360,8 +357,8 @@ const MOCK_SUSCRIPCIONES_INICIAL: Suscripcion[] = [
 
 // Semilla Pro: tarjetas de crédito (días de corte y pago)
 const MOCK_TARJETAS_CREDITO_INICIAL: TarjetaCredito[] = [
-  { id: 'tc-exito', nombre: 'Tarjeta Éxito', diaCorte: 15, diaPago: 5, cupo: 3000000, color: '#FF7A3D', creadoEn: '2026-08-01' },
-  { id: 'tc-visa', nombre: 'Visa Bancolombia', diaCorte: 28, diaPago: 18, cupo: 5000000, color: '#25C9BE', creadoEn: '2026-08-01' },
+  { id: 'tc-mastercard', nombre: 'Mastercard Bancolombia', diaCorte: 16, diaPago: 3, cupo: 5000000, tasaMensual: mensualDesdeEA(28), deudaId: 'deuda-mastercard', color: '#FF7A3D', creadoEn: '2026-09-12' },
+  { id: 'tc-nu', nombre: 'Tarjeta Nu', diaCorte: 25, diaPago: 10, cupo: 3000000, tasaMensual: mensualDesdeEA(29), deudaId: 'deuda-nu', color: '#25C9BE', creadoEn: '2026-09-12' },
 ];
 
 // Mecanismo de eventos para reactividad en componentes
@@ -404,6 +401,7 @@ function asegurarInicializacion(): void {
         STORAGE_KEYS.DISPONIBLE_DEUDAS,
         JSON.stringify(MOCK_DISPONIBLE_MENSUAL_INICIAL)
       );
+      localStorage.setItem(STORAGE_KEYS.PERFIL_FLUJO, JSON.stringify(MOCK_PERFIL_FLUJO));
       localStorage.setItem(STORAGE_KEYS.INICIALIZADO, 'true');
     }
   } catch (error) {
@@ -461,6 +459,43 @@ export function setDisponibleMensual(monto: number): void {
     notificarCambio();
   } catch (err) {
     console.error('Error al guardar disponible mensual:', err);
+  }
+}
+
+/**
+ * El mes en limpio. null = todavía no configuró su plan: la app lo lleva a
+ * configurarlo antes de enseñarle nada.
+ */
+export function getPerfilFlujo(): PerfilFlujo | null {
+  asegurarInicializacion();
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.PERFIL_FLUJO);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error al leer el perfil de flujo:', err);
+  }
+  return null;
+}
+
+/**
+ * Guarda el mes en limpio. Lo que queda después de lo básico ES la plata para
+ * salir de deudas: no se le pide a la persona que adivine una cifra aparte.
+ */
+export function setPerfilFlujo(perfil: Omit<PerfilFlujo, 'configuradoEn'>): void {
+  try {
+    const limpio: PerfilFlujo = {
+      ingresoMensual: Math.max(0, Math.round(perfil.ingresoMensual)),
+      gastosBasicos: Math.max(0, Math.round(perfil.gastosBasicos)),
+      configuradoEn: new Date().toISOString(),
+    };
+    localStorage.setItem(STORAGE_KEYS.PERFIL_FLUJO, JSON.stringify(limpio));
+    localStorage.setItem(
+      STORAGE_KEYS.DISPONIBLE_DEUDAS,
+      JSON.stringify(Math.max(0, limpio.ingresoMensual - limpio.gastosBasicos))
+    );
+    notificarCambio();
+  } catch (err) {
+    console.error('Error al guardar el perfil de flujo:', err);
   }
 }
 
@@ -722,7 +757,10 @@ export function guardarDeuda(deuda: Deuda): void {
     saldo: Math.max(0, deuda.saldo),
     saldoTotal: Math.max(0, deuda.saldo),
     pagoMinimo: Math.max(0, deuda.pagoMinimo),
-    tasaMensual: Math.max(0, deuda.tasaMensual),
+    tasaMensual:
+      typeof deuda.tasaEA === 'number' && deuda.tasaEA > 0
+        ? mensualDesdeEA(deuda.tasaEA)
+        : Math.max(0, deuda.tasaMensual),
     saldada: Boolean(deuda.saldada),
     creadoEn: deuda.creadoEn || new Date().toISOString(),
     orden: ordenCalculado,
@@ -1002,6 +1040,7 @@ export function restablecerDatosEjemplo(): void {
       STORAGE_KEYS.DISPONIBLE_DEUDAS,
       JSON.stringify(MOCK_DISPONIBLE_MENSUAL_INICIAL)
     );
+    localStorage.setItem(STORAGE_KEYS.PERFIL_FLUJO, JSON.stringify(MOCK_PERFIL_FLUJO));
     localStorage.setItem(STORAGE_KEYS.INICIALIZADO, 'true');
     localStorage.setItem(STORAGE_KEYS.NIVEL_ACCESO, JSON.stringify('demo'));
     localStorage.removeItem(STORAGE_KEYS.PRESUPUESTOS);
@@ -1122,6 +1161,23 @@ export function guardarSobre(sobre: Sobre): void {
     nuevos = [...items, normal];
   }
   setSobres(nuevos);
+}
+
+/**
+ * Suma a un sobre fijo del sistema (el colchón, la inversión). Si no existe
+ * todavía, lo crea: el sistema no le pide a nadie que arme sus sobres a mano.
+ */
+export function aportarASobre(id: string, nombre: string, monto: number, meta?: number, color?: string): void {
+  const sobres = getSobres();
+  const actual = sobres.find((x) => x.id === id);
+  guardarSobre({
+    id,
+    nombre: actual?.nombre ?? nombre,
+    meta: actual?.meta ?? meta,
+    apartado: Math.max(0, (actual?.apartado ?? 0) + Math.round(monto)),
+    color: actual?.color ?? color,
+    creadoEn: actual?.creadoEn ?? new Date().toISOString(),
+  });
 }
 
 export function eliminarSobre(id: string): void {

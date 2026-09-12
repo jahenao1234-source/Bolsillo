@@ -3,6 +3,7 @@ import { X, Plus, CreditCard, Landmark, Zap, ShoppingBag, FileText, AlertCircle,
 import { TipoDeuda, Deuda } from '../../types';
 import { Boton } from '../ui/Boton';
 import { formatearCOP } from '../../utils/format';
+import { eaDesdeMensual, mensualDesdeEA } from '../../logic/sistema';
 
 interface ModalAgregarDeudaProps {
   abierto: boolean;
@@ -17,14 +18,14 @@ const OPCIONES_TIPO: { tipo: TipoDeuda; etiqueta: string; desc: string; icon: Re
     etiqueta: 'Tarjeta de crédito',
     desc: 'Bancolombia, Falabella, Tuya, Nu...',
     icon: <CreditCard className="w-4 h-4" />,
-    tasaSugerida: 2.1,
+    tasaSugerida: 28,
   },
   {
     tipo: 'gota_a_gota',
     etiqueta: 'Gota a gota / Paga diario',
     desc: 'Cobro de interés diario o semanal',
     icon: <Zap className="w-4 h-4 text-[color:var(--alerta)]" />,
-    tasaSugerida: 10.0,
+    tasaSugerida: 214,
   },
   {
     tipo: 'fiado',
@@ -38,14 +39,14 @@ const OPCIONES_TIPO: { tipo: TipoDeuda; etiqueta: string; desc: string; icon: Re
     etiqueta: 'Crédito de Libranza',
     desc: 'Descuento directo por nómina',
     icon: <FileText className="w-4 h-4 text-[color:var(--acento)]" />,
-    tasaSugerida: 1.4,
+    tasaSugerida: 18,
   },
   {
     tipo: 'prestamo',
     etiqueta: 'Préstamo bancario libre',
     desc: 'Crédito de consumo personal',
     icon: <Landmark className="w-4 h-4" />,
-    tasaSugerida: 1.8,
+    tasaSugerida: 24,
   },
 ];
 
@@ -58,8 +59,11 @@ export const ModalAgregarDeuda: React.FC<ModalAgregarDeudaProps> = ({
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState<TipoDeuda>('tarjeta');
   const [saldoStr, setSaldoStr] = useState('');
-  const [tasaStr, setTasaStr] = useState('2.1');
+  const [tasaStr, setTasaStr] = useState('28');
   const [pagoMinimoStr, setPagoMinimoStr] = useState('');
+  const [diaCorteStr, setDiaCorteStr] = useState('');
+  const [diaPagoStr, setDiaPagoStr] = useState('');
+  const [cupoStr, setCupoStr] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -68,15 +72,22 @@ export const ModalAgregarDeuda: React.FC<ModalAgregarDeudaProps> = ({
       setTipo(deudaAEditar.tipo);
       const saldo = deudaAEditar.saldo ?? deudaAEditar.saldoTotal ?? 0;
       setSaldoStr(saldo > 0 ? formatearCOP(saldo) : '');
-      setTasaStr(deudaAEditar.tasaMensual.toString());
+      const ea = deudaAEditar.tasaEA ?? eaDesdeMensual(deudaAEditar.tasaMensual);
+      setTasaStr((Math.round(ea * 10) / 10).toString());
       setPagoMinimoStr(deudaAEditar.pagoMinimo > 0 ? formatearCOP(deudaAEditar.pagoMinimo) : '');
+      setDiaCorteStr(deudaAEditar.diaCorte ? String(deudaAEditar.diaCorte) : '');
+      setDiaPagoStr(deudaAEditar.diaPago ? String(deudaAEditar.diaPago) : '');
+      setCupoStr(deudaAEditar.cupo ? formatearCOP(deudaAEditar.cupo) : '');
       setError(null);
     } else {
       setNombre('');
       setTipo('tarjeta');
       setSaldoStr('');
-      setTasaStr('2.1');
+      setTasaStr('28');
       setPagoMinimoStr('');
+      setDiaCorteStr('');
+      setDiaPagoStr('');
+      setCupoStr('');
       setError(null);
     }
   }, [deudaAEditar, abierto]);
@@ -114,7 +125,12 @@ export const ModalAgregarDeuda: React.FC<ModalAgregarDeudaProps> = ({
     e.preventDefault();
     const saldo = parseMonto(saldoStr);
     const pagoMinimo = parseMonto(pagoMinimoStr);
-    const tasa = parseFloat(tasaStr.replace(',', '.')) || 0;
+    const tasaEA = parseFloat(tasaStr.replace(',', '.')) || 0;
+    const dia = (str: string) => {
+      const n = parseInt(str, 10);
+      return n >= 1 && n <= 31 ? n : undefined;
+    };
+    const cupo = parseMonto(cupoStr);
 
     if (!nombre.trim()) {
       setError('Por favor escribe un nombre para la deuda.');
@@ -138,8 +154,12 @@ export const ModalAgregarDeuda: React.FC<ModalAgregarDeudaProps> = ({
       saldo,
       saldoTotal: saldo,
       montoOriginal: deudaAEditar?.montoOriginal ?? saldo,
-      tasaMensual: tasa,
+      tasaEA,
+      tasaMensual: mensualDesdeEA(tasaEA),
       pagoMinimo,
+      diaPago: dia(diaPagoStr),
+      diaCorte: tipo === 'tarjeta' ? dia(diaCorteStr) : undefined,
+      cupo: tipo === 'tarjeta' && cupo > 0 ? cupo : undefined,
       proximoPagoMonto: pagoMinimo,
       proximaFechaPago: deudaAEditar?.proximaFechaPago || 'Fin de mes',
       saldada: deudaAEditar ? deudaAEditar.saldada : false,
@@ -269,33 +289,77 @@ export const ModalAgregarDeuda: React.FC<ModalAgregarDeudaProps> = ({
             </div>
           </div>
 
-          {/* Tasa de interés mensual */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider">
-                Tasa de interés mensual (% mes)
+          {/* Tasa: en E.A., que es como sale en el extracto */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider mb-1.5">
+                Tasa efectiva anual (% E.A.)
               </label>
-              <span className="text-[10px] text-[color:var(--acento)] font-semibold">
-                Ej: 2.1% mes ≈ 28% E.A.
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
               <input
                 type="number"
                 step="0.1"
                 min="0"
-                max="50"
+                max="400"
                 required
                 value={tasaStr}
                 onChange={(e) => setTasaStr(e.target.value)}
-                placeholder="2.1"
+                placeholder="28"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors"
               />
-              <span className="px-3 py-2.5 bg-[var(--superficie-2)] border border-[var(--linea)] rounded-xl text-xs font-semibold text-[color:var(--texto-2)]">
-                % mes
-              </span>
+              <p className="text-[10.5px] text-[color:var(--texto-3)] mt-1">
+                Sale en tu extracto. Si no la sabes, deja la sugerida.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider mb-1.5">
+                Día límite de pago
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="31"
+                value={diaPagoStr}
+                onChange={(e) => setDiaPagoStr(e.target.value)}
+                placeholder="15"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors"
+              />
             </div>
           </div>
+
+          {/* Tarjeta: corte y cupo, para saber cuándo cierra y cuánto le queda */}
+          {tipo === 'tarjeta' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider mb-1.5">
+                  Día de corte
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={diaCorteStr}
+                  onChange={(e) => setDiaCorteStr(e.target.value)}
+                  placeholder="16"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[color:var(--texto-2)] uppercase tracking-wider mb-1.5">
+                  Cupo total ($ COP)
+                </label>
+                <input
+                  type="text"
+                  value={cupoStr}
+                  onChange={(e) => {
+                    const val = parseMonto(e.target.value);
+                    setCupoStr(val > 0 ? formatearCOP(val) : '');
+                  }}
+                  placeholder="$5.000.000"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Botones de acción */}
           <div className="pt-3 border-t border-[var(--linea)] flex items-center justify-end gap-3">

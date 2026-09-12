@@ -42,6 +42,9 @@ import {
   guardarTarjetaCredito,
   eliminarTarjetaCredito,
   suscribirStore,
+  getPerfilFlujo,
+  setPerfilFlujo,
+  aportarASobre,
 } from '../data/store';
 import {
   ResumenFinanciero,
@@ -56,6 +59,7 @@ import {
   RetoAhorro,
   Suscripcion,
   TarjetaCredito,
+  PerfilFlujo,
 } from '../types';
 
 export function useBolsilloData() {
@@ -79,6 +83,7 @@ export function useBolsilloData() {
   const [suscripciones, setSuscripcionesState] = useState<Suscripcion[]>(getSuscripciones);
   const [sangradoMensual, setSangradoState] = useState<number>(getSangradoMensual);
   const [tarjetasCredito, setTarjetasCreditoState] = useState<TarjetaCredito[]>(getTarjetasCredito);
+  const [perfilFlujo, setPerfilFlujoState] = useState<PerfilFlujo | null>(getPerfilFlujo);
 
   useEffect(() => {
     const desuscribir = suscribirStore(() => {
@@ -100,6 +105,7 @@ export function useBolsilloData() {
       setSuscripcionesState(getSuscripciones());
       setSangradoState(getSangradoMensual());
       setTarjetasCreditoState(getTarjetasCredito());
+      setPerfilFlujoState(getPerfilFlujo());
     });
     return desuscribir;
   }, []);
@@ -127,6 +133,10 @@ export function useBolsilloData() {
     marcarSaldada,
     reordenarDeudas,
     setDisponibleMensual,
+    // Sistema v3
+    perfilFlujo,
+    setPerfilFlujo,
+    aportarASobre,
     // Módulos Pro (Crecer)
     presupuestos,
     gastoPorCategoria,
