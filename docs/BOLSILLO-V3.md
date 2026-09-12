@@ -68,7 +68,8 @@ src/hooks/useBolsilloData.ts    ← el hook que usan las pantallas
 
 - **`PerfilFlujo`** `{ ingresoMensual, gastosBasicos, configuradoEn }`. `setPerfilFlujo` también fija `disponibleMensual = ingreso − básicos`: **la plata para deudas no se adivina**.
 - **`Deuda`** suma `tasaEA` (la manda; `tasaMensual` se deriva), `diaCorte`, `diaPago` y `cupo`.
-- **Colchón e inversión** son sobres con id fijo (`sobre-colchon`, `sobre-inversion`) creados por `aportarASobre`.
+- **Sobres del sistema** (`sobre-colchon`, `sobre-inversion`, `basico-arriendo`, etc.) se aseguran siempre. Tienen `sistema: true` y no se borran. Se dividen por `grupo` (`'basico' | 'libre'`) o sin grupo (propios). Tienen `presupuestoMensual` para calcular el disponible y pueden tener un arreglo de `historial` de movimientos (`{ id, fecha, monto, descripcion }`).
+- **Movimiento** ahora tiene `sobreId` opcional para restar del presupuesto de sobres básicos o de gustos.
 - **Ejemplo** (`VITE_DATOS_EJEMPLO`, activo en desarrollo): Mastercard $1.200.000 (28% E.A.), Nu $2.500.000 (29%), libre inversión $6.100.000 (19,5%). Ingreso $3.200.000, básicos $2.230.000, **$970.000 para deudas**.
 
 ### Números de referencia (motor, perfil de ejemplo)
@@ -115,7 +116,7 @@ Si cambias la lógica, estos números son la prueba rápida de que no rompiste n
 - [ ] Estadísticas del documento sin fuente ("el 85%…"): no usarlas en la app sin fuente.
 
 **De esta construcción:**
-- [ ] **Mover al colchón no tiene tope mensual ni historial**: hoy se puede tocar dos veces el mismo mes.
+- [x] **Mover al colchón no tiene tope mensual ni historial**: resuelto (se valida si ya se movió en el mes y se guarda historial).
 - [ ] **Eliminar billetera** es un botón flotante provisional mientras el modal está abierto; debería vivir dentro de `ModalAgregarBilletera`.
 - [ ] El **simulador de Deudas** es de abono extra mensual; el documento pide también el abono extraordinario (prima).
 - [ ] **"Más" (`PantallaCrecer`) sigue siendo v2**, y su módulo Tarjetas se solapa con las tarjetas de Deudas.
