@@ -20,6 +20,7 @@ import {
   ID_SOBRE_INVERSION,
   metaFondoBlindado,
   repartoPro,
+  movidoEsteMes,
 } from '../logic/sistema';
 import { formatearCOP } from '../utils/format';
 import { MESES_NOMBRE } from '../utils/fechas';
@@ -63,19 +64,26 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   const mover = (id: string, nombre: string, monto: number, meta?: number, color?: string) => {
     if (monto <= 0) return;
     const exito = onMoverAporte(id, monto);
-    if (!exito) {
-      setMovido(`Ya apartaste para ${nombre.toLowerCase()} este mes`);
+    if (exito) {
+      setMovido(`Listo: ${formatearCOP(monto)} apartados en tu ${nombre.toLowerCase()}.`);
       window.setTimeout(() => setMovido(null), 3000);
-      return;
     }
-    setMovido(`${formatearCOP(monto)} a ${nombre.toLowerCase()}`);
-    window.setTimeout(() => setMovido(null), 3000);
   };
 
   const accion =
     fase === 'blindar'
-      ? { texto: `Mover ${formatearCOP(reparto.colchon)} al fondo blindado`, hacer: () => mover(ID_SOBRE_COLCHON, 'Fondo blindado', reparto.colchon, metaFondo, '#25C9BE') }
-      : { texto: `Mover ${formatearCOP(reparto.inversion)} a inversión`, hacer: () => mover(ID_SOBRE_INVERSION, 'Inversión', reparto.inversion, undefined, '#5FE0A8') };
+      ? { 
+          texto: `Mover ${formatearCOP(reparto.colchon)} al fondo blindado`, 
+          hacer: () => mover(ID_SOBRE_COLCHON, 'Fondo blindado', reparto.colchon, metaFondo, '#25C9BE'),
+          movido: colchon ? movidoEsteMes(colchon, new Date()) : 0,
+          monto: reparto.colchon
+        }
+      : { 
+          texto: `Mover ${formatearCOP(reparto.inversion)} a inversión`, 
+          hacer: () => mover(ID_SOBRE_INVERSION, 'Inversión', reparto.inversion, undefined, '#5FE0A8'),
+          movido: inversion ? movidoEsteMes(inversion, new Date()) : 0,
+          monto: reparto.inversion
+        };
 
   return (
     <div className="w-full pb-24 xl:pb-0 xl:flex-1 xl:flex xl:flex-col">
@@ -126,14 +134,14 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
               </div>
             )}
 
-            {libre > 0 && (
-              <button type="button" onClick={accion.hacer} className="w-full py-3 rounded-[13px] bg-accion-gradient text-on-accion font-extrabold text-sm cursor-pointer">
+            {libre > 0 && accion.monto > 0 && accion.movido === 0 && !movido && (
+              <button type="button" onClick={accion.hacer} className="w-full py-3 rounded-[13px] bg-accion-gradient text-on-accion font-extrabold text-sm cursor-pointer mt-4">
                 {accion.texto}
               </button>
             )}
-            {movido && (
-              <p role="status" className="text-xs text-positivo text-center -mt-2">
-                Listo: {movido}. Queda apartado dentro de tus billeteras.
+            {(accion.movido > 0 || movido) && libre > 0 && (
+              <p role="status" className="text-sm font-semibold text-positivo text-center mt-4">
+                {movido || `Movido el ${new Date().getDate()} ✓`}
               </p>
             )}
           </Zona>
