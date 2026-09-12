@@ -1,44 +1,56 @@
 /**
- * Bolsillo v2 - Finanzas Personales para Colombia
- * Sistema de 2 Temas: Medianoche (Oscuro) y Papel (Cálido Claro)
+ * Bolsillo v3 — un solo sistema, guiado.
+ *
+ * La app responde siempre tres cosas: en qué fase está la persona (salir de
+ * deudas · blindar · crecer), qué hace este mes y a dónde se va su plata cuando
+ * algo se completa. La navegación sigue a la fase; los momentos (una deuda en
+ * $0, la última en $0) enseñan el traspaso en el instante en que ocurre.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useBolsilloData } from './hooks/useBolsilloData';
-import { BarraNavegacion, SeccionApp } from './components/navigation/BarraNavegacion';
-import { RielNavegacion } from './components/layout/RielNavegacion';
-import { BarraContexto } from './components/layout/BarraContexto';
-import { CajonHoy } from './components/layout/CajonHoy';
-import { useCajonHoy } from './hooks/useCajonHoy';
+import {
+  BarraInferior,
+  ConmutadorModo,
+  INICIO_POR_MODO,
+  ITEMS_POR_MODO,
+  ModoApp,
+  RielLateral,
+  SeccionApp,
+} from './components/navigation/Navegacion';
 import { ProveedorShell } from './components/layout/shell';
-import { PantallaInicio } from './screens/PantallaInicio';
-import { PantallaBilleteras } from './screens/PantallaBilleteras';
+import { MomentoGraduacion, MomentoTraspaso } from './components/sistema/Momentos';
+import { PantallaMiPlan } from './screens/PantallaMiPlan';
 import { PantallaDeudas } from './screens/PantallaDeudas';
+import { PantallaBilletera } from './screens/PantallaBilletera';
+import { PantallaPlanListo } from './screens/PantallaPlanListo';
+import { PantallaProInicio } from './screens/PantallaProInicio';
+import { PantallaSobres } from './screens/PantallaSobres';
+import { PantallaCrecer } from './screens/PantallaCrecer';
 import { PantallaPerfil } from './screens/PantallaPerfil';
 import { PantallaPro } from './screens/PantallaPro';
-import { PantallaCrecer } from './screens/PantallaCrecer';
 import { PantallaTermometro } from './screens/PantallaTermometro';
 import { PantallaActivarCodigo } from './screens/PantallaActivarCodigo';
-import { PWAInstallButton } from './components/ui/PWAInstallButton';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
-import { useTema, inicializarTema } from './utils/theme';
-import { getContextoMes, ingresoDelMes, calcularAgenda } from './logic/resumenMes';
+import { PWAInstallButton } from './components/ui/PWAInstallButton';
+import { inicializarTema } from './utils/theme';
+import { getContextoMes, ingresoDelMes } from './logic/resumenMes';
+import { deudasActivas, escaleraAtaque, type Escalon } from './logic/sistema';
+import type { Deuda } from './types';
+
+type Momento =
+  | { tipo: 'traspaso'; deuda: Deuda; siguiente: Escalon | null; minimoSiguiente: number; saldadas: number; total: number }
+  | { tipo: 'graduacion'; totalPagado: number; libre: number };
+
+/** Secciones que existen en los dos modos. */
+const GLOBALES: SeccionApp[] = ['perfil', 'pro', 'activar_codigo', 'plan_listo'];
 
 export default function App() {
-  const [seccionActiva, setSeccionActiva] = useState<SeccionApp>(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
-      ? 'billeteras'
-      : 'inicio'
-  );
-  const { esPapel } = useTema();
-  // Se incrementa en cada navegación; permite a "Crecer" volver a su hub al re-seleccionarlo.
-  const [navTick, setNavTick] = useState(0);
-
-  // Asegurar que el tema esté cargado desde localStorage
   useEffect(() => {
     inicializarTema();
   }, []);
 
+  const datos = useBolsilloData();
   const {
     resumen,
     billeteras,
@@ -46,339 +58,329 @@ export default function App() {
     deudas,
     movimientos,
     disponibleMensual,
-    flujoMes,
     nivelAcceso,
-    guardarBilletera,
-    eliminarBilletera,
-    registrarMovimiento,
-    abonarDeudaDesdeBilletera,
-    presupuestos,
-    gastoPorCategoria,
-    guardarPresupuesto,
-    eliminarPresupuesto,
-    sobres,
-    totalApartado,
-    guardarSobre,
-    eliminarSobre,
-    retos,
-    guardarReto,
-    eliminarReto,
-    aportarSemanaReto,
-    suscripciones,
-    sangradoMensual,
-    guardarSuscripcion,
-    eliminarSuscripcion,
-    tarjetasCredito,
-    guardarTarjetaCredito,
-    eliminarTarjetaCredito,
-  } = useBolsilloData();
+    perfilFlujo,
+  } = datos;
 
-  // Lo que entra en el mes completo. A mitad de mes, `flujoMes.ingresos` solo
-  // trae la quincena que ya llegó, y los módulos que comparan contra el ingreso
-  // (presupuesto, suscripciones, retos) darían porcentajes al doble.
-  const ingresoDelMesCompleto = React.useMemo(
-    () => ingresoDelMes(movimientos, getContextoMes()).proyectado,
-    [movimientos]
-  );
+  const esPro = nivelAcceso === 'pro';
+  const activas = useMemo(() => deudasActivas(deudas), [deudas]);
 
-  // El cajón de "Hoy": mobiliario de toda la app, no de una pantalla.
-  const cajon = useCajonHoy();
+  // ---------- Modo: lo decide la fase; el conmutador solo si conviven deudas y Pro ----------
+  const [modoElegido, setModoElegido] = useState<ModoApp>('deuda');
+  const hibrido = esPro && activas.length > 0;
+  const modo: ModoApp = !esPro ? 'deuda' : activas.length === 0 ? 'pro' : modoElegido;
 
-  // La misma agenda que muestra Inicio. Se calcula aquí porque el cajón la
-  // necesita esté donde esté el usuario.
-  const agendaHoy = React.useMemo(
-    () =>
-      calcularAgenda({
-        contexto: getContextoMes(),
-        deudas,
-        suscripciones,
-        tarjetas: tarjetasCredito,
-        retos,
-        esPro: nivelAcceso === 'pro',
-      }),
-    [deudas, suscripciones, tarjetasCredito, retos, nivelAcceso]
-  );
+  const [seccion, setSeccion] = useState<SeccionApp>(INICIO_POR_MODO[modo]);
+  const [momento, setMomento] = useState<Momento | null>(null);
+  const contenidoRef = useRef<HTMLDivElement>(null);
 
-  const cobrosPendientes = agendaHoy.filter((e) => e.monto > 0).length;
+  // Sin su mes configurado no hay plan que enseñar: se fija la sección en el armado
+  // del plan, para que guardar el primer paso no la saque de ahí a la mitad.
+  useEffect(() => {
+    if (!perfilFlujo && nivelAcceso !== 'demo') setSeccion('plan_listo');
+  }, [perfilFlujo, nivelAcceso]);
 
-  // En escritorio el que scrollea es el contenedor del contenido, no la ventana.
-  const contenidoRef = React.useRef<HTMLDivElement>(null);
+  // Si la sección no existe en el modo actual, vuelve al inicio de ese modo.
+  useEffect(() => {
+    const valida = GLOBALES.includes(seccion) || ITEMS_POR_MODO[modo].some((i) => i.id === seccion);
+    if (!valida) setSeccion(INICIO_POR_MODO[modo]);
+  }, [modo, seccion]);
 
-  // Huecos de la barra de contexto. Cada pantalla los llena por portal.
-  const [slotBarra, setSlotBarra] = useState<HTMLElement | null>(null);
-  const [slotAcciones, setSlotAcciones] = useState<HTMLElement | null>(null);
-  const shell = React.useMemo(
-    () => ({ slotBarra, slotAcciones, cajonEmpuja: cajon.abierto && !cajon.flotante }),
-    [slotBarra, slotAcciones, cajon.abierto, cajon.flotante]
-  );
-
-  const handleNavegar = (seccion: SeccionApp) => {
-    setSeccionActiva(seccion);
-    setNavTick((t) => t + 1);
-    contenidoRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const navegar = (destino: SeccionApp) => {
+    if (destino === 'pro_inicio' || destino === 'sobres' || destino === 'herramientas') setModoElegido('pro');
+    if (destino === 'plan' || destino === 'deudas' || destino === 'billetera') setModoElegido('deuda');
+    setSeccion(destino);
+    contenidoRef.current?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
   };
 
-  // Determinar si debemos renderizar el Termómetro como entrada para Demo
-  const mostrarTermometro = nivelAcceso === 'demo' && seccionActiva !== 'activar_codigo';
+  const cambiarModo = (m: ModoApp) => {
+    setModoElegido(m);
+    setSeccion(INICIO_POR_MODO[m]);
+  };
 
-  // El gancho y la pantalla de código van a pantalla completa, sin shell.
-  const conShell = !mostrarTermometro && seccionActiva !== 'activar_codigo';
+  // ---------- Momentos: se evalúan contra las deudas de ANTES del pago ----------
+  const evaluarMomento = (deudaId: string, antes: Deuda[]) => {
+    const restantes = antes.filter((d) => d.id !== deudaId);
+    const deuda = antes.find((d) => d.id === deudaId);
+    if (!deuda) return;
+
+    if (restantes.length === 0) {
+      setMomento({
+        tipo: 'graduacion',
+        totalPagado: deudas.reduce((a, d) => a + (d.montoOriginal ?? 0), 0),
+        libre: disponibleMensual,
+      });
+      return;
+    }
+
+    const siguiente = escaleraAtaque(restantes, disponibleMensual)[0] ?? null;
+    setMomento({
+      tipo: 'traspaso',
+      deuda,
+      siguiente,
+      minimoSiguiente: restantes.find((d) => d.id === siguiente?.deudaId)?.pagoMinimo ?? 0,
+      saldadas: deudas.length - restantes.length,
+      total: deudas.length,
+    });
+  };
+
+  const abonar = (deudaId: string, billeteraId: string, monto: number) => {
+    const antes = activas;
+    const resultado = datos.abonarDeudaDesdeBilletera(deudaId, billeteraId, monto);
+    if (!resultado.exito) {
+      window.alert(resultado.error ?? 'No se pudo registrar el pago.');
+      return;
+    }
+    if (resultado.deudaSaldada) evaluarMomento(deudaId, antes);
+  };
+
+  const marcarSaldada = (deudaId: string) => {
+    const antes = activas;
+    datos.marcarSaldada(deudaId, true);
+    evaluarMomento(deudaId, antes);
+  };
+
+  const ingresoMensual = useMemo(() => ingresoDelMes(movimientos, getContextoMes()).proyectado, [movimientos]);
+  // Huecos de la barra de contexto del escritorio. Cada pantalla los llena por portal.
+  const [slotBarra, setSlotBarra] = useState<HTMLElement | null>(null);
+  const [slotAcciones, setSlotAcciones] = useState<HTMLElement | null>(null);
+  const valorShell = useMemo(() => ({ slotBarra, slotAcciones, cajonEmpuja: false }), [slotBarra, slotAcciones]);
+
+  // ---------- Pantallas sin shell ----------
+  if (nivelAcceso === 'demo' && seccion !== 'activar_codigo') {
+    return (
+      <div className="min-h-screen bg-fondo text-texto">
+        <OfflineIndicator />
+        <div className="px-4 sm:px-6 py-5">
+          <PantallaTermometro onIrAActivarCodigo={() => setSeccion('activar_codigo')} />
+        </div>
+      </div>
+    );
+  }
+
+  if (seccion === 'activar_codigo') {
+    return (
+      <div className="min-h-screen bg-fondo text-texto px-4 sm:px-6 py-5">
+        <PantallaActivarCodigo
+          onVolver={() => setSeccion(nivelAcceso === 'demo' ? 'termometro' : 'perfil')}
+          onExito={() => setSeccion(INICIO_POR_MODO[modo])}
+        />
+      </div>
+    );
+  }
+
+  if (!perfilFlujo || seccion === 'plan_listo') {
+    return (
+      <div className="min-h-screen bg-fondo text-texto px-4 sm:px-6">
+        <PantallaPlanListo
+          perfil={perfilFlujo}
+          deudas={deudas}
+          onGuardarPerfil={datos.setPerfilFlujo}
+          onGuardarDeuda={datos.guardarDeuda}
+          onEliminarDeuda={datos.eliminarDeuda}
+          onTerminar={() => navegar('plan')}
+          onVolver={perfilFlujo ? () => navegar('plan') : undefined}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[var(--fondo)] text-[color:var(--texto)] font-sans antialiased relative overflow-x-hidden transition-colors duration-200">
-      {/* Indicador de estado sin conexión para PWA */}
+    <div className="min-h-screen bg-fondo text-texto antialiased overflow-x-hidden">
       <OfflineIndicator />
+      <ProveedorShell value={valorShell}>
+        <div className="app-shell min-h-screen flex">
+          <RielLateral modo={modo} seccionActiva={seccion} onCambiarSeccion={navegar} usuario={resumen.usuario} />
+          <BarraInferior modo={modo} seccionActiva={seccion} onCambiarSeccion={navegar} />
 
-      {/* ========================================================= */}
-      {/* EL SHELL: riel · área de trabajo · cajón de Hoy           */}
-      {/* En escritorio la página no scrollea: lo hace el contenido. */}
-      {/* ========================================================= */}
-      <ProveedorShell value={shell}>
-      <div className="app-shell min-h-screen flex">
-        {/* Riel de escritorio (68px) */}
-        {conShell && (
-          <RielNavegacion
-            seccionActiva={seccionActiva}
-            onCambiarSeccion={handleNavegar}
-            usuario={resumen.usuario}
-            saldoTotal={saldoTotal}
-          />
-        )}
-
-        {/* Barra inferior de móvil (fija, fuera del flujo) */}
-        {conShell && (
-          <BarraNavegacion
-            seccionActiva={seccionActiva}
-            onCambiarSeccion={handleNavegar}
-            nivelAcceso={nivelAcceso}
-          />
-        )}
-
-        {/* Área de contenido principal */}
-        <main className="app-main flex-1 flex flex-col min-w-0 min-h-screen relative z-10">
-          {/* Barra superior en móvil solo cuando no estamos en gancho o pantalla de código */}
-          {conShell && (
-            <header className="md:hidden sticky top-0 z-20 bg-[var(--fondo)]/90 backdrop-blur-md px-4 py-3 border-b border-[var(--linea)] flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className={`w-8 h-8 rounded-lg p-[1px] shadow-xs ${
-                    esPapel ? 'bg-[var(--acento)]' : 'bg-platinum-gradient'
-                  }`}
-                >
-                  <div className="w-full h-full rounded-[7px] bg-[var(--superficie)] flex items-center justify-center">
-                    <span
-                      className={`font-display font-black text-sm ${
-                        esPapel ? 'text-[color:var(--acento)]' : 'text-platinum-gradient'
-                      }`}
-                    >
-                      B
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`font-display font-bold text-base tracking-tight ${
-                      esPapel ? 'text-[color:var(--acento)]' : 'text-platinum-gradient'
-                    }`}
-                  >
-                    Bolsillo
-                  </span>
-                  <span className="text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded bg-[var(--superficie-2)] text-[color:var(--texto-2)] border border-[var(--linea)]">
-                    COL
-                  </span>
-                </div>
-              </div>
-
+          <main className="app-main flex-1 flex flex-col min-w-0 min-h-screen">
+            {/* Cabecera del celular: marca, conmutador y perfil */}
+            <header className="md:hidden sticky top-0 z-20 bg-fondo/90 backdrop-blur-md px-4 py-3 border-b border-linea flex items-center justify-between gap-3">
+              <span className="font-display font-extrabold text-base">
+                Bolsillo{modo === 'pro' && <span className="text-acento"> Pro</span>}
+              </span>
+              {hibrido && <ConmutadorModo modo={modo} onCambiar={cambiarModo} />}
               <div className="flex items-center gap-2">
                 <PWAInstallButton />
+                <button
+                  type="button"
+                  onClick={() => navegar('perfil')}
+                  aria-label="Tu perfil"
+                  className="w-8 h-8 rounded-full bg-elevada border border-linea grid place-items-center font-display font-bold text-[11px] text-acento cursor-pointer"
+                >
+                  {resumen.usuario.slice(0, 2).toUpperCase() || '··'}
+                </button>
               </div>
             </header>
-          )}
 
-          {/* La barra de contexto: dónde estás y el botón del cajón de Hoy */}
-          {conShell && (
-            <div className="no-imprimir hidden md:block px-5 pt-4 pb-1 flex-none">
-              <BarraContexto
-                refTitulo={setSlotBarra}
-                refAcciones={setSlotAcciones}
-                cajonAbierto={cajon.abierto}
-                pendientes={cobrosPendientes}
-                onAlternarCajon={cajon.alternar}
-              />
+            {/* Barra de contexto del escritorio: cada pantalla la llena por portal */}
+            <div className="no-imprimir hidden md:flex items-center justify-between gap-5 px-5 pt-4 pb-1 min-h-[38px] flex-none">
+              <div ref={setSlotBarra} className="flex items-center gap-3 min-w-0" />
+              <div className="flex items-center gap-2 flex-none">
+                <div ref={setSlotAcciones} className="flex items-center gap-2" />
+                {hibrido && <ConmutadorModo modo={modo} onCambiar={cambiarModo} />}
+              </div>
             </div>
-          )}
 
-          {/* El contenido crece con lo que lleva: baja la página, no una caja. */}
-          <div
-            ref={contenidoRef}
-            className={`app-contenido flex-1 xl:flex xl:flex-col px-4 sm:px-6 md:px-5 py-5 md:pt-3 w-full ${
-              conShell ? 'pb-24 md:pb-5' : ''
-            }`}
-          >
-            {/* Pantalla 1: Termómetro de la Deuda (Gancho Demo) */}
-            {mostrarTermometro && (
-              <div key="termometro" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
-                <PantallaTermometro
-                  onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
-                />
-              </div>
-            )}
-
-            {/* Pantalla 2: Activar Código de Acceso */}
-            {!mostrarTermometro && seccionActiva === 'activar_codigo' && (
-              <div key="activar_codigo" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
-                <PantallaActivarCodigo
-                  onVolver={() => setSeccionActiva(nivelAcceso === 'demo' ? 'termometro' : 'perfil')}
-                  onExito={() => setSeccionActiva('inicio')}
-                />
-              </div>
-            )}
-
-            {/* Pantalla 3: Inicio (Mi Dinero) */}
-            {!mostrarTermometro && seccionActiva === 'inicio' && (
-              <div key="inicio" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
-                <PantallaInicio
-                  resumen={resumen}
-                  billeteras={billeteras}
-                  deudas={deudas}
-                  movimientos={movimientos}
-                  disponibleMensual={disponibleMensual}
-                  esPro={nivelAcceso === 'pro'}
-                  saldoTotal={saldoTotal}
-                  presupuestos={presupuestos}
-                  sobres={sobres}
-                  totalApartado={totalApartado}
-                  retos={retos}
-                  suscripciones={suscripciones}
-                  sangradoMensual={sangradoMensual}
-                  tarjetasCredito={tarjetasCredito}
-                  onNavegar={handleNavegar}
-                  onRegistrarMovimiento={registrarMovimiento}
-                  onAbonarDeuda={abonarDeudaDesdeBilletera}
-                />
-              </div>
-            )}
-
-            {/* Pantalla 4: Billeteras & Movimientos */}
-            {!mostrarTermometro && seccionActiva === 'billeteras' && (
-              <div key="billeteras" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
-                <PantallaBilleteras
-                  billeteras={billeteras}
-                  saldoTotal={saldoTotal}
-                  movimientos={movimientos}
-                  flujoMes={flujoMes}
-                  deudas={deudas}
-                  onVolver={() => setSeccionActiva('inicio')}
-                  onNavegar={handleNavegar}
-                  onGuardarBilletera={guardarBilletera}
-                  onEliminarBilletera={eliminarBilletera}
-                  onRegistrarMovimiento={registrarMovimiento}
-                  esPro={nivelAcceso === 'pro'}
-                />
-              </div>
-            )}
-
-            {/* Pantalla 5: Plan Deuda Cero */}
-            {!mostrarTermometro && seccionActiva === 'deudas' && (
-              <div key="deudas" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
-                <PantallaDeudas
-                  deudas={deudas}
-                  deudaTotal={resumen.deudaTotal}
-                  disponibleMensual={disponibleMensual}
-                  billeteras={billeteras}
-                  onVolver={() => setSeccionActiva('inicio')}
-                  onNavegar={handleNavegar}
-                  onAbonarDeuda={abonarDeudaDesdeBilletera}
-                  esPro={nivelAcceso === 'pro'}
-                />
-              </div>
-            )}
-
-            {/* Pantalla: Crecer (módulos Pro). En entrada muestra la vitrina; en Pro, el hub. */}
-            {!mostrarTermometro && seccionActiva === 'crecer' && (
-              <div key="crecer" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
-                {nivelAcceso === 'pro' ? (
-                  <PantallaCrecer
-                    resetToken={navTick}
-                    usuario={resumen.usuario}
-                    presupuestos={presupuestos}
-                    gastoPorCategoria={gastoPorCategoria}
-                    ingresoMensual={ingresoDelMesCompleto}
+            <div
+              ref={contenidoRef}
+              className="app-contenido flex-1 xl:flex xl:flex-col px-4 sm:px-6 md:px-5 py-5 md:pt-3 pb-24 md:pb-5 w-full"
+            >
+              <div key={seccion} className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
+                {seccion === 'plan' && (
+                  <PantallaMiPlan
+                    deudas={deudas}
+                    movimientos={movimientos}
                     billeteras={billeteras}
-                    onGuardarPresupuesto={guardarPresupuesto}
-                    onEliminarPresupuesto={eliminarPresupuesto}
-                    onRegistrarMovimiento={registrarMovimiento}
-                    sobres={sobres}
-                    totalApartado={totalApartado}
                     saldoTotal={saldoTotal}
-                    onGuardarSobre={guardarSobre}
-                    onEliminarSobre={eliminarSobre}
-                    retos={retos}
-                    onGuardarReto={guardarReto}
-                    onEliminarReto={eliminarReto}
-                    onAportarReto={aportarSemanaReto}
-                    suscripciones={suscripciones}
-                    sangradoMensual={sangradoMensual}
-                    onGuardarSuscripcion={guardarSuscripcion}
-                    onEliminarSuscripcion={eliminarSuscripcion}
-                    tarjetas={tarjetasCredito}
+                    disponibleMensual={disponibleMensual}
+                    perfil={perfilFlujo}
+                    esPro={esPro}
+                    onAbonarDeuda={abonar}
+                    onIrA={navegar}
+                  />
+                )}
+
+                {seccion === 'deudas' && (
+                  <PantallaDeudas
+                    deudas={deudas}
+                    billeteras={billeteras}
+                    movimientos={movimientos}
+                    disponibleMensual={disponibleMensual}
+                    onGuardarDeuda={datos.guardarDeuda}
+                    onEliminarDeuda={datos.eliminarDeuda}
+                    onMarcarSaldada={marcarSaldada}
+                    onAbonarDeuda={abonar}
+                  />
+                )}
+
+                {seccion === 'billetera' && (
+                  <PantallaBilletera
+                    billeteras={billeteras}
+                    saldoTotal={saldoTotal}
+                    movimientos={movimientos}
+                    deudas={deudas}
+                    disponibleMensual={disponibleMensual}
+                    perfil={perfilFlujo}
+                    onGuardarBilletera={datos.guardarBilletera}
+                    onEliminarBilletera={datos.eliminarBilletera}
+                    onRegistrarMovimiento={datos.registrarMovimiento}
+                  />
+                )}
+
+                {seccion === 'pro_inicio' && (
+                  <PantallaProInicio
+                    deudas={deudas}
+                    sobres={datos.sobres}
+                    disponibleMensual={disponibleMensual}
+                    onAportarASobre={datos.aportarASobre}
+                    onIrA={(d) => navegar(d === 'plan' ? 'plan' : d)}
+                  />
+                )}
+
+                {seccion === 'sobres' && (
+                  <PantallaSobres
+                    sobres={datos.sobres}
+                    totalApartado={datos.totalApartado}
+                    saldoTotal={saldoTotal}
+                    onGuardarSobre={datos.guardarSobre}
+                    onEliminarSobre={datos.eliminarSobre}
+                    onVolver={() => navegar('pro_inicio')}
+                  />
+                )}
+
+                {seccion === 'herramientas' && (
+                  <PantallaCrecer
+                    usuario={resumen.usuario}
+                    presupuestos={datos.presupuestos}
+                    gastoPorCategoria={datos.gastoPorCategoria}
+                    ingresoMensual={ingresoMensual}
+                    billeteras={billeteras}
+                    onGuardarPresupuesto={datos.guardarPresupuesto}
+                    onEliminarPresupuesto={datos.eliminarPresupuesto}
+                    onRegistrarMovimiento={datos.registrarMovimiento}
+                    sobres={datos.sobres}
+                    totalApartado={datos.totalApartado}
+                    saldoTotal={saldoTotal}
+                    onGuardarSobre={datos.guardarSobre}
+                    onEliminarSobre={datos.eliminarSobre}
+                    retos={datos.retos}
+                    onGuardarReto={datos.guardarReto}
+                    onEliminarReto={datos.eliminarReto}
+                    onAportarReto={datos.aportarSemanaReto}
+                    suscripciones={datos.suscripciones}
+                    sangradoMensual={datos.sangradoMensual}
+                    onGuardarSuscripcion={datos.guardarSuscripcion}
+                    onEliminarSuscripcion={datos.eliminarSuscripcion}
+                    tarjetas={datos.tarjetasCredito}
                     deudas={deudas}
                     movimientos={movimientos}
                     disponibleMensual={disponibleMensual}
-                    onAbonarDeuda={abonarDeudaDesdeBilletera}
-                    onGuardarTarjeta={guardarTarjetaCredito}
-                    onEliminarTarjeta={eliminarTarjetaCredito}
+                    onAbonarDeuda={(deudaId, billeteraId, monto) => {
+                      const antes = activas;
+                      const r = datos.abonarDeudaDesdeBilletera(deudaId, billeteraId, monto);
+                      if (r.exito && r.deudaSaldada) evaluarMomento(deudaId, antes);
+                      return r;
+                    }}
+                    onGuardarTarjeta={datos.guardarTarjetaCredito}
+                    onEliminarTarjeta={datos.eliminarTarjetaCredito}
                   />
-                ) : (
+                )}
+
+                {seccion === 'perfil' && (
+                  <PantallaPerfil
+                    usuario={resumen.usuario}
+                    nivelAcceso={nivelAcceso}
+                    onNavegarPro={() => navegar('pro')}
+                    onAbrirActivarCodigo={() => setSeccion('activar_codigo')}
+                  />
+                )}
+
+                {seccion === 'pro' && (
                   <PantallaPro
-                    onVolver={() => setSeccionActiva('inicio')}
-                    onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
+                    onVolver={() => navegar('perfil')}
+                    onIrAActivarCodigo={() => setSeccion('activar_codigo')}
+                    movimientos={movimientos}
+                    deudas={deudas}
+                    disponibleMensual={disponibleMensual}
                   />
                 )}
               </div>
-            )}
-
-            {/* Pantalla 6: Perfil & Ajustes (Reemplaza a "Más") */}
-            {!mostrarTermometro && seccionActiva === 'perfil' && (
-              <div key="perfil" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
-                <PantallaPerfil
-                  usuario={resumen.usuario}
-                  nivelAcceso={nivelAcceso}
-                  onNavegarPro={() => setSeccionActiva('pro')}
-                  onAbrirActivarCodigo={() => setSeccionActiva('activar_codigo')}
-                />
-              </div>
-            )}
-
-            {/* Pantalla 7: Bolsillo Pro (Aspiracional, 1 sola puerta) */}
-            {!mostrarTermometro && seccionActiva === 'pro' && (
-              <div key="pro" className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
-                <PantallaPro
-                  onVolver={() => setSeccionActiva('perfil')}
-                  onIrAActivarCodigo={() => setSeccionActiva('activar_codigo')}
-                  movimientos={movimientos}
-                  deudas={deudas}
-                  disponibleMensual={disponibleMensual}
-                />
-              </div>
-            )}
-          </div>
-        </main>
-
-        {/* El cajón de Hoy: la misma columna en todas las pantallas */}
-        {conShell && (
-          <CajonHoy
-            abierto={cajon.abierto}
-            flotante={cajon.flotante}
-            eventos={agendaHoy}
-            saldoTotal={saldoTotal}
-            onCerrar={cajon.cerrar}
-            onNavegar={handleNavegar}
-          />
-        )}
-      </div>
+            </div>
+          </main>
+        </div>
       </ProveedorShell>
+
+      {momento?.tipo === 'traspaso' && (
+        <MomentoTraspaso
+          deuda={momento.deuda}
+          siguiente={momento.siguiente}
+          minimoSiguiente={momento.minimoSiguiente}
+          saldadas={momento.saldadas}
+          total={momento.total}
+          onContinuar={() => {
+            setMomento(null);
+            navegar('plan');
+          }}
+        />
+      )}
+      {momento?.tipo === 'graduacion' && (
+        <MomentoGraduacion
+          totalPagado={momento.totalPagado}
+          libre={momento.libre}
+          esPro={esPro}
+          onActivarPro={() => {
+            setMomento(null);
+            setSeccion('activar_codigo');
+          }}
+          onEmpezarBlindar={() => {
+            setMomento(null);
+            navegar('pro_inicio');
+          }}
+          onCerrar={() => setMomento(null)}
+        />
+      )}
     </div>
   );
 }

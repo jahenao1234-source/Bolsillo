@@ -166,7 +166,7 @@ export const PantallaPro: React.FC<PantallaProProps> = ({
   const DUDAS = [
     {
       q: '¿Hay mensualidad?',
-      a: 'No. Pagas $59.000 una vez y es tuyo. No guardamos tu tarjeta.',
+      a: 'Tú eliges: $19.900 al mes y cancelas cuando quieras, o $97.000 una sola vez y es tuyo.',
     },
     {
       q: '¿Y lo que saquen después?',
@@ -202,19 +202,19 @@ export const PantallaPro: React.FC<PantallaProProps> = ({
               Acceso de por vida
             </p>
             <h2 className="font-display font-black text-[21px] leading-[1.15] tracking-tight text-[color:var(--texto)] mt-1.5">
-              Ya controlas tu plata.{' '}
-              <span className="text-[color:var(--acento)]">Ahora hazla crecer.</span>
+              Salir de deudas es la mitad.{' '}
+              <span className="text-[color:var(--acento)]">La otra mitad es que tu plata tenga dueño.</span>
             </h2>
 
             <div className="mt-4 pt-3 border-t border-[var(--hairline)]">
               <div className="font-display font-black text-[38px] leading-none tabular-nums text-[color:var(--texto)]">
-                $59.000{' '}
+                $19.900{' '}
                 <span className="text-[13px] font-semibold text-[color:var(--texto-3)]">
-                  COP · una vez
+                  COP al mes
                 </span>
               </div>
               <p className="text-[11px] text-[color:var(--texto-3)] mt-1.5 leading-relaxed">
-                Menos que un solo mes de intereses de mora en una tarjeta.
+                O $97.000 una sola vez, de por vida.
               </p>
             </div>
 
@@ -228,7 +228,7 @@ export const PantallaPro: React.FC<PantallaProProps> = ({
             </button>
 
             <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {['Pago único', 'Sin mensualidad', 'Sin cobros sorpresa'].map((t) => (
+              {['Mensual o de por vida', 'Cancelas cuando quieras', 'Sin cobros sorpresa'].map((t) => (
                 <span
                   key={t}
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium text-[color:var(--texto-2)] bg-[var(--superficie-2)] border border-[var(--linea)]"
