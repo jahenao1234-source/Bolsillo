@@ -42,6 +42,7 @@ export const PantallaSobres: React.FC<PantallaSobresProps> = ({
 }) => {
   const [modal, setModal] = useState<{ modo: ModoModal; sobre: Sobre | null } | null>(null);
   const disponibleReal = saldoTotal - totalApartado;
+  const sobresPropios = sobres.filter(s => !s.grupo && !s.sistema);
 
   return (
     <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
@@ -54,7 +55,7 @@ export const PantallaSobres: React.FC<PantallaSobresProps> = ({
         </h1>
         <span className="w-px h-4 bg-[var(--linea)]" />
         <Chip>
-          {sobres.length} {sobres.length === 1 ? 'sobre' : 'sobres'}
+          {sobresPropios.length} {sobresPropios.length === 1 ? 'sobre' : 'sobres'}
         </Chip>
         {totalApartado > 0 && <Chip variante="aqua">{formatearCOP(totalApartado)} apartado</Chip>}
       </BarraTitulo>
@@ -153,7 +154,7 @@ export const PantallaSobres: React.FC<PantallaSobresProps> = ({
           <Zona crece sinPadding>
             <Scroll className="px-4 xl:px-[17px] py-3">
               {/* Lista de sobres */}
-              {sobres.length === 0 ? (
+              {sobresPropios.length === 0 ? (
                 <Tarjeta padding="lg" className="text-center py-12">
                   <div className="w-14 h-14 rounded-2xl grid place-items-center mx-auto mb-4" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
                     <Mail className="w-7 h-7 text-[color:var(--acento)]" />
@@ -174,8 +175,8 @@ export const PantallaSobres: React.FC<PantallaSobresProps> = ({
                   </div>
                 </Tarjeta>
               ) : (
-                <div className="grid gap-3 @xl:grid-cols-2">
-                  {sobres.map((s) => {
+                <div className="grid gap-3">
+                  {sobresPropios.map((s) => {
                     const color = s.color || 'var(--acento)';
                     const pct = s.meta && s.meta > 0 ? Math.min(100, (s.apartado / s.meta) * 100) : s.apartado > 0 ? 100 : 0;
                     const completo = s.meta ? s.apartado >= s.meta : false;
