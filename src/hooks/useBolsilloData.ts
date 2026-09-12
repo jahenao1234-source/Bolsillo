@@ -45,6 +45,9 @@ import {
   getPerfilFlujo,
   setPerfilFlujo,
   aportarASobre,
+  asegurarSobresSistema,
+  repartirBasicosDeNuevo,
+  moverAporteMensual,
 } from '../data/store';
 import {
   ResumenFinanciero,
@@ -137,6 +140,9 @@ export function useBolsilloData() {
     perfilFlujo,
     setPerfilFlujo,
     aportarASobre,
+    asegurarSobresSistema,
+    repartirBasicosDeNuevo,
+    moverAporteMensual,
     // Módulos Pro (Crecer)
     presupuestos,
     gastoPorCategoria,

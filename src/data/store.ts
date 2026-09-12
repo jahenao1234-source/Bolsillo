@@ -23,7 +23,22 @@ import {
   PerfilFlujo,
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
-import { mensualDesdeEA } from '../logic/sistema';
+import {
+  mensualDesdeEA,
+  repartoBasicoSugerido,
+  ID_BASICO_ARRIENDO,
+  ID_BASICO_MERCADO,
+  ID_BASICO_SERVICIOS,
+  ID_BASICO_TRANSPORTE,
+  ID_SOBRE_COLCHON,
+  ID_SOBRE_INVERSION,
+  ID_LIBRE_GUSTOS,
+  CATS_ARRIENDO,
+  CATS_MERCADO,
+  CATS_SERVICIOS,
+  CATS_TRANSPORTE,
+  CATS_GUSTOS,
+} from '../logic/sistema';
 import { aporteDeSemana } from '../logic/retos';
 import { sangradoVigente } from '../logic/suscripciones';
 
@@ -1124,6 +1139,93 @@ export function getGastoPorCategoria(mes: string = 'sep'): Record<string, number
 // ==========================================
 // SOBRES (Pro · Crecer)
 // ==========================================
+
+export function asegurarSobresSistema(perfil: PerfilFlujo | null): void {
+  if (!perfil) return;
+  const sobres = getSobres();
+  const reparto = repartoBasicoSugerido(perfil.gastosBasicos);
+
+  const plantillas: Partial<Sobre>[] = [
+    { id: ID_BASICO_ARRIENDO, nombre: 'Arriendo', grupo: 'basico', presupuestoMensual: reparto.arriendo, categorias: CATS_ARRIENDO, sistema: true, color: '#25C9BE' },
+    { id: ID_BASICO_MERCADO, nombre: 'Mercado', grupo: 'basico', presupuestoMensual: reparto.mercado, categorias: CATS_MERCADO, sistema: true, color: '#5FE0A8', modulo: 'lista_compras' },
+    { id: ID_BASICO_SERVICIOS, nombre: 'Servicios', grupo: 'basico', presupuestoMensual: reparto.servicios, categorias: CATS_SERVICIOS, sistema: true, color: '#8AA9FF' },
+    { id: ID_BASICO_TRANSPORTE, nombre: 'Transporte', grupo: 'basico', presupuestoMensual: reparto.transporte, categorias: CATS_TRANSPORTE, sistema: true, color: '#FF7A3D' },
+    { id: ID_SOBRE_COLCHON, nombre: 'Fondo blindado', grupo: 'libre', categorias: [], sistema: true, color: '#25C9BE' },
+    { id: ID_SOBRE_INVERSION, nombre: 'Inversión', grupo: 'libre', categorias: [], sistema: true, color: '#8AA9FF', modulo: 'activos' },
+    { id: ID_LIBRE_GUSTOS, nombre: 'Gustos', grupo: 'libre', categorias: CATS_GUSTOS, sistema: true, color: '#FF7A3D' },
+  ];
+
+  let modificados = false;
+  const nuevos = [...sobres];
+
+  for (const tpl of plantillas) {
+    if (!nuevos.find((s) => s.id === tpl.id)) {
+      nuevos.push({
+        ...tpl,
+        apartado: 0,
+        creadoEn: new Date().toISOString(),
+        historial: [],
+      } as Sobre);
+      modificados = true;
+    }
+  }
+
+  if (modificados) setSobres(nuevos);
+}
+
+export function repartirBasicosDeNuevo(perfil: PerfilFlujo | null): void {
+  if (!perfil) return;
+  const sobres = getSobres();
+  const reparto = repartoBasicoSugerido(perfil.gastosBasicos);
+
+  const mapeo: Record<string, number> = {
+    [ID_BASICO_ARRIENDO]: reparto.arriendo,
+    [ID_BASICO_MERCADO]: reparto.mercado,
+    [ID_BASICO_SERVICIOS]: reparto.servicios,
+    [ID_BASICO_TRANSPORTE]: reparto.transporte,
+  };
+
+  const nuevos = sobres.map((s) => {
+    if (s.grupo === 'basico' && mapeo[s.id] !== undefined) {
+      return { ...s, presupuestoMensual: mapeo[s.id] };
+    }
+    return s;
+  });
+
+  setSobres(nuevos);
+}
+
+export function moverAporteMensual(sobreId: string, monto: number): boolean {
+  const sobres = getSobres();
+  const idx = sobres.findIndex((s) => s.id === sobreId);
+  if (idx < 0) return false;
+
+  const sobre = { ...sobres[idx] };
+  const hoy = new Date();
+
+  const yaAporto = (sobre.historial || [])
+    .filter((h) => h.origen === 'aporte_mensual')
+    .some((h) => {
+      const f = new Date(h.fecha);
+      return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+    });
+
+  if (yaAporto) return false;
+
+  sobre.apartado += monto;
+  if (!sobre.historial) sobre.historial = [];
+  sobre.historial.push({
+    fecha: hoy.toISOString(),
+    monto,
+    origen: 'aporte_mensual',
+  });
+
+  const nuevos = [...sobres];
+  nuevos[idx] = sobre;
+  setSobres(nuevos);
+
+  return true;
+}
 
 export function getSobres(): Sobre[] {
   try {

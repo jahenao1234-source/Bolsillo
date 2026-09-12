@@ -8,7 +8,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Check, FolderLock, Wrench } from 'lucide-react';
-import type { Deuda, Sobre } from '../types';
+import type { Deuda, Sobre, PerfilFlujo } from '../types';
 import { Marco, Columna, Zona } from '../components/layout/Marco';
 import { BarraTitulo } from '../components/layout/shell';
 import { FASES, RailPasos, Rotulo } from '../components/sistema/RailPasos';
@@ -18,7 +18,7 @@ import {
   fechaColchonCompleto,
   ID_SOBRE_COLCHON,
   ID_SOBRE_INVERSION,
-  META_COLCHON,
+  metaFondoBlindado,
   repartoPro,
 } from '../logic/sistema';
 import { formatearCOP } from '../utils/format';
@@ -28,7 +28,9 @@ interface PantallaProInicioProps {
   deudas: Deuda[];
   sobres: Sobre[];
   disponibleMensual: number;
+  perfil: PerfilFlujo | null;
   onAportarASobre: (id: string, nombre: string, monto: number, meta?: number, color?: string) => void;
+  onMoverAporte: (sobreId: string, monto: number) => boolean;
   onIrA: (destino: 'sobres' | 'herramientas' | 'plan') => void;
 }
 
@@ -36,33 +38,43 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   deudas,
   sobres,
   disponibleMensual,
+  perfil,
   onAportarASobre,
+  onMoverAporte,
   onIrA,
 }) => {
   const [movido, setMovido] = useState<string | null>(null);
 
   const activas = useMemo(() => deudasActivas(deudas), [deudas]);
-  const fase = faseActual(deudas, sobres);
+  const metaFondo = perfil ? metaFondoBlindado(perfil.gastosBasicos) : 0;
+  const fase = faseActual(deudas, sobres, metaFondo);
   const colchon = sobres.find((s) => s.id === ID_SOBRE_COLCHON);
   const inversion = sobres.find((s) => s.id === ID_SOBRE_INVERSION);
   const apartadoColchon = colchon?.apartado ?? 0;
 
+
+
   // Mientras haya deudas, toda la plata del mes va al plan: aquí no hay libre que repartir.
   const libre = activas.length > 0 ? 0 : disponibleMensual;
-  const reparto = repartoPro(libre, apartadoColchon);
+  const reparto = repartoPro(libre, apartadoColchon, metaFondo);
   const mesNombre = MESES_NOMBRE[new Date().getMonth()].toLowerCase();
-  const progreso = Math.min(100, (apartadoColchon / META_COLCHON) * 100);
+  const progreso = Math.min(100, (apartadoColchon / metaFondo) * 100);
 
   const mover = (id: string, nombre: string, monto: number, meta?: number, color?: string) => {
     if (monto <= 0) return;
-    onAportarASobre(id, nombre, monto, meta, color);
+    const exito = onMoverAporte(id, monto);
+    if (!exito) {
+      setMovido(`Ya apartaste para ${nombre.toLowerCase()} este mes`);
+      window.setTimeout(() => setMovido(null), 3000);
+      return;
+    }
     setMovido(`${formatearCOP(monto)} a ${nombre.toLowerCase()}`);
     window.setTimeout(() => setMovido(null), 3000);
   };
 
   const accion =
     fase === 'blindar'
-      ? { texto: `Mover ${formatearCOP(reparto.colchon)} al colchón`, hacer: () => mover(ID_SOBRE_COLCHON, 'Colchón', reparto.colchon, META_COLCHON, '#25C9BE') }
+      ? { texto: `Mover ${formatearCOP(reparto.colchon)} al fondo blindado`, hacer: () => mover(ID_SOBRE_COLCHON, 'Fondo blindado', reparto.colchon, metaFondo, '#25C9BE') }
       : { texto: `Mover ${formatearCOP(reparto.inversion)} a inversión`, hacer: () => mover(ID_SOBRE_INVERSION, 'Inversión', reparto.inversion, undefined, '#5FE0A8') };
 
   return (
@@ -92,16 +104,16 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
 
             {fase !== 'crecer' ? (
               <div>
-                <Rotulo>Tu colchón</Rotulo>
+                <Rotulo>Tu fondo blindado</Rotulo>
                 <p className="mt-1.5 flex items-baseline gap-2">
                   <span className="font-display font-extrabold text-[34px] leading-none tabular-nums">{formatearCOP(apartadoColchon)}</span>
-                  <span className="text-[13px] text-texto-3 tabular-nums">de {formatearCOP(META_COLCHON)}</span>
+                  <span className="text-[13px] text-texto-3 tabular-nums">de {formatearCOP(metaFondo)}</span>
                 </p>
                 <div className="h-1.5 rounded-full bg-superficie-2 overflow-hidden mt-2.5">
                   <div className="h-full rounded-full bg-acento" style={{ width: `${progreso}%` }} />
                 </div>
                 <p className="text-xs text-texto-2 mt-2">
-                  {reparto.colchon > 0 ? `Completo en ${fechaColchonCompleto(apartadoColchon, reparto.colchon).toLowerCase()}.` : 'Para que la próxima emergencia no sea tarjeta.'}
+                  {reparto.colchon > 0 ? `Completo en ${fechaColchonCompleto(apartadoColchon, reparto.colchon, metaFondo).toLowerCase()}.` : 'Para que la próxima emergencia no sea tarjeta.'}
                 </p>
               </div>
             ) : (
@@ -133,7 +145,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
               <Rotulo>Tus {formatearCOP(libre)} de {mesNombre}</Rotulo>
               <div className="mt-2 rounded-2xl border border-linea bg-superficie">
                 {[
-                  { nombre: 'Colchón', desc: 'Para que la próxima emergencia no sea tarjeta', monto: reparto.colchon, color: 'text-acento', primero: fase === 'blindar' },
+                  { nombre: 'Fondo blindado', desc: 'Para que la próxima emergencia no sea tarjeta', monto: reparto.colchon, color: 'text-acento', primero: fase === 'blindar' },
                   { nombre: 'Inversión', desc: 'CDT o fondo que tú abras', monto: reparto.inversion, color: 'text-texto', primero: fase === 'crecer' },
                   { nombre: 'Gustos', desc: 'Sin culpa y sin deuda', monto: reparto.gustos, color: 'text-texto', primero: false },
                 ].map((fila, i) => (
@@ -157,7 +169,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
               </div>
               {fase === 'blindar' && (
                 <p className="text-xs text-texto-2 mt-2.5 leading-relaxed">
-                  Cuando el colchón llegue a {formatearCOP(META_COLCHON)}, <b className="text-texto">su parte pasa a inversión</b>:{' '}
+                  Cuando el fondo blindado llegue a {formatearCOP(metaFondo)}, <b className="text-texto">su parte pasa a inversión</b>:{' '}
                   {formatearCOP(reparto.colchon + reparto.inversion)} al mes para crecer.
                 </p>
               )}

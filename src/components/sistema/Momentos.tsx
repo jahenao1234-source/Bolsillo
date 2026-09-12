@@ -125,14 +125,14 @@ const ContenidoGraduacion: React.FC<GraduacionProps> = ({ totalPagado, libre, es
     {esPro ? (
       <>
         <p className="text-xs leading-relaxed text-texto-2">
-          Sigue el mismo traspaso: primero un colchón de <b className="text-texto">$1.000.000</b>, después a crecer.
+          Sigue el mismo traspaso: primero tu fondo blindado (primer hito <b className="text-texto">$1.000.000</b>), después a crecer.
         </p>
         <Boton onClick={onEmpezarBlindar}>Empezar a blindar</Boton>
       </>
     ) : (
       <>
         <p className="text-xs leading-relaxed text-texto-2">
-          <b className="text-texto">Bolsillo Pro</b> les pone dueño con el mismo traspaso: primero un colchón de $1.000.000, después a crecer.
+          <b className="text-texto">Bolsillo Pro</b> les pone dueño con el mismo traspaso: primero tu fondo blindado (primer hito $1.000.000), después a crecer.
         </p>
         <div className="flex items-baseline gap-2 tabular-nums">
           <span className="font-display font-extrabold text-[22px]">$19.900</span>

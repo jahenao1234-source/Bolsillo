@@ -11,7 +11,7 @@ import { X } from 'lucide-react';
 import type { Billetera, Deuda, Movimiento } from '../../types';
 import { formatearCOP } from '../../utils/format';
 import { MESES_ABREV } from '../../utils/fechas';
-import { diasDeRetraso } from '../../logic/sistema';
+import { diasDeRetraso, CATS_ARRIENDO, CATS_MERCADO, CATS_SERVICIOS, CATS_TRANSPORTE, CATS_GUSTOS, ID_BASICO_ARRIENDO, ID_BASICO_MERCADO, ID_BASICO_SERVICIOS, ID_BASICO_TRANSPORTE, ID_LIBRE_GUSTOS } from '../../logic/sistema';
 
 interface HojaGastoRapidoProps {
   abierto: boolean;
@@ -26,7 +26,7 @@ interface HojaGastoRapidoProps {
   onCerrar: () => void;
 }
 
-const CATEGORIAS = ['Comida', 'Transporte', 'Servicios', 'Ocio', 'Otro'];
+const CATEGORIAS = ['Comida', 'Transporte', 'Servicios', 'Arriendo', 'Ocio', 'Otro'];
 
 interface Resultado {
   concepto: string;
@@ -78,6 +78,14 @@ export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
 
     const ahora = new Date();
     const nombre = concepto.trim() || categoria;
+    
+    let sobreId: string | undefined;
+    if (CATS_ARRIENDO.includes(categoria)) sobreId = ID_BASICO_ARRIENDO;
+    else if (CATS_MERCADO.includes(categoria)) sobreId = ID_BASICO_MERCADO;
+    else if (CATS_SERVICIOS.includes(categoria)) sobreId = ID_BASICO_SERVICIOS;
+    else if (CATS_TRANSPORTE.includes(categoria)) sobreId = ID_BASICO_TRANSPORTE;
+    else if (CATS_GUSTOS.includes(categoria)) sobreId = ID_LIBRE_GUSTOS;
+
     onGuardar({
       tipo: 'gasto',
       monto,
@@ -87,6 +95,7 @@ export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
       nota: nombre,
       descripcion: nombre,
       creadoEn: ahora.toISOString(),
+      sobreId,
     });
 
     // Solo la parte de ESTE gasto que queda por encima del techo sale del ataque.

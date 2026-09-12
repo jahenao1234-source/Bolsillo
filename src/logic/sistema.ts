@@ -12,15 +12,28 @@
  * dónde se va su plata cuando algo se completa. Sin React y sin almacenamiento.
  */
 
-import { Deuda, Movimiento, Sobre } from '../types';
+import { Deuda, Movimiento, Sobre, PerfilFlujo } from '../types';
 import { calcularPlan, calcularFechaMesRelativo, ordenarDeudasSegunEstrategia } from './planDeudas';
 
 /** La v3 enseña un solo método: bola de nieve. Menos opciones, más guía. */
 export const ESTRATEGIA = 'bola_de_nieve' as const;
 
-export const META_COLCHON = 1_000_000;
+export const ID_BASICO_ARRIENDO = 'basico-arriendo';
+export const ID_BASICO_MERCADO = 'basico-mercado';
+export const ID_BASICO_SERVICIOS = 'basico-servicios';
+export const ID_BASICO_TRANSPORTE = 'basico-transporte';
 export const ID_SOBRE_COLCHON = 'sobre-colchon';
 export const ID_SOBRE_INVERSION = 'sobre-inversion';
+export const ID_LIBRE_GUSTOS = 'libre-gustos';
+
+export const CATS_ARRIENDO = ['Arriendo', 'Vivienda'];
+export const CATS_MERCADO = ['Comida', 'Mercado', 'Alimentación'];
+export const CATS_SERVICIOS = ['Servicios'];
+export const CATS_TRANSPORTE = ['Transporte'];
+export const CATS_GUSTOS = ['Ocio', 'Gustos'];
+
+export const HITO_FONDO = 1000000;
+export const MODULOS_LISTOS = false;
 
 export type Fase = 'salir' | 'blindar' | 'crecer';
 
@@ -51,10 +64,10 @@ export function eaDesdeMensual(mensual: number): number {
 // FASE
 // ==========================================
 
-export function faseActual(deudas: Deuda[], sobres: Sobre[]): Fase {
+export function faseActual(deudas: Deuda[], sobres: Sobre[], gastosBasicos: number): Fase {
   if (deudasActivas(deudas).length > 0) return 'salir';
   const colchon = sobres.find((s) => s.id === ID_SOBRE_COLCHON);
-  if (!colchon || colchon.apartado < META_COLCHON) return 'blindar';
+  if (!colchon || colchon.apartado < metaFondoBlindado(gastosBasicos)) return 'blindar';
   return 'crecer';
 }
 
@@ -298,8 +311,59 @@ export function gastoDeLaSemana(movimientos: Movimiento[], hoy: Date = new Date(
 }
 
 // ==========================================
-// PRO: BLINDAR Y CRECER
+// PRO: BLINDAR Y CRECER (BASE CERO)
 // ==========================================
+
+export function metaFondoBlindado(gastosBasicos: number): number {
+  return 3 * gastosBasicos;
+}
+
+export function repartoBasicoSugerido(gastosBasicos: number) {
+  const arriendo = Math.round(((900 / 2230) * gastosBasicos) / 1000) * 1000;
+  const mercado = Math.round(((700 / 2230) * gastosBasicos) / 1000) * 1000;
+  const servicios = Math.round(((350 / 2230) * gastosBasicos) / 1000) * 1000;
+  const transporte = gastosBasicos - arriendo - mercado - servicios;
+  return { arriendo, mercado, servicios, transporte };
+}
+
+export function gastadoDelMes(sobre: Sobre, movimientos: Movimiento[], hoy: Date = new Date()): number {
+  return movimientos
+    .filter((m) => m.tipo === 'gasto' && m.categoria !== 'Deudas' && !m.deudaId && m.creadoEn)
+    .filter((m) => {
+      const f = new Date(m.creadoEn as string);
+      return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+    })
+    .filter(
+      (m) =>
+        m.sobreId === sobre.id ||
+        (!m.sobreId && sobre.categorias && sobre.categorias.includes(m.categoria))
+    )
+    .reduce((a, m) => a + m.monto, 0);
+}
+
+export function movidoEsteMes(sobre: Sobre, hoy: Date = new Date()): number {
+  if (!sobre.historial) return 0;
+  return sobre.historial
+    .filter((h) => h.origen === 'aporte_mensual')
+    .filter((h) => {
+      const f = new Date(h.fecha);
+      return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+    })
+    .reduce((a, h) => a + h.monto, 0);
+}
+
+export function estadoBaseCero(perfil: PerfilFlujo | null, sobres: Sobre[], deudas: Deuda[]) {
+  if (!perfil) return { ingreso: 0, basicosAsignado: 0, libre: 0, porAsignar: 0, deudasActivas: false };
+
+  const basicosAsignado = sobres
+    .filter((s) => s.grupo === 'basico')
+    .reduce((a, s) => a + (s.presupuestoMensual || 0), 0);
+  const tieneDeudas = deudasActivas(deudas).length > 0;
+  const libre = tieneDeudas ? 0 : Math.max(0, perfil.ingresoMensual - basicosAsignado);
+  const porAsignar = perfil.ingresoMensual - basicosAsignado - libre;
+
+  return { ingreso: perfil.ingresoMensual, basicosAsignado, libre, porAsignar, deudasActivas: tieneDeudas };
+}
 
 export interface RepartoPro {
   colchon: number;
@@ -315,18 +379,18 @@ const aMiles = (n: number) => Math.round(n / 1000) * 1000;
  * el sistema aguante), y el resto a partes iguales entre colchón e inversión.
  * Cuando el colchón se llena, su parte pasa a inversión: el mismo traspaso.
  */
-export function repartoPro(libre: number, colchonApartado: number): RepartoPro {
+export function repartoPro(libre: number, colchonApartado: number, metaFondo: number): RepartoPro {
   if (libre <= 0) return { colchon: 0, inversion: 0, gustos: 0, total: 0 };
   const gustos = aMiles(libre * 0.175);
   const resto = libre - gustos;
-  const falta = Math.max(0, META_COLCHON - colchonApartado);
+  const falta = Math.max(0, metaFondo - colchonApartado);
   const colchon = Math.min(aMiles(resto / 2), falta);
   return { colchon, inversion: resto - colchon, gustos, total: libre };
 }
 
 /** Mes en que el colchón queda completo aportando `aporte` al mes. */
-export function fechaColchonCompleto(apartado: number, aporte: number): string {
-  const falta = META_COLCHON - apartado;
+export function fechaColchonCompleto(apartado: number, aporte: number, metaFondo: number): string {
+  const falta = metaFondo - apartado;
   if (falta <= 0) return 'Completo';
   if (aporte <= 0) return 'Sin fecha';
   return calcularFechaMesRelativo(Math.ceil(falta / aporte));

@@ -453,59 +453,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
                 cajonEmpuja ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3'
               } xl:auto-rows-fr`}
             >
-              {/* --- Presupuesto --- */}
-              <TarjetaModulo
-                color="var(--azul)"
-                icono={<PieChart className="w-3.5 h-3.5" />}
-                nombre="Presupuesto"
-                etiqueta={resumenPresupuesto.n > 0 ? `${resumenPresupuesto.n} topes` : undefined}
-                cifra={resumenPresupuesto.n > 0 ? `${resumenPresupuesto.pct}%` : '—'}
-                sufijo={resumenPresupuesto.n > 0 ? 'usado' : undefined}
-                accion={
-                  topeApretado && topeApretado.pct >= 80
-                    ? `Subir el tope de ${topeApretado.categoria}`
-                    : 'Revisar tus topes'
-                }
-                onClick={() => setModulo('presupuesto')}
-              >
-                {resumenPresupuesto.n > 0 ? (
-                  <>
-                    <span className="block h-[7px] rounded bg-[var(--hairline)] overflow-hidden mt-2">
-                      <span
-                        className="block h-full rounded"
-                        style={{
-                          width: `${Math.min(100, resumenPresupuesto.pct)}%`,
-                          background: 'var(--azul)',
-                        }}
-                      />
-                    </span>
-                    <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                      {formatearCOP(resumenPresupuesto.totalGastado)} de{' '}
-                      {formatearCOP(resumenPresupuesto.totalTope)} en topes.
-                    </p>
-                    {topeApretado && (
-                      <div className="flex justify-between gap-2 text-[10.5px] mt-2">
-                        <span className="text-[color:var(--texto-3)] truncate">
-                          {topeApretado.categoria}
-                        </span>
-                        <span
-                          className={`font-display font-semibold tabular-nums ${
-                            topeApretado.pct >= 80
-                              ? 'text-[color:var(--alerta)]'
-                              : 'text-[color:var(--texto-2)]'
-                          }`}
-                        >
-                          {Math.round(topeApretado.pct)}% del tope
-                        </span>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                    Ponle un tope a cada categoría y te aviso antes de que se acabe.
-                  </p>
-                )}
-              </TarjetaModulo>
+              {/* --- Presupuesto (Eliminado en Base Cero: reemplazado por sobres de lo básico) --- */}
 
               {/* --- Sobres --- */}
               <TarjetaModulo

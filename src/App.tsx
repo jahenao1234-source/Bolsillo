@@ -25,7 +25,7 @@ import { PantallaDeudas } from './screens/PantallaDeudas';
 import { PantallaBilletera } from './screens/PantallaBilletera';
 import { PantallaPlanListo } from './screens/PantallaPlanListo';
 import { PantallaProInicio } from './screens/PantallaProInicio';
-import { PantallaSobres } from './screens/PantallaSobres';
+import { PantallaSobresBaseCero } from './screens/PantallaSobresBaseCero';
 import { PantallaCrecer } from './screens/PantallaCrecer';
 import { PantallaPerfil } from './screens/PantallaPerfil';
 import { PantallaPro } from './screens/PantallaPro';
@@ -77,7 +77,11 @@ export default function App() {
   // Sin su mes configurado no hay plan que enseñar: se fija la sección en el armado
   // del plan, para que guardar el primer paso no la saque de ahí a la mitad.
   useEffect(() => {
-    if (!perfilFlujo && nivelAcceso !== 'demo') setSeccion('plan_listo');
+    if (!perfilFlujo && nivelAcceso !== 'demo') {
+      setSeccion('plan_listo');
+    } else {
+      datos.asegurarSobresSistema(perfilFlujo);
+    }
   }, [perfilFlujo, nivelAcceso]);
 
   // Si la sección no existe en el modo actual, vuelve al inicio de ese modo.
@@ -274,19 +278,17 @@ export default function App() {
                     deudas={deudas}
                     sobres={datos.sobres}
                     disponibleMensual={disponibleMensual}
+                    perfil={perfilFlujo}
                     onAportarASobre={datos.aportarASobre}
+                    onMoverAporte={datos.moverAporteMensual}
                     onIrA={(d) => navegar(d === 'plan' ? 'plan' : d)}
                   />
                 )}
 
                 {seccion === 'sobres' && (
-                  <PantallaSobres
-                    sobres={datos.sobres}
-                    totalApartado={datos.totalApartado}
-                    saldoTotal={saldoTotal}
-                    onGuardarSobre={datos.guardarSobre}
-                    onEliminarSobre={datos.eliminarSobre}
+                  <PantallaSobresBaseCero
                     onVolver={() => navegar('pro_inicio')}
+                    onIrAMiPlan={() => navegar('plan')}
                   />
                 )}
 
