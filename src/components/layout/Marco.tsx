@@ -78,6 +78,11 @@ interface ZonaProps {
   crece?: boolean;
   /** Quita el padding: para listas y tablas que llegan hasta el borde. */
   sinPadding?: boolean;
+  /**
+   * En móvil, sin tarjeta propia: para zonas que ya llevan tarjetas dentro y
+   * que, envueltas en otra, quedarían como tarjetas dentro de tarjetas.
+   */
+  plana?: boolean;
   className?: string;
 }
 
@@ -85,6 +90,7 @@ export const Zona: React.FC<ZonaProps> = ({
   children,
   crece = false,
   sinPadding = false,
+  plana = false,
   className = '',
 }) => (
   <div
@@ -93,6 +99,7 @@ export const Zona: React.FC<ZonaProps> = ({
       xl:rounded-none xl:border-0 xl:border-b xl:border-[var(--hairline)] xl:bg-transparent
       ${sinPadding ? 'p-0' : 'p-4 xl:px-[17px] xl:py-[13px]'}
       ${crece ? 'xl:flex-1 xl:flex xl:flex-col' : 'xl:flex-none'}
+      ${plana ? 'max-xl:border-0 max-xl:bg-transparent max-xl:rounded-none max-xl:p-0' : ''}
       ${className}
     `}
   >
