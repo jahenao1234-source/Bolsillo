@@ -352,6 +352,17 @@ export function movidoEsteMes(sobre: Sobre, hoy: Date = new Date()): number {
     .reduce((a, h) => a + h.monto, 0);
 }
 
+export function fechaAporteEsteMes(sobre: Sobre, hoy: Date = new Date()): Date | null {
+  if (!sobre.historial) return null;
+  const aporte = sobre.historial
+    .filter((h) => h.origen === 'aporte_mensual')
+    .find((h) => {
+      const f = new Date(h.fecha);
+      return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+    });
+  return aporte ? new Date(aporte.fecha) : null;
+}
+
 export function estadoBaseCero(perfil: PerfilFlujo | null, sobres: Sobre[], deudas: Deuda[]) {
   if (!perfil) return { ingreso: 0, basicosAsignado: 0, libre: 0, porAsignar: 0, paraDeudas: 0, deudasActivas: false };
 

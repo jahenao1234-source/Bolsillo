@@ -21,6 +21,7 @@ import {
   metaFondoBlindado,
   repartoPro,
   movidoEsteMes,
+  fechaAporteEsteMes,
 } from '../logic/sistema';
 import { formatearCOP } from '../utils/format';
 import { MESES_NOMBRE } from '../utils/fechas';
@@ -76,13 +77,15 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           texto: `Mover ${formatearCOP(reparto.colchon)} al fondo blindado`, 
           hacer: () => mover(ID_SOBRE_COLCHON, 'Fondo blindado', reparto.colchon, metaFondo, '#25C9BE'),
           movido: colchon ? movidoEsteMes(colchon, new Date()) : 0,
-          monto: reparto.colchon
+          monto: reparto.colchon,
+          fecha: colchon ? fechaAporteEsteMes(colchon, new Date()) : null,
         }
       : { 
           texto: `Mover ${formatearCOP(reparto.inversion)} a inversión`, 
           hacer: () => mover(ID_SOBRE_INVERSION, 'Inversión', reparto.inversion, undefined, '#5FE0A8'),
           movido: inversion ? movidoEsteMes(inversion, new Date()) : 0,
-          monto: reparto.inversion
+          monto: reparto.inversion,
+          fecha: inversion ? fechaAporteEsteMes(inversion, new Date()) : null,
         };
 
   return (
@@ -141,7 +144,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
             )}
             {(accion.movido > 0 || movido) && libre > 0 && (
               <p role="status" className="text-sm font-semibold text-positivo text-center mt-4">
-                {movido || `Movido el ${new Date().getDate()} ✓`}
+                {movido || `Movido el ${accion.fecha?.getDate()} ✓`}
               </p>
             )}
           </Zona>
