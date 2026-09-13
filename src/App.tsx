@@ -311,7 +311,7 @@ export default function App() {
                     onEliminarPresupuesto={datos.eliminarPresupuesto}
                     onRegistrarMovimiento={datos.registrarMovimiento}
                     sobres={datos.sobres}
-                    totalApartado={datos.totalApartado}
+                    totalApartado={datos.sobres.filter(s => !s.grupo).reduce((a, s) => a + s.apartado, 0)}
                     saldoTotal={saldoTotal}
                     onGuardarSobre={datos.guardarSobre}
                     onEliminarSobre={datos.eliminarSobre}
