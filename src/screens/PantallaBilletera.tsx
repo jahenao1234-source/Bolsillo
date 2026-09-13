@@ -15,14 +15,13 @@ import { Rotulo } from '../components/sistema/RailPasos';
 import { HojaGastoRapido } from '../components/sistema/HojaGastoRapido';
 import { ModalAgregarBilletera } from '../components/billeteras/ModalAgregarBilletera';
 import { ModalRegistrarMovimiento } from '../components/billeteras/ModalRegistrarMovimiento';
-import { deudasActivas, gastoDeLaSemana, techoSemanal } from '../logic/sistema';
+import { deudasActivas, enSobres, gastoDeLaSemana, techoSemanal } from '../logic/sistema';
 import { formatearCOP } from '../utils/format';
 
 interface PantallaBilleteraProps {
   billeteras: Billetera[];
   sobres: Sobre[];
   saldoTotal: number;
-  totalApartado: number;
   movimientos: Movimiento[];
   deudas: Deuda[];
   disponibleMensual: number;
@@ -38,7 +37,6 @@ export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
   billeteras,
   sobres,
   saldoTotal,
-  totalApartado,
   movimientos,
   deudas,
   disponibleMensual,
@@ -54,6 +52,8 @@ export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
   const [visibles, setVisibles] = useState(POR_PAGINA);
 
   const activas = useMemo(() => deudasActivas(deudas), [deudas]);
+  // Solo cuenta la plata de sobres que dicen en qué cuenta está: esa sí está dentro del saldo.
+  const totalApartado = billeteras.reduce((a, b) => a + enSobres(b.id, sobres), 0);
   const techo = perfil ? techoSemanal(perfil.gastosBasicos) : null;
   const gastoSemana = gastoDeLaSemana(movimientos);
   const pasado = techo !== null && gastoSemana > techo;
@@ -125,7 +125,18 @@ export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
                     <span className="w-2 h-2 rounded-full flex-none" style={{ background: b.color ?? 'var(--texto-3)' }} />
                     <span className="truncate">{b.nombre}</span>
                   </span>
-                  <span className={`font-bold tabular-nums ${b.saldo < 0 ? 'text-alerta' : 'text-texto'}`}>{formatearCOP(b.saldo)}</span>
+                  <span className="text-right">
+                    <span className={`block font-bold tabular-nums ${b.saldo < 0 ? 'text-alerta' : 'text-texto'}`}>{formatearCOP(b.saldo)}</span>
+                    {enSobres(b.id, sobres) > 0 && (
+                      b.saldo - enSobres(b.id, sobres) < 0 ? (
+                        <span className="block text-[11px] text-alerta">Tus sobres suman más de lo que hay aquí</span>
+                      ) : (
+                        <span className="block text-[11px] text-texto-3 tabular-nums">
+                          {formatearCOP(enSobres(b.id, sobres))} en sobres · {formatearCOP(b.saldo - enSobres(b.id, sobres))} sin sobre
+                        </span>
+                      )
+                    )}
+                  </span>
                 </button>
               ))
             )}

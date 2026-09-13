@@ -43,8 +43,8 @@ type Momento =
   | { tipo: 'traspaso'; deuda: Deuda; siguiente: Escalon | null; minimoSiguiente: number; saldadas: number; total: number }
   | { tipo: 'graduacion'; totalPagado: number; libre: number };
 
-/** Secciones que existen en los dos modos. */
-const GLOBALES: SeccionApp[] = ['perfil', 'pro', 'activar_codigo', 'plan_listo'];
+/** Secciones que existen en los dos modos. Billetera no está en la barra de Pro, pero Inicio lleva a ella. */
+const GLOBALES: SeccionApp[] = ['perfil', 'pro', 'activar_codigo', 'plan_listo', 'billetera'];
 
 export default function App() {
   useEffect(() => {
@@ -278,7 +278,6 @@ export default function App() {
                     billeteras={billeteras}
                     sobres={datos.sobres}
                     saldoTotal={saldoTotal}
-                    totalApartado={datos.totalApartado}
                     movimientos={movimientos}
                     deudas={deudas}
                     disponibleMensual={disponibleMensual}
