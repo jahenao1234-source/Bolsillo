@@ -42,6 +42,7 @@ export const ITEMS_POR_MODO: Record<ModoApp, ItemNav[]> = {
   pro: [
     { id: 'pro_inicio', etiqueta: 'Inicio', icono: Home },
     { id: 'sobres', etiqueta: 'Sobres', icono: FolderLock },
+    { id: 'billetera', etiqueta: 'Mi plata', icono: Wallet },
     { id: 'herramientas', etiqueta: 'Más', icono: LayoutGrid },
   ],
 };
@@ -57,7 +58,7 @@ interface NavProps {
 /** Barra inferior del celular. */
 export const BarraInferior: React.FC<NavProps> = ({ modo, seccionActiva, onCambiarSeccion }) => (
   <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-fondo/95 backdrop-blur-md border-t border-linea pb-[env(safe-area-inset-bottom,8px)]">
-    <div className="grid grid-cols-3 h-16 max-w-lg mx-auto px-2">
+    <div className={`grid h-16 max-w-lg mx-auto px-2 ${ITEMS_POR_MODO[modo].length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
       {ITEMS_POR_MODO[modo].map(({ id, etiqueta, icono: Icono }) => {
         const activo = seccionActiva === id;
         return (
@@ -66,13 +67,12 @@ export const BarraInferior: React.FC<NavProps> = ({ modo, seccionActiva, onCambi
             type="button"
             onClick={() => onCambiarSeccion(id)}
             aria-current={activo ? 'page' : undefined}
-            className={`relative flex flex-col items-center justify-center gap-1 cursor-pointer select-none ${
-              activo ? 'text-acento' : 'text-texto-3 hover:text-texto-2'
-            }`}
+            className="relative flex flex-col items-center justify-center cursor-pointer select-none"
           >
-            {activo && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] rounded-full bg-acento" />}
-            <Icono className="w-5 h-5" />
-            <span className="text-[11px] font-semibold">{etiqueta}</span>
+            <span className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-[10px] ${activo ? 'bg-nav-activo text-on-nav-activo' : 'text-texto-3 hover:text-texto-2'}`}>
+              <Icono className="w-5 h-5" />
+              <span className="text-[11px] font-semibold">{etiqueta}</span>
+            </span>
           </button>
         );
       })}
@@ -86,10 +86,11 @@ interface RielProps extends NavProps {
 
 /** Riel de escritorio: los mismos tres destinos, y el perfil abajo. */
 export const RielLateral: React.FC<RielProps> = ({ modo, seccionActiva, onCambiarSeccion, usuario }) => (
-  <aside className="hidden md:flex flex-col items-center flex-none w-[68px] bg-superficie-2 border-r border-linea py-4 gap-1">
-    <div className="w-8 h-8 mb-3.5 rounded-[9px] grid place-items-center bg-superficie border border-linea">
+  <aside className="hidden md:flex flex-col items-center flex-none w-[68px] bg-superficie-2 border-r border-linea py-4 gap-1 xl:w-[232px] xl:items-stretch xl:px-3 xl:py-6">
+    <div className="w-8 h-8 mb-3.5 rounded-[9px] grid place-items-center bg-superficie border border-linea xl:hidden">
       <span className="font-display font-black text-[15px] leading-none text-acento">B</span>
     </div>
+    <div className="max-xl:hidden px-2.5 mb-6 font-display font-extrabold text-[22px] tracking-tight text-texto">Bolsillo<span className="text-acento">.</span></div>
 
     {ITEMS_POR_MODO[modo].map(({ id, etiqueta, icono: Icono }) => {
       const activo = seccionActiva === id;
@@ -100,13 +101,14 @@ export const RielLateral: React.FC<RielProps> = ({ modo, seccionActiva, onCambia
           onClick={() => onCambiarSeccion(id)}
           aria-current={activo ? 'page' : undefined}
           title={etiqueta}
-          className={`relative w-[46px] h-11 rounded-[10px] grid place-items-center cursor-pointer transition-colors ${
-            activo ? 'bg-elevada text-acento' : 'text-texto-3 hover:text-texto-2 hover:bg-superficie'
+          className={`relative w-[46px] h-11 rounded-[10px] grid place-items-center cursor-pointer transition-colors xl:w-full xl:h-11 xl:flex xl:items-center xl:gap-3 xl:px-3.5 xl:justify-start ${
+            activo ? 'bg-elevada text-acento xl:bg-nav-activo xl:text-on-nav-activo xl:font-semibold' : 'text-texto-3 hover:text-texto-2 hover:bg-superficie xl:text-texto-2 xl:hover:bg-superficie'
           }`}
         >
-          {activo && <span className="absolute -left-[11px] w-[3px] h-[21px] rounded-r-[3px] bg-acento" />}
-          <Icono className="w-[18px] h-[18px] -mt-1" />
-          <span className="absolute bottom-[3px] text-[7px] leading-none tracking-tight">{etiqueta}</span>
+          {activo && <span className="absolute -left-[11px] w-[3px] h-[21px] rounded-r-[3px] bg-acento xl:hidden" />}
+          <Icono className="w-[18px] h-[18px] -mt-1 xl:mt-0" />
+          <span className="absolute bottom-[3px] text-[7px] leading-none tracking-tight xl:hidden">{etiqueta}</span>
+          <span className="max-xl:hidden text-[14.5px]">{etiqueta}</span>
         </button>
       );
     })}
@@ -118,9 +120,12 @@ export const RielLateral: React.FC<RielProps> = ({ modo, seccionActiva, onCambia
       onClick={() => onCambiarSeccion('perfil')}
       aria-current={seccionActiva === 'perfil' ? 'page' : undefined}
       title={usuario || 'Tu perfil'}
-      className="w-[34px] h-[34px] rounded-full bg-elevada border border-linea grid place-items-center font-display font-bold text-[10.5px] text-acento cursor-pointer hover:border-acento/50"
+      className="w-[34px] h-[34px] rounded-full bg-elevada border border-linea grid place-items-center font-display font-bold text-[10.5px] text-acento cursor-pointer hover:border-acento/50 xl:w-full xl:h-auto xl:rounded-[10px] xl:flex xl:items-center xl:gap-3 xl:px-3 xl:py-2.5 xl:bg-transparent xl:border-0"
     >
-      {usuario.slice(0, 2).toUpperCase() || '··'}
+      <span className="xl:w-[34px] xl:h-[34px] xl:rounded-full xl:bg-elevada xl:border xl:border-linea xl:flex xl:items-center xl:justify-center xl:flex-none">
+        {usuario.slice(0, 2).toUpperCase() || '··'}
+      </span>
+      <span className="max-xl:hidden text-[14px] font-semibold text-texto">{usuario || 'Tu perfil'}</span>
     </button>
   </aside>
 );
