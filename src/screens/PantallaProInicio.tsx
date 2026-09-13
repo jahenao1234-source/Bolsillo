@@ -4,7 +4,7 @@ import { RailPasos, Rotulo, PASOS_SISTEMA } from '../components/sistema/RailPaso
 import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
-import { MESES_NOMBRE } from '../utils/fechas';
+import { MESES_NOMBRE, MESES_ABREV } from '../utils/fechas';
 import { Deuda, PerfilFlujo, Sobre, Billetera, Movimiento } from '../types';
 import {
   faseActual,
@@ -25,6 +25,7 @@ import {
   gastoPorCategoriaDelMes,
   fechaAporteEsteMes,
   Fase,
+  COLOR_SOBRE_SISTEMA,
 } from '../logic/sistema';
 
 import { GraficoGastoMes } from '../components/sistema/GraficoGastoMes';
@@ -337,8 +338,135 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           </div>
         </div>
 
-        {/* Fila 2 columnas 1 y 2 vacías para V5 */}
-        <div className="col-span-2" />
+        {/* Fila 2: TUS SOBRES y ÚLTIMOS MOVIMIENTOS */}
+        <div className="col-span-2 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-4 min-h-0">
+          {/* PANEL TUS SOBRES */}
+          <div className={PANEL}>
+            <div className="flex justify-between items-center mb-4">
+              <div className={TITULO}>TUS SOBRES</div>
+              <button onClick={() => onIrA('sobres')} className="text-[13px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
+            </div>
+            <div className="space-y-[13px]">
+              {[...sobres.filter(s => s.grupo === 'basico'), gustos].filter(Boolean).map((s) => {
+                const sObj = s as Sobre;
+                const pres = sObj.presupuestoMensual || 0;
+                const gast = gastadoDelMes(sObj, movimientos, hoy);
+                const disp = Math.max(0, pres - gast);
+                const pct = pres > 0 ? Math.round((gast / pres) * 100) : 0;
+                const color = COLOR_SOBRE_SISTEMA[sObj.id] || sObj.color || '#25C9BE';
+                return (
+                  <div key={sObj.id}>
+                    <div className="flex justify-between items-baseline mb-1.5">
+                      <div className="text-[13px] text-[color:var(--texto-2)]">
+                        <span className="text-[color:var(--texto)] font-medium">{sObj.nombre}</span> · {formatearCOP(disp)} disp.
+                      </div>
+                      <div className="text-[13px] font-bold text-[color:var(--texto)]">{pct}%</div>
+                    </div>
+                    <div className="h-[7px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* PANEL ÚLTIMOS MOVIMIENTOS */}
+          <div className={PANEL}>
+            <div className="flex justify-between items-center mb-4">
+              <div className={TITULO}>ÚLTIMOS MOVIMIENTOS</div>
+              <button onClick={() => onIrA('billetera')} className="text-[13px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <table className="w-full text-left border-collapse min-w-[500px]">
+                <thead>
+                  <tr>
+                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap">Concepto</th>
+                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap">Cuenta</th>
+                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap">Tipo</th>
+                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap">Fecha</th>
+                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap text-right">Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...movimientos]
+                    .sort((a, b) => new Date(b.creadoEn as string).getTime() - new Date(a.creadoEn as string).getTime())
+                    .slice(0, 4)
+                    .map((m) => {
+                      const fechaObj = new Date(m.creadoEn as string);
+                      const dia = fechaObj.getDate();
+                      const mes = MESES_ABREV[fechaObj.getMonth()];
+                      
+                      let cuentaStr = m.billeteraNombre || 'Cuenta';
+                      if (m.tipo === 'transferencia' && m.billeteraDestinoId) {
+                        const bDest = billeteras.find(b => b.id === m.billeteraDestinoId);
+                        if (bDest) {
+                          cuentaStr = `${cuentaStr} → ${bDest.nombre}`;
+                        }
+                      }
+                      
+                      const esDeuda = m.tipo === 'pago_deuda' || m.deudaId || m.categoria === 'Deudas';
+                      let tipoEstilo = '';
+                      let tipoTexto = '';
+                      if (esDeuda) {
+                        tipoEstilo = 'bg-[var(--superficie-2)] text-[color:var(--texto-2)]';
+                        tipoTexto = 'Deuda';
+                      } else if (m.tipo === 'ingreso') {
+                        tipoEstilo = 'bg-[color:var(--positivo)]/12 text-[color:var(--positivo)]';
+                        tipoTexto = 'Ingreso';
+                      } else if (m.tipo === 'transferencia') {
+                        tipoEstilo = 'bg-[color:var(--azul)]/12 text-[color:var(--azul)]';
+                        tipoTexto = 'Transferencia';
+                      } else {
+                        tipoEstilo = 'bg-[color:var(--alerta)]/12 text-[color:var(--alerta)]';
+                        tipoTexto = 'Gasto';
+                      }
+
+                      const desc = m.descripcion || m.nota || m.categoria || '';
+                      const inicial = desc ? desc.charAt(0).toUpperCase() : '?';
+
+                      let montoStr = '';
+                      if (m.tipo === 'transferencia') {
+                        montoStr = formatearCOP(m.monto);
+                      } else if (m.tipo === 'ingreso') {
+                        montoStr = `+${formatearCOP(m.monto)}`;
+                      } else {
+                        montoStr = `−${formatearCOP(m.monto)}`;
+                      }
+
+                      return (
+                        <tr key={m.id}>
+                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-[26px] h-[26px] rounded-full bg-[var(--superficie-2)] border border-[var(--linea)] flex items-center justify-center flex-shrink-0">
+                                <span className="text-[11px] font-bold text-[color:var(--texto-2)]">{inicial}</span>
+                              </div>
+                              <span className="text-[14px] text-[color:var(--texto)]">{desc}</span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap">
+                            <span className="text-[14px] text-[color:var(--texto)]">{cuentaStr}</span>
+                          </td>
+                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap">
+                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold ${tipoEstilo}`}>
+                              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                              {tipoTexto}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap">
+                            <span className="text-[14px] text-[color:var(--texto)]">{dia} {mes}</span>
+                          </td>
+                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap text-right">
+                            <span className="text-[14px] text-[color:var(--texto)]">{montoStr}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
