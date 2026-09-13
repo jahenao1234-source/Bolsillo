@@ -7,7 +7,7 @@ import { formatearCOP } from '../../utils/format';
 
 const COLORES_SOBRE = ['#5FE0A8', '#25C9BE', '#FF7A3D', '#8AA9FF', '#F2C879'];
 
-export type ModoModal = 'crear' | 'editar' | 'alimentar';
+export type ModoModal = 'crear' | 'editar';
 
 interface ModalSobreProps {
   modo: ModoModal;
@@ -19,12 +19,11 @@ interface ModalSobreProps {
 export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, onGuardar }) => {
   const [nombre, setNombre] = useState(sobre?.nombre || '');
   const [metaStr, setMetaStr] = useState(sobre?.meta ? formatearCOP(sobre.meta) : '');
-  const [montoStr, setMontoStr] = useState(
     modo === 'editar' && sobre ? (
       (sobre.grupo === 'basico' || sobre.id === ID_LIBRE_GUSTOS)
         ? (sobre.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : '')
         : formatearCOP(sobre.apartado)
-    ) : (modo === 'alimentar' ? '' : (sobre?.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : ''))
+    ) : (sobre?.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : '')
   );
   const [color, setColor] = useState(sobre?.color || COLORES_SOBRE[0]);
   const [error, setError] = useState('');
@@ -37,23 +36,12 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
     if (error) setError('');
   };
 
-  const esAlimentar = modo === 'alimentar';
   const esSistema = sobre?.sistema;
   const esBasico = sobre?.grupo === 'basico';
-  const titulo = modo === 'crear' ? 'Nuevo sobre' : modo === 'editar' ? 'Editar sobre' : `Alimentar sobre`;
+  const titulo = modo === 'crear' ? 'Nuevo sobre' : 'Editar sobre';
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (esAlimentar) {
-      const suma = num(montoStr);
-      if (suma <= 0) {
-        setError('Escribe cuánto quieres apartar');
-        return;
-      }
-      onGuardar({ ...(sobre as Sobre), apartado: (sobre?.apartado || 0) + suma });
-      return;
-    }
-    
     if (!esSistema && !nombre.trim()) {
       setError('Ponle un nombre al sobre');
       return;
@@ -90,7 +78,6 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
             </div>
             <div>
               <h2 className="text-base font-bold text-[color:var(--texto)]">{titulo}</h2>
-              {esAlimentar && sobre && <p className="text-xs text-[color:var(--texto-2)]">{sobre.nombre}</p>}
             </div>
           </div>
           <button
@@ -110,32 +97,7 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
             </div>
           )}
 
-          {esAlimentar ? (
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--texto-2)] block">
-                ¿Cuánto apartas? <span className="text-[color:var(--alerta)]">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={montoStr}
-                  onChange={fmtOnChange(setMontoStr)}
-                  placeholder="$0"
-                  autoFocus
-                  className="w-full px-3.5 py-3 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-xl font-bold font-display tabular-nums text-[color:var(--acento)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors"
-                />
-                <span className="absolute right-3.5 top-3.5 text-xs text-[color:var(--texto-2)] uppercase">COP</span>
-              </div>
-              {sobre && (
-                <p className="text-xs text-[color:var(--texto-2)]">
-                  Ahora tiene {formatearCOP(sobre.apartado)} · quedará en{' '}
-                  <strong className="text-[color:var(--acento)]">{formatearCOP((sobre.apartado || 0) + num(montoStr))}</strong>
-                </p>
-              )}
-            </div>
-          ) : (
-            <>
+          <>
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--texto-2)] block">
                   Nombre del sobre {esSistema ? '' : <span className="text-[color:var(--alerta)]">*</span>}
@@ -225,14 +187,13 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
               </div>
               )}
             </>
-          )}
 
           <div className="pt-3 border-t border-[var(--linea)] flex items-center justify-end gap-2.5">
             <Boton variante="fantasma" tamano="md" onClick={onCerrar} type="button">
               Cancelar
             </Boton>
             <Boton variante="primario" tamano="md" type="submit" iconoDerecha={<Check className="w-4 h-4" />}>
-              {esAlimentar ? 'Apartar' : modo === 'editar' ? 'Guardar' : 'Crear sobre'}
+              {modo === 'editar' ? 'Guardar' : 'Crear sobre'}
             </Boton>
           </div>
         </form>

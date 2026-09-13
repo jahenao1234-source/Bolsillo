@@ -8,7 +8,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import type { Billetera, Deuda, Movimiento } from '../../types';
+import type { Billetera, Deuda, Movimiento, Sobre } from '../../types';
 import { formatearCOP } from '../../utils/format';
 import { MESES_ABREV } from '../../utils/fechas';
 import { diasDeRetraso, CATS_ARRIENDO, CATS_MERCADO, CATS_SERVICIOS, CATS_TRANSPORTE, CATS_GUSTOS, ID_BASICO_ARRIENDO, ID_BASICO_MERCADO, ID_BASICO_SERVICIOS, ID_BASICO_TRANSPORTE, ID_LIBRE_GUSTOS } from '../../logic/sistema';
@@ -16,6 +16,7 @@ import { diasDeRetraso, CATS_ARRIENDO, CATS_MERCADO, CATS_SERVICIOS, CATS_TRANSP
 interface HojaGastoRapidoProps {
   abierto: boolean;
   billeteras: Billetera[];
+  sobres: Sobre[];
   /** null si la persona no ha configurado su mes: no hay techo contra el que medir. */
   techoSemanal: number | null;
   gastoSemana: number;
@@ -39,6 +40,7 @@ interface Resultado {
 export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
   abierto,
   billeteras,
+  sobres,
   techoSemanal,
   gastoSemana,
   deudas,
@@ -66,6 +68,23 @@ export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
     // corriera con ese cambio borraría el resultado que la persona tiene que ver.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [abierto]);
+
+  useEffect(() => {
+    if (!abierto) return;
+    let sId: string | undefined;
+    if (CATS_ARRIENDO.includes(categoria)) sId = ID_BASICO_ARRIENDO;
+    else if (CATS_MERCADO.includes(categoria)) sId = ID_BASICO_MERCADO;
+    else if (CATS_SERVICIOS.includes(categoria)) sId = ID_BASICO_SERVICIOS;
+    else if (CATS_TRANSPORTE.includes(categoria)) sId = ID_BASICO_TRANSPORTE;
+    else if (CATS_GUSTOS.includes(categoria)) sId = ID_LIBRE_GUSTOS;
+
+    if (sId) {
+      const sobre = sobres.find(s => s.id === sId);
+      if (sobre?.billeteraId && billeteras.some(b => b.id === sobre.billeteraId)) {
+        setBilleteraId(sobre.billeteraId);
+      }
+    }
+  }, [categoria, sobres, billeteras, abierto]);
 
   if (!abierto) return null;
 

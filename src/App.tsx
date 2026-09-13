@@ -302,12 +302,15 @@ export default function App() {
                   <PantallaSobresBaseCero
                     perfilFlujo={perfilFlujo}
                     sobres={datos.sobres}
+                    billeteras={billeteras}
                     deudas={deudas}
                     movimientos={movimientos}
                     onRepartirBasicos={datos.repartirBasicosDeNuevo}
                     onGuardarSobre={datos.guardarSobre}
                     onEliminarSobre={datos.eliminarSobre}
                     onAportarASobre={datos.aportarASobre}
+                    onAbonarASobre={datos.abonarASobre}
+                    onRetirarDeSobre={datos.retirarDeSobre}
                     onVolver={() => navegar('pro_inicio')}
                     onIrAMiPlan={() => navegar('plan')}
                   />
@@ -374,6 +377,7 @@ export default function App() {
               <HojaGastoRapido
                 abierto={hojaGastoAbierta}
                 billeteras={billeteras}
+                sobres={datos.sobres}
                 techoSemanal={techoSemanal(perfilFlujo!.gastosBasicos)}
                 gastoSemana={gastoDeLaSemana(movimientos)}
                 deudas={activas}

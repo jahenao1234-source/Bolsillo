@@ -48,6 +48,8 @@ import {
   asegurarSobresSistema,
   repartirBasicosDeNuevo,
   moverAporteMensual,
+  abonarASobre,
+  retirarDeSobre,
 } from '../data/store';
 import {
   ResumenFinanciero,
@@ -143,6 +145,8 @@ export function useBolsilloData() {
     asegurarSobresSistema,
     repartirBasicosDeNuevo,
     moverAporteMensual,
+    abonarASobre,
+    retirarDeSobre,
     // Módulos Pro (Crecer)
     presupuestos,
     gastoPorCategoria,

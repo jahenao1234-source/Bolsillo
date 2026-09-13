@@ -11,6 +11,7 @@ export interface TarjetaSobreProps {
   marcaHito?: number;
   pie?: string;
   puente?: { texto: string; onClick: (e: React.MouseEvent) => void };
+  cuenta?: { texto: string; onAbonar: (e: React.MouseEvent) => void };
   variante: 'completa' | 'mini';
   onClick?: () => void;
 }
@@ -25,6 +26,7 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
   marcaHito,
   pie,
   puente,
+  cuenta,
   variante,
   onClick,
 }) => {
@@ -85,6 +87,23 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
           />
         )}
       </div>
+
+      {cuenta && (
+        <div className="flex justify-between items-center mt-1">
+          <span className="text-[12px] text-[color:var(--texto-3)]">{cuenta.texto}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              cuenta.onAbonar(e);
+            }}
+            className="text-[12.5px] font-bold cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-none p-0"
+            style={{ color: color }}
+          >
+            + Abonar
+          </button>
+        </div>
+      )}
 
       {puente ? (
         <button

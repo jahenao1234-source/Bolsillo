@@ -3,7 +3,7 @@ import { Target, Check, AlertTriangle, ArrowRight } from 'lucide-react';
 import { ModalSobre, ModoModal } from '../components/sobres/ModalSobre';
 import { TarjetaSobre } from '../components/sobres/TarjetaSobre';
 import { formatearCOP } from '../utils/format';
-import { Sobre, Movimiento, Deuda, PerfilFlujo } from '../types';
+import { Sobre, Movimiento, Deuda, PerfilFlujo, Billetera } from '../types';
 import {
   estadoBaseCero,
   gastadoDelMes,
@@ -21,12 +21,15 @@ import {
 interface PantallaSobresBaseCeroProps {
   perfilFlujo: PerfilFlujo | null;
   sobres: Sobre[];
+  billeteras: Billetera[];
   deudas: Deuda[];
   movimientos: Movimiento[];
   onRepartirBasicos: (perfil: PerfilFlujo | null) => void;
   onGuardarSobre: (sobre: Sobre) => void;
   onEliminarSobre: (id: string) => void;
   onAportarASobre: (id: string, nombre: string, monto: number, meta?: number, color?: string) => void;
+  onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string) => { exito: boolean; error?: string };
+  onRetirarDeSobre: (sobreId: string, destinoId: string, monto: number, nota?: string) => { exito: boolean; error?: string };
   onVolver: () => void;
   onIrAMiPlan?: () => void;
 }
@@ -34,13 +37,17 @@ interface PantallaSobresBaseCeroProps {
 export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   perfilFlujo,
   sobres,
+  billeteras,
   deudas,
   movimientos,
   onRepartirBasicos,
   onGuardarSobre,
+  onAbonarASobre,
+  onRetirarDeSobre,
   onIrAMiPlan,
 }) => {
   const [modal, setModal] = useState<{ modo: ModoModal; sobre: Sobre | null } | null>(null);
+  const [modalMover, setModalMover] = useState<{ modo: 'abonar' | 'retirar'; sobre: Sobre } | null>(null);
   const [propiosAbiertos, setPropiosAbiertos] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -73,6 +80,12 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     } else {
       setModal({ modo: 'editar', sobre: s });
     }
+  };
+
+  const getTextoCuenta = (sobre: Sobre) => {
+    if (!sobre.billeteraId) return 'Sin cuenta todavía';
+    const cuenta = billeteras.find(b => b.id === sobre.billeteraId);
+    return cuenta ? `En ${cuenta.nombre}` : 'En cuenta eliminada';
   };
 
   const renderEncabezado = () => {
@@ -277,6 +290,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
           marcaHito={colchon.apartado < 1000000 ? (1000000 / meta) * 100 : undefined}
           pie={!isMobile ? (colchon.apartado < 1000000 ? "Primer hito: $1.000.000" : "Para que la próxima emergencia no sea tarjeta") : undefined}
           puente={(!isMobile && false) ? { texto: "Qué hacer si compras a cuotas", onClick: (e) => { e.stopPropagation(); } } : undefined} // TODO: Prompt 5
+          cuenta={{ texto: getTextoCuenta(colchon), onAbonar: (e) => setModalMover({ modo: 'abonar', sobre: colchon }) }}
           variante={isMobile ? 'mini' : 'completa'}
           onClick={() => handleClickSobre(colchon)}
         />
@@ -295,6 +309,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
           progreso={metaAnual > 0 ? (inversion.apartado / metaAnual) * 100 : 0}
           pie={(!MODULOS_LISTOS && !isMobile) ? "Se invierte en Activos" : undefined}
           puente={MODULOS_LISTOS ? { texto: "Registrar en un CDT o fondo", onClick: (e) => { e.stopPropagation(); } } : undefined}
+          cuenta={{ texto: getTextoCuenta(inversion), onAbonar: (e) => setModalMover({ modo: 'abonar', sobre: inversion }) }}
           variante="completa" // Siempre completa, incluso en celular
           onClick={() => handleClickSobre(inversion)}
         />
@@ -374,7 +389,10 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
                 </div>
                 <div className="text-right flex flex-col items-end">
                   <div className="font-bold text-[13px] tabular-nums" style={{ color: s.color || 'var(--acento)' }}>{formatearCOP(s.apartado)}</div>
-                  <button onClick={(e) => { e.stopPropagation(); setModal({ modo: 'alimentar', sobre: s }); }} className="text-[11px] font-bold text-[color:var(--acento)] mt-0.5 hover:underline cursor-pointer">Alimentar</button>
+                  <div className="flex gap-2.5 mt-0.5">
+                    <span className="text-[10px] text-[color:var(--texto-3)] mt-0.5 mr-1">{getTextoCuenta(s)}</span>
+                    <button onClick={(e) => { e.stopPropagation(); setModalMover({ modo: 'abonar', sobre: s }); }} className="text-[11px] font-bold text-[color:var(--acento)] hover:underline cursor-pointer">Abonar</button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -385,7 +403,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   };
 
   return (
-    <div className="w-full min-h-full px-4 md:px-[24px] max-w-[1200px] mx-auto pb-24 xl:pb-0 animate-screen-enter">
+    <div className="w-full min-h-full px-4 md:px-[24px] mx-auto pb-24 xl:pb-0 animate-screen-enter">
       {renderEncabezado()}
       {renderBasicos()}
       {renderLibres()}
@@ -399,6 +417,23 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
           onGuardar={(s) => {
             onGuardarSobre(s);
             setModal(null);
+          }}
+        />
+      )}
+
+      {modalMover && (
+        <ModalMoverSobre
+          modo={modalMover.modo}
+          sobre={modalMover.sobre}
+          billeteras={billeteras}
+          sobres={sobres}
+          onCerrar={() => setModalMover(null)}
+          onConfirmar={(monto, origenId, destinoId) => {
+            if (modalMover.modo === 'abonar') {
+              return onAbonarASobre(modalMover.sobre.id, origenId, monto, 'abono', destinoId);
+            } else {
+              return onRetirarDeSobre(modalMover.sobre.id, destinoId, monto);
+            }
           }}
         />
       )}
