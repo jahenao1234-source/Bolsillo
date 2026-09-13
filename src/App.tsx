@@ -35,7 +35,8 @@ import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { PWAInstallButton } from './components/ui/PWAInstallButton';
 import { inicializarTema } from './utils/theme';
 import { getContextoMes, ingresoDelMes } from './logic/resumenMes';
-import { deudasActivas, escaleraAtaque, type Escalon } from './logic/sistema';
+import { deudasActivas, escaleraAtaque, type Escalon, gastoDeLaSemana, techoSemanal } from './logic/sistema';
+import { HojaGastoRapido } from './components/sistema/HojaGastoRapido';
 import type { Deuda } from './types';
 
 type Momento =
@@ -92,7 +93,7 @@ export default function App() {
 
   const navegar = (destino: SeccionApp) => {
     if (destino === 'pro_inicio' || destino === 'sobres' || destino === 'herramientas') setModoElegido('pro');
-    if (destino === 'plan' || destino === 'deudas' || destino === 'billetera') setModoElegido('deuda');
+    if (destino === 'plan' || destino === 'deudas') setModoElegido('deuda');
     setSeccion(destino);
     contenidoRef.current?.scrollTo({ top: 0 });
     window.scrollTo({ top: 0 });
@@ -149,6 +150,7 @@ export default function App() {
   // Huecos de la barra de contexto del escritorio. Cada pantalla los llena por portal.
   const [slotBarra, setSlotBarra] = useState<HTMLElement | null>(null);
   const [slotAcciones, setSlotAcciones] = useState<HTMLElement | null>(null);
+  const [hojaGastoAbierta, setHojaGastoAbierta] = useState(false);
   const valorShell = useMemo(() => ({ slotBarra, slotAcciones, cajonEmpuja: false }), [slotBarra, slotAcciones]);
 
   // ---------- Pantallas sin shell ----------
@@ -206,6 +208,12 @@ export default function App() {
               </span>
               {hibrido && <ConmutadorModo modo={modo} onCambiar={cambiarModo} />}
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setHojaGastoAbierta(true)}
+                  className="px-3 py-1.5 rounded-full border border-[color:var(--acento)]/45 text-[color:var(--acento)] text-[12px] font-bold"
+                >
+                  + Gasto
+                </button>
                 <PWAInstallButton />
                 <button
                   type="button"
@@ -223,6 +231,12 @@ export default function App() {
               <div ref={setSlotBarra} className="flex items-center gap-3 min-w-0" />
               <div className="flex items-center gap-2 flex-none">
                 <div ref={setSlotAcciones} className="flex items-center gap-2" />
+                <button
+                  onClick={() => setHojaGastoAbierta(true)}
+                  className="px-3 py-1.5 rounded-full border border-[color:var(--acento)]/45 text-[color:var(--acento)] text-[12px] font-bold"
+                >
+                  + Gasto
+                </button>
                 {hibrido && <ConmutadorModo modo={modo} onCambiar={cambiarModo} />}
               </div>
             </div>
@@ -275,13 +289,12 @@ export default function App() {
 
                 {seccion === 'pro_inicio' && (
                   <PantallaProInicio
+                    perfil={perfilFlujo}
                     deudas={deudas}
                     sobres={datos.sobres}
-                    disponibleMensual={disponibleMensual}
-                    perfil={perfilFlujo}
-                    onAportarASobre={datos.aportarASobre}
-                    onMoverAporte={datos.moverAporteMensual}
-                    onIrA={(d) => navegar(d === 'plan' ? 'plan' : d)}
+                    saldoTotal={saldoTotal}
+                    onMover={datos.aportarASobre}
+                    onIrA={navegar}
                   />
                 )}
 
@@ -357,6 +370,21 @@ export default function App() {
                   />
                 )}
               </div>
+
+              <HojaGastoRapido
+                abierto={hojaGastoAbierta}
+                billeteras={billeteras}
+                techoSemanal={techoSemanal(perfilFlujo!.gastosBasicos)}
+                gastoSemana={gastoDeLaSemana(movimientos)}
+                deudas={activas}
+                caja={disponibleMensual}
+                enFaseDeudas={activas.length > 0}
+                onGuardar={(mov) => {
+                  datos.registrarMovimiento(mov);
+                  setHojaGastoAbierta(false);
+                }}
+                onCerrar={() => setHojaGastoAbierta(false)}
+              />
             </div>
           </main>
         </div>

@@ -12,7 +12,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import type { Billetera, Deuda, Movimiento, PerfilFlujo } from '../types';
 import { Marco, Columna, Zona } from '../components/layout/Marco';
 import { BarraTitulo } from '../components/layout/shell';
-import { FASES, RailPasos, Rotulo } from '../components/sistema/RailPasos';
+import { RailPasos, PASOS_SISTEMA, Rotulo } from '../components/sistema/RailPasos';
 import { PagosDelMes } from '../components/sistema/PagosDelMes';
 import { EscaleraAtaque } from '../components/sistema/EscaleraAtaque';
 import { GraficoExtincion } from '../components/sistema/GraficoExtincion';
@@ -78,7 +78,7 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
   if (deudas.length === 0) {
     return (
       <div className="max-w-md mx-auto xl:mx-0 py-6 flex flex-col gap-4">
-        <RailPasos pasos={FASES} actual="salir" />
+        <RailPasos pasos={PASOS_SISTEMA} actual="salir" />
         <h2 className="font-display font-extrabold text-3xl leading-tight tracking-tight">Tu plan empieza con tus deudas.</h2>
         <p className="text-sm text-texto-2 leading-relaxed">
           Anota lo que debes y lo que te entra al mes. En diez minutos tienes tu fecha de libertad y lo que pagas cada mes.
@@ -128,16 +128,14 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
     <div className="w-full pb-24 xl:pb-0 xl:flex-1 xl:flex xl:flex-col">
       <BarraTitulo>
         <span className="font-display font-extrabold text-[15px]">Mi plan</span>
-        <RailPasos pasos={FASES} actual="salir" className="w-[330px] ml-3" />
+        <RailPasos pasos={PASOS_SISTEMA} actual="salir" className="w-[330px] ml-3" />
       </BarraTitulo>
 
       <Marco columnas="340px minmax(0,1fr) 320px">
         {/* ---------- Qué hago este mes ---------- */}
         <Columna ordenMovil={1} borde>
           <Zona crece plana className="flex flex-col gap-3.5 xl:gap-4">
-            <RailPasos pasos={FASES} actual="salir" className="xl:hidden" />
-            {heroe}
-
+            <RailPasos pasos={PASOS_SISTEMA} actual="deudas" compact className="xl:hidden border-b border-[var(--linea)] pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 mb-5" />
             {noAlcanza && (
               <p className="text-xs leading-relaxed text-texto-2 p-3 rounded-xl border border-alerta/40 bg-alerta/5">
                 Lo que tienes para deudas (<b className="text-texto">{formatearCOP(caja)}</b>) no alcanza los mínimos (

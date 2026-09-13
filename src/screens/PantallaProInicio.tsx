@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Target, Check, ChevronRight } from 'lucide-react';
-import { RailPasos, Rotulo } from '../components/sistema/RailPasos';
+import { RailPasos, Rotulo, PASOS_SISTEMA } from '../components/sistema/RailPasos';
 import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
@@ -16,8 +16,10 @@ import {
   ID_SOBRE_COLCHON,
   ID_SOBRE_INVERSION,
   ID_LIBRE_GUSTOS,
+  ID_BASICO_MERCADO,
   gastadoDelMes,
   fechaAporteEsteMes,
+  Fase,
 } from '../logic/sistema';
 
 interface PantallaProInicioProps {
@@ -46,7 +48,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   const hoy = new Date();
   const mesNombre = MESES_NOMBRE[hoy.getMonth()].toLowerCase();
   
-  const fase = faseActual(perfil.gastosBasicos, sobres, deudas);
+  const fase = faseActual(deudas, sobres, perfil.gastosBasicos);
   const estado = estadoBaseCero(perfil, sobres, deudas);
   const metaFondo = metaFondoBlindado(perfil.gastosBasicos);
   const colchon = sobres.find(s => s.id === ID_SOBRE_COLCHON);
@@ -80,7 +82,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   const renderMobile = () => (
     <div className="w-full pb-24 animate-screen-enter xl:hidden">
       <div className="pt-2">
-        <RailPasos faseActual={fase} compact />
+        <RailPasos pasos={PASOS_SISTEMA} actual={fase} />
       </div>
 
       <div className="px-4 mt-6 flex flex-col gap-6">
@@ -143,7 +145,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           <button onClick={() => onIrA('sobres')} className="rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] px-[11px] py-2.5 text-left flex flex-col justify-between h-[64px]">
             <span className="text-[12.5px] font-bold text-[color:var(--texto)]">Sobres</span>
             <span className="text-[11px] font-semibold text-[#25C9BE] truncate">
-              Mercado {formatearCOP((sobres.find(s => s.id === ID_BASICO_MERCADO)?.presupuestoMensual || 0) - gastadoDelMes(sobres.find(s => s.id === ID_BASICO_MERCADO)!, sobres.flatMap(s => s.historial || []).map(h => ({id: h.id, monto: h.monto, categoria: '', fecha: new Date(h.fecha), descripcion: '', sobreId: s.id, tipo: 'gasto', creadoEn: h.fecha}) as any), hoy))} disp.
+              Mercado {formatearCOP((sobres.find(s => s.id === ID_BASICO_MERCADO)?.presupuestoMensual || 0) - gastadoDelMes(sobres.find(s => s.id === ID_BASICO_MERCADO)!, sobres.flatMap(sb => sb.historial || []).map(h => ({id: h.fecha, monto: h.monto, categoria: '', fecha: new Date(h.fecha), descripcion: '', sobreId: ID_BASICO_MERCADO, tipo: 'gasto', creadoEn: h.fecha}) as any), hoy))} disp.
             </span>
           </button>
           <button onClick={() => onIrA('billetera')} className="rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] px-[11px] py-2.5 text-left flex flex-col justify-between h-[64px]">
@@ -158,7 +160,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   const renderDesktop = () => (
     <div className="hidden xl:flex xl:flex-col xl:flex-1 h-full animate-screen-enter">
       <div className="px-5 pt-3 pb-2 border-b border-[var(--linea)] bg-[var(--fondo)] z-10">
-        <RailPasos faseActual={fase} />
+        <RailPasos pasos={PASOS_SISTEMA} actual={fase} />
       </div>
       
       <Marco columnas="340px minmax(0,1fr) 330px">

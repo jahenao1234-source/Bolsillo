@@ -11,7 +11,7 @@ export interface Paso<T extends string = string> {
   nombre: string;
 }
 
-export const FASES: Paso<Fase>[] = [
+export const PASOS_SISTEMA: Paso[] = [
   { id: 'salir', nombre: 'Salir de deudas' },
   { id: 'blindar', nombre: 'Blindar' },
   { id: 'crecer', nombre: 'Crecer' },
@@ -20,10 +20,11 @@ export const FASES: Paso<Fase>[] = [
 interface RailPasosProps<T extends string> {
   pasos: Paso<T>[];
   actual: T;
+  compact?: boolean;
   className?: string;
 }
 
-export function RailPasos<T extends string>({ pasos, actual, className = '' }: RailPasosProps<T>) {
+export const RailPasos = <T extends string>({ pasos, actual, compact, className = '' }: RailPasosProps<T>) => {
   const indice = pasos.findIndex((p) => p.id === actual);
 
   return (

@@ -12,7 +12,7 @@ import { Check } from 'lucide-react';
 import type { Deuda } from '../../types';
 import type { Escalon } from '../../logic/sistema';
 import { formatearCOP } from '../../utils/format';
-import { FASES, RailPasos } from './RailPasos';
+import { RailPasos, PASOS_SISTEMA } from './RailPasos';
 
 const Capa: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[var(--base)]/80 backdrop-blur-sm">
@@ -105,7 +105,7 @@ interface GraduacionProps {
 
 const ContenidoGraduacion: React.FC<GraduacionProps> = ({ totalPagado, libre, esPro, onActivarPro, onEmpezarBlindar, onCerrar }) => (
   <div className="flex flex-col gap-4">
-    <RailPasos pasos={FASES} actual="blindar" />
+        <RailPasos pasos={PASOS_SISTEMA} actual="deudas" className="mb-4 hidden xl:flex" />
     <div>
       <p className="font-display font-extrabold text-[38px] leading-none tracking-tight">Sin deudas.</p>
       {totalPagado > 0 && (

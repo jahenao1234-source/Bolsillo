@@ -410,7 +410,7 @@ export function resumenAnioPro(sobres: Sobre[], reparto: { colchon: number, inve
 
 export function siguientePaso(
   estado: ReturnType<typeof estadoBaseCero>,
-  fase: 'deudas' | 'blindar' | 'crecer',
+  fase: Fase,
   sobres: Sobre[],
   reparto: { colchon: number, inversion: number },
   hoy: Date = new Date(),
