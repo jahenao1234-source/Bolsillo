@@ -277,6 +277,7 @@ export default function App() {
                   <PantallaBilletera
                     billeteras={billeteras}
                     saldoTotal={saldoTotal}
+                    totalApartado={datos.totalApartado}
                     movimientos={movimientos}
                     deudas={deudas}
                     disponibleMensual={disponibleMensual}
@@ -290,10 +291,11 @@ export default function App() {
                 {seccion === 'pro_inicio' && (
                   <PantallaProInicio
                     perfil={perfilFlujo}
+                    billeteras={billeteras}
                     deudas={deudas}
                     sobres={datos.sobres}
                     saldoTotal={saldoTotal}
-                    onMover={datos.aportarASobre}
+                    onAbonarASobre={datos.abonarASobre}
                     onIrA={navegar}
                   />
                 )}

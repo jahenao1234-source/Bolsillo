@@ -5,7 +5,7 @@ import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
 import { MESES_NOMBRE } from '../utils/fechas';
-import { Deuda, PerfilFlujo, Sobre } from '../types';
+import { Deuda, PerfilFlujo, Sobre, Billetera } from '../types';
 import {
   faseActual,
   estadoBaseCero,
@@ -22,27 +22,23 @@ import {
   Fase,
 } from '../logic/sistema';
 
+import { ModalMoverSobre } from '../components/sobres/ModalMoverSobre';
+
 interface PantallaProInicioProps {
   perfil: PerfilFlujo;
   deudas: Deuda[];
   sobres: Sobre[];
-  saldoTotal: number;
-  onMover: (
-    sobreId: string,
-    nombre: string,
-    monto: number,
-    meta?: number,
-    color?: string
-  ) => void;
+  billeteras: Billetera[];
+  onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string) => { exito: boolean; error?: string };
   onIrA: (seccion: 'plan' | 'sobres' | 'billetera') => void;
 }
 
 export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   perfil,
   deudas,
-  sobres,
+  billeteras,
   saldoTotal,
-  onMover,
+  onAbonarASobre,
   onIrA,
 }) => {
   const hoy = new Date();
@@ -62,18 +58,26 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
 
   const [accionAnimada, setAccionAnimada] = useState(false);
 
+  const [modalMover, setModalMover] = useState<{ modo: 'abonar'; sobre: Sobre } | null>(null);
+
   const handleCta = () => {
     if (paso.accionId === 'plan') {
       onIrA('plan');
     } else if (paso.accionId === 'mover-fondo') {
-      onMover(ID_SOBRE_COLCHON, 'Fondo blindado', reparto.colchon, metaFondo, '#25C9BE');
-      setAccionAnimada(true);
-      setTimeout(() => setAccionAnimada(false), 3000);
+      if (colchon) setModalMover({ modo: 'abonar', sobre: colchon });
     } else if (paso.accionId === 'mover-inversion') {
-      onMover(ID_SOBRE_INVERSION, 'Inversión', reparto.inversion, undefined, '#5FE0A8');
+      if (inversion) setModalMover({ modo: 'abonar', sobre: inversion });
+    }
+  };
+
+  const handleConfirmarAbono = (monto: number, origenId: string, destinoId: string) => {
+    if (!modalMover) return { exito: false };
+    const res = onAbonarASobre(modalMover.sobre.id, origenId, monto, 'aporte_mensual', destinoId);
+    if (res.exito) {
       setAccionAnimada(true);
       setTimeout(() => setAccionAnimada(false), 3000);
     }
+    return res;
   };
 
   const deudasActivas = deudas.filter(d => d.saldo > 0);
@@ -322,6 +326,19 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
     <>
       {renderMobile()}
       {renderDesktop()}
+
+      {modalMover && (
+        <ModalMoverSobre
+          modo={modalMover.modo}
+          sobre={modalMover.sobre}
+          billeteras={billeteras}
+          sobres={sobres}
+          montoSugerido={modalMover.sobre.id === ID_SOBRE_COLCHON ? reparto.colchon : reparto.inversion}
+          origen="aporte_mensual"
+          onCerrar={() => setModalMover(null)}
+          onConfirmar={handleConfirmarAbono}
+        />
+      )}
     </>
   );
 };

@@ -21,6 +21,7 @@ import { formatearCOP } from '../utils/format';
 interface PantallaBilleteraProps {
   billeteras: Billetera[];
   saldoTotal: number;
+  totalApartado: number;
   movimientos: Movimiento[];
   deudas: Deuda[];
   disponibleMensual: number;
@@ -35,6 +36,7 @@ const POR_PAGINA = 10;
 export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
   billeteras,
   saldoTotal,
+  totalApartado,
   movimientos,
   deudas,
   disponibleMensual,
@@ -73,7 +75,10 @@ export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
     <div className="w-full pb-24 xl:pb-0 xl:flex-1 xl:flex xl:flex-col">
       <BarraTitulo>
         <span className="font-display font-extrabold text-[15px]">Tu plata</span>
-        <span className="text-sm text-texto-2 tabular-nums">{formatearCOP(saldoTotal)}</span>
+        <div className="flex flex-col text-right">
+          <span className="text-sm text-texto-2 tabular-nums">{formatearCOP(saldoTotal)}</span>
+          {totalApartado > 0 && <span className="text-[10px] text-texto-3">{formatearCOP(totalApartado)} en sobres</span>}
+        </div>
       </BarraTitulo>
       <BarraAcciones>
         <button
@@ -90,6 +95,7 @@ export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
         <div>
           <h2 className="font-display font-extrabold text-xl">Tu plata</h2>
           <p className="text-sm text-texto-2 tabular-nums">{formatearCOP(saldoTotal)}</p>
+          {totalApartado > 0 && <p className="text-[11px] text-texto-3 mt-0.5">{formatearCOP(totalApartado)} en sobres</p>}
         </div>
         {botonGasto}
       </div>
