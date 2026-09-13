@@ -292,6 +292,7 @@ export default function App() {
                   <PantallaProInicio
                     perfil={perfilFlujo}
                     billeteras={billeteras}
+                    movimientos={movimientos}
                     deudas={deudas}
                     sobres={datos.sobres}
                     saldoTotal={saldoTotal}

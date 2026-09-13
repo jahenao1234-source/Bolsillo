@@ -5,7 +5,7 @@ import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
 import { MESES_NOMBRE } from '../utils/fechas';
-import { Deuda, PerfilFlujo, Sobre, Billetera } from '../types';
+import { Deuda, PerfilFlujo, Sobre, Billetera, Movimiento } from '../types';
 import {
   faseActual,
   estadoBaseCero,
@@ -31,6 +31,7 @@ interface PantallaProInicioProps {
   deudas: Deuda[];
   sobres: Sobre[];
   billeteras: Billetera[];
+  movimientos: Movimiento[];
   saldoTotal: number;
   onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string, tope?: number) => { exito: boolean; error?: string };
   onIrA: (seccion: 'plan' | 'sobres' | 'billetera') => void;
@@ -41,6 +42,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   deudas,
   sobres,
   billeteras,
+  movimientos,
   saldoTotal,
   onAbonarASobre,
   onIrA,
@@ -64,9 +66,19 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
 
   const [modalMover, setModalMover] = useState<{ modo: 'abonar'; sobre: Sobre } | null>(null);
 
+  // Lo mismo que muestra Sobres: presupuesto menos lo gastado este mes.
+  const disponibleDe = (s: Sobre | undefined) =>
+    s ? Math.max(0, (s.presupuestoMensual || 0) - gastadoDelMes(s, movimientos, hoy)) : 0;
+  const mercado = sobres.find((s) => s.id === ID_BASICO_MERCADO);
+  // Sin cuentas no hay de dónde mover: primero hay que registrar dónde está la plata.
+  const sinCuentas = billeteras.length === 0;
+  const textoCta = sinCuentas && paso.accionId !== 'plan' ? 'Primero agrega dónde tienes tu plata' : paso.cta;
+
   const handleCta = () => {
     if (paso.accionId === 'plan') {
       onIrA('plan');
+    } else if (sinCuentas) {
+      onIrA('billetera');
     } else if (paso.accionId === 'mover-fondo') {
       if (colchon) setModalMover({ modo: 'abonar', sobre: colchon });
     } else if (paso.accionId === 'mover-inversion') {
@@ -150,7 +162,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
               onClick={handleCta}
               className="w-full py-2.5 rounded-xl text-[13px] font-bold text-[color:var(--on-acento)] bg-[color:var(--acento)] cursor-pointer"
             >
-              {paso.cta}
+              {textoCta}
             </button>
           )}
           {accionAnimada && (
@@ -164,7 +176,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           <button onClick={() => onIrA('sobres')} className="rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] px-[11px] py-2.5 text-left flex flex-col justify-between h-[64px]">
             <span className="text-[12.5px] font-bold text-[color:var(--texto)]">Sobres</span>
             <span className="text-[11px] font-semibold text-[#25C9BE] truncate">
-              Mercado {formatearCOP((sobres.find(s => s.id === ID_BASICO_MERCADO)?.presupuestoMensual || 0) - gastadoDelMes(sobres.find(s => s.id === ID_BASICO_MERCADO)!, sobres.flatMap(sb => sb.historial || []).map(h => ({id: h.fecha, monto: h.monto, categoria: '', fecha: new Date(h.fecha), descripcion: '', sobreId: ID_BASICO_MERCADO, tipo: 'gasto', creadoEn: h.fecha}) as any), hoy))} disp.
+              Mercado {formatearCOP(disponibleDe(mercado))} disp.
             </span>
           </button>
           <button onClick={() => onIrA('billetera')} className="rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] px-[11px] py-2.5 text-left flex flex-col justify-between h-[64px]">
@@ -232,7 +244,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                     <div className="text-right">
                       <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.gustos)}</div>
                       <div className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5">
-                        {formatearCOP(reparto.gustos - gastadoDelMes(gustos!, [], hoy))} disponibles
+                        {formatearCOP(Math.max(0, reparto.gustos - (gustos ? gastadoDelMes(gustos, movimientos, hoy) : 0)))} disponibles
                       </div>
                     </div>
                   </div>
@@ -243,7 +255,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                     onClick={handleCta}
                     className="w-full py-3 mt-4 rounded-xl text-[13px] font-bold text-[color:var(--on-acento)] bg-[color:var(--acento)] cursor-pointer shadow-sm transition-transform hover:scale-[1.02]"
                   >
-                    {paso.cta}
+                    {textoCta}
                   </button>
                 )}
                 {accionAnimada && (
@@ -282,7 +294,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                 <div className="mt-3 flex flex-col border border-[var(--linea)] rounded-[14px] bg-[var(--superficie)] overflow-hidden">
                   {sobres.filter(s => s.grupo === 'basico').map((s, i, arr) => {
                     const pres = s.presupuestoMensual || 0;
-                    const gast = gastadoDelMes(s, [], hoy); // Not actually passing real movimientos yet, but mock
+                    const gast = gastadoDelMes(s, movimientos, hoy);
                     const pagado = s.id === 'basico-arriendo' && gast >= pres;
                     return (
                       <div key={s.id} className={`px-4 py-3 ${i < arr.length - 1 ? 'border-b border-[var(--hairline)]' : ''}`}>
@@ -315,7 +327,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                   <div className="flex items-center gap-3">
                     <span className="text-[13px] font-bold text-[color:var(--texto)]">Sobres</span>
                   </div>
-                  <span className="text-[12px] font-semibold text-[#25C9BE] group-hover:text-[color:var(--texto)] transition-colors">Mercado $280.000</span>
+                  <span className="text-[12px] font-semibold text-[#25C9BE] group-hover:text-[color:var(--texto)] transition-colors tabular-nums">Mercado {formatearCOP(disponibleDe(mercado))} disp.</span>
                 </button>
                 
                 <button onClick={() => onIrA('billetera')} className="flex items-center justify-between px-4 py-3.5 rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] cursor-pointer hover:border-[color:var(--texto-3)] transition-colors text-left group">
