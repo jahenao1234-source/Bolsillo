@@ -65,7 +65,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
         <Rotulo className="mb-2">Línea de base cero</Rotulo>
         <div className="p-4 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] flex flex-col gap-1">
           <div className="text-sm font-semibold tabular-nums text-[color:var(--texto)]">
-            {formatearCOP(totalBasicos)} lo básico + {formatearCOP(estado.deudasActivas ? estado.paraDeudas : estado.libre)} {estado.deudasActivas ? 'a tu plan de deudas' : 'lo libre'} = {formatearCOP(estado.ingreso)}
+            {formatearCOP(perfilFlujo?.gastosBasicos ?? 0)} lo básico + {formatearCOP(estado.deudasActivas ? estado.paraDeudas : estado.libre)} {estado.deudasActivas ? 'a tu plan de deudas' : 'lo libre'} = {formatearCOP(estado.ingreso)}
             {!estado.deudasActivas && estado.porAsignar === 0 && ' · $0 sin dueño'}
           </div>
           {estado.porAsignar !== 0 && (
