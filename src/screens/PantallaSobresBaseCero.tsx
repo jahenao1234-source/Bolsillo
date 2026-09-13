@@ -15,7 +15,7 @@ import {
   ID_LIBRE_GUSTOS,
   MODULOS_LISTOS,
   metaFondoBlindado,
-  repartoPro,
+  repartoDelMes,
   COLOR_SOBRE_SISTEMA,
 } from '../logic/sistema';
 
@@ -70,7 +70,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   const metaFondo = perfilFlujo ? metaFondoBlindado(perfilFlujo.gastosBasicos) : 0;
   const colchonSobre = sobres.find(s => s.id === ID_SOBRE_COLCHON);
   const colchonApartado = colchonSobre ? colchonSobre.apartado : 0;
-  const reparto = repartoPro(estado.libre, colchonApartado, metaFondo);
+  const reparto = repartoDelMes(estado.libre, sobres, metaFondo, hoy);
   
   const mesNombre = hoy.toLocaleString('es-CO', { month: 'long' }).toLowerCase();
 

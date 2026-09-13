@@ -24,6 +24,7 @@ import {
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
 import { MESES_ABREV } from '../utils/fechas';
+import { formatearCOP } from '../utils/format';
 import {
   mensualDesdeEA,
   repartoBasicoSugerido,
@@ -1434,7 +1435,9 @@ export function abonarASobre(
   origenId: string,
   monto: number,
   origen: 'aporte_mensual' | 'abono' = 'abono',
-  destinoId?: string
+  destinoId?: string,
+  /** Aporte del mes que le toca al sobre (solo con origen 'aporte_mensual'). */
+  tope?: number
 ): { exito: boolean; error?: string } {
   const sobres = getSobres();
   const billeteras = getBilleteras();
@@ -1463,8 +1466,12 @@ export function abonarASobre(
     return { exito: false, error: `${cuentaOrigen.nombre} tiene $${sinSobreOrigen} sin sobre` };
   }
 
-  if (origen === 'aporte_mensual' && movidoEsteMes(sobre) > 0) {
-    return { exito: false, error: 'Ya moviste el aporte de este mes' };
+  // El aporte del mes se puede mover por partes, sin pasarse de lo que le toca.
+  if (origen === 'aporte_mensual' && tope != null) {
+    const falta = Math.max(0, tope - movidoEsteMes(sobre));
+    if (monto > falta) {
+      return { exito: false, error: `Este mes te faltan ${formatearCOP(falta)} por mover` };
+    }
   }
 
   const fecha = new Date().toISOString();

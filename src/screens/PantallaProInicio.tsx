@@ -10,7 +10,9 @@ import {
   faseActual,
   estadoBaseCero,
   metaFondoBlindado,
-  repartoPro,
+  repartoDelMes,
+  faltaMoverEsteMes,
+  movidoEsteMes,
   resumenAnioPro,
   siguientePaso,
   ID_SOBRE_COLCHON,
@@ -30,7 +32,7 @@ interface PantallaProInicioProps {
   sobres: Sobre[];
   billeteras: Billetera[];
   saldoTotal: number;
-  onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string) => { exito: boolean; error?: string };
+  onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string, tope?: number) => { exito: boolean; error?: string };
   onIrA: (seccion: 'plan' | 'sobres' | 'billetera') => void;
 }
 
@@ -54,11 +56,11 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   const gustos = sobres.find(s => s.id === ID_LIBRE_GUSTOS);
   const colchonApartado = colchon ? colchon.apartado : 0;
   
-  const reparto = repartoPro(estado.libre, colchonApartado, metaFondo);
+  const reparto = repartoDelMes(estado.libre, sobres, metaFondo, hoy);
   const resumenAnio = resumenAnioPro(sobres, reparto, hoy);
   const paso = siguientePaso(estado, fase, sobres, reparto, hoy, metaFondo);
 
-  const [accionAnimada, setAccionAnimada] = useState(false);
+  const [accionAnimada, setAccionAnimada] = useState<{ monto: number; destino: string } | null>(null);
 
   const [modalMover, setModalMover] = useState<{ modo: 'abonar'; sobre: Sobre } | null>(null);
 
@@ -72,14 +74,25 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
     }
   };
 
+  const aporteDe = (s: Sobre) => (s.id === ID_SOBRE_COLCHON ? reparto.colchon : reparto.inversion);
+
   const handleConfirmarAbono = (monto: number, origenId: string, destinoId: string) => {
     if (!modalMover) return { exito: false };
-    const res = onAbonarASobre(modalMover.sobre.id, origenId, monto, 'aporte_mensual', destinoId);
+    const { sobre } = modalMover;
+    const res = onAbonarASobre(sobre.id, origenId, monto, 'aporte_mensual', destinoId, aporteDe(sobre));
     if (res.exito) {
-      setAccionAnimada(true);
-      setTimeout(() => setAccionAnimada(false), 3000);
+      setAccionAnimada({ monto, destino: sobre.id === ID_SOBRE_COLCHON ? 'fondo blindado' : 'inversión' });
+      setTimeout(() => setAccionAnimada(null), 3000);
     }
     return res;
+  };
+
+  /** Pendiente, a medias o completo: el aporte del mes se puede mover por partes. */
+  const estadoAporte = (s: Sobre | undefined, aporte: number) => {
+    const movido = s ? movidoEsteMes(s, hoy) : 0;
+    if (movido <= 0) return 'Pendiente de mover';
+    if (movido < aporte) return `Movido ${formatearCOP(movido)} de ${formatearCOP(aporte)}`;
+    return `Movido el ${fechaAporteEsteMes(s!, hoy)?.getDate()} ✓`;
   };
 
   const deudasActivas = deudas.filter(d => d.saldo > 0);
@@ -128,7 +141,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
             </div>
             {paso.accionId !== 'nada' && paso.accionId !== 'plan' && (
               <div className="text-[14px] font-bold text-[#25C9BE] tabular-nums">
-                {formatearCOP(paso.accionId === 'mover-fondo' ? reparto.colchon : reparto.inversion)}
+                {formatearCOP(paso.accionId === 'mover-fondo' ? faltaMoverEsteMes(colchon, reparto.colchon, hoy) : faltaMoverEsteMes(inversion, reparto.inversion, hoy))}
               </div>
             )}
           </div>
@@ -142,7 +155,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           )}
           {accionAnimada && (
             <div className="mt-3 text-center text-[12px] font-bold text-[color:var(--positivo)] animate-fade-in">
-              Listo: {formatearCOP(paso.accionId === 'mover-fondo' ? reparto.colchon : reparto.inversion)} apartados en tu {paso.accionId === 'mover-fondo' ? 'fondo blindado' : 'inversión'}.
+              Listo: {formatearCOP(accionAnimada.monto)} apartados en tu {accionAnimada.destino}.
             </div>
           )}
         </div>
@@ -201,7 +214,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                     <div className="text-right">
                       <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.colchon)}</div>
                       <div className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5">
-                        {fechaAporteEsteMes(colchon!, hoy) ? `Movido el ${fechaAporteEsteMes(colchon!, hoy)?.getDate()} ✓` : 'Pendiente de mover'}
+                        {estadoAporte(colchon, reparto.colchon)}
                       </div>
                     </div>
                   </div>
@@ -210,7 +223,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                     <div className="text-right">
                       <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.inversion)}</div>
                       <div className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5">
-                        {fechaAporteEsteMes(inversion!, hoy) ? `Movido el ${fechaAporteEsteMes(inversion!, hoy)?.getDate()} ✓` : 'Pendiente de mover'}
+                        {estadoAporte(inversion, reparto.inversion)}
                       </div>
                     </div>
                   </div>
@@ -235,7 +248,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                 )}
                 {accionAnimada && (
                   <div className="mt-3 text-center text-[12px] font-bold text-[color:var(--positivo)] animate-fade-in">
-                    Listo: {formatearCOP(paso.accionId === 'mover-fondo' ? reparto.colchon : reparto.inversion)} apartados.
+                    Listo: {formatearCOP(accionAnimada.monto)} apartados en tu {accionAnimada.destino}.
                   </div>
                 )}
               </div>
@@ -335,7 +348,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           sobre={modalMover.sobre}
           billeteras={billeteras}
           sobres={sobres}
-          montoSugerido={modalMover.sobre.id === ID_SOBRE_COLCHON ? reparto.colchon : reparto.inversion}
+          montoSugerido={faltaMoverEsteMes(modalMover.sobre, aporteDe(modalMover.sobre), hoy)}
           origen="aporte_mensual"
           onCerrar={() => setModalMover(null)}
           onConfirmar={handleConfirmarAbono}

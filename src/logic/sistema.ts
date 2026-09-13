@@ -365,6 +365,21 @@ export function gastadoDelMes(sobre: Sobre, movimientos: Movimiento[], hoy: Date
     .reduce((a, m) => a + m.monto, 0);
 }
 
+/** Lo que falta mover este mes del aporte que le toca al sobre. */
+export function faltaMoverEsteMes(sobre: Sobre | undefined, aporte: number, hoy: Date = new Date()): number {
+  return Math.max(0, aporte - (sobre ? movidoEsteMes(sobre, hoy) : 0));
+}
+
+/**
+ * El reparto del mes se calcula con el fondo como estaba ANTES del aporte de
+ * este mes. Si se usara el apartado actual, cada abono achicaría su propio tope.
+ */
+export function repartoDelMes(libre: number, sobres: Sobre[], metaFondo: number, hoy: Date = new Date()): RepartoPro {
+  const colchon = sobres.find((s) => s.id === ID_SOBRE_COLCHON);
+  const antesDelMes = colchon ? colchon.apartado - movidoEsteMes(colchon, hoy) : 0;
+  return repartoPro(libre, Math.max(0, antesDelMes), metaFondo);
+}
+
 export function movidoEsteMes(sobre: Sobre, hoy: Date = new Date()): number {
   if (!sobre.historial) return 0;
   return sobre.historial
@@ -442,24 +457,29 @@ export function siguientePaso(
   const colchon = sobres.find(s => s.id === ID_SOBRE_COLCHON);
   const inversion = sobres.find(s => s.id === ID_SOBRE_INVERSION);
 
+  const cop = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
+
+  // Un aporte puede moverse por partes: el paso sigue abierto mientras falte plata.
   if (fase === 'blindar') {
-    if (!colchon || !fechaAporteEsteMes(colchon, hoy)) {
+    const falta = faltaMoverEsteMes(colchon, reparto.colchon, hoy);
+    if (falta > 0) {
       const apartado = colchon?.apartado || 0;
       return {
-        texto: `Mover ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(reparto.colchon)} al fondo blindado`,
-        detalle: `Llega a ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(apartado + reparto.colchon)} de ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(metaFondo)}`,
-        cta: "Mover al fondo",
+        texto: `Mover ${cop(falta)} al fondo blindado`,
+        detalle: `Llega a ${cop(apartado + falta)} de ${cop(metaFondo)}`,
+        cta: falta < reparto.colchon ? "Mover lo que falta" : "Mover al fondo",
         accionId: 'mover-fondo'
       };
     }
   }
 
-  if (!inversion || !fechaAporteEsteMes(inversion, hoy)) {
+  const faltaInversion = faltaMoverEsteMes(inversion, reparto.inversion, hoy);
+  if (faltaInversion > 0) {
     const apartado = inversion?.apartado || 0;
     return {
-      texto: `Mover ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(reparto.inversion)} a inversión`,
-      detalle: `Llega a ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(apartado + reparto.inversion)}`,
-      cta: "Mover a inversión",
+      texto: `Mover ${cop(faltaInversion)} a inversión`,
+      detalle: `Llega a ${cop(apartado + faltaInversion)}`,
+      cta: faltaInversion < reparto.inversion ? "Mover lo que falta" : "Mover a inversión",
       accionId: 'mover-inversion'
     };
   }
