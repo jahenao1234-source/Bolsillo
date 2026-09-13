@@ -114,6 +114,7 @@ export interface Movimiento {
   deudaId?: string; // Opcional, si es abono a una deuda
   sobreId?: string;
   creadoEn?: string;
+  billeteraDestinoId?: string;
 }
 
 export interface FiltrosMovimiento {
@@ -187,7 +188,8 @@ export interface Sobre {
   categorias?: string[];
   modulo?: 'lista_compras' | 'activos' | 'anti_recaida' | 'ninguno';
   sistema?: boolean;
-  historial?: { fecha: string; monto: number; origen: 'aporte_mensual' | 'rescate' | 'ajuste' | 'retiro'; nota?: string }[];
+  billeteraId?: string;
+  historial?: { fecha: string; monto: number; origen: 'aporte_mensual' | 'abono' | 'rescate' | 'ajuste' | 'retiro'; nota?: string; billeteraId?: string }[];
 }
 
 export type TipoReto = 'escalado' | 'semanal_fijo';

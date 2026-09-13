@@ -38,6 +38,8 @@ import {
   CATS_SERVICIOS,
   CATS_TRANSPORTE,
   CATS_GUSTOS,
+  sinSobre,
+  movidoEsteMes,
 } from '../logic/sistema';
 import { aporteDeSemana } from '../logic/retos';
 import { sangradoVigente } from '../logic/suscripciones';
@@ -327,7 +329,7 @@ const MOCK_PRESUPUESTOS_INICIAL: Presupuesto[] = [
 
 // Semilla Pro: sobres digitales (dinero apartado hacia metas)
 const MOCK_SOBRES_INICIAL: Sobre[] = [
-  { id: 'sobre-emergencia', nombre: 'Fondo de emergencia', meta: 1000000, apartado: 300000, color: '#5FE0A8', creadoEn: '2026-08-01' },
+  { id: 'sobre-emergencia', nombre: 'Fondo de emergencia', meta: 1000000, apartado: 300000, color: '#5FE0A8', creadoEn: '2026-08-01', billeteraId: 'bil-ahorros' },
   { id: 'sobre-arriendo', nombre: 'Arriendo', meta: 800000, apartado: 500000, color: '#25C9BE', creadoEn: '2026-08-01' },
   { id: 'sobre-moto', nombre: 'Cuota moto', meta: 2000000, apartado: 150000, color: '#FF7A3D', creadoEn: '2026-08-01' },
 ];
@@ -1195,6 +1197,7 @@ export function repartirBasicosDeNuevo(perfil: PerfilFlujo | null): void {
   setSobres(nuevos);
 }
 
+/** @deprecated Usar abonarASobre en su lugar */
 export function moverAporteMensual(sobreId: string, monto: number): boolean {
   const sobres = getSobres();
   const idx = sobres.findIndex((s) => s.id === sobreId);
@@ -1268,6 +1271,7 @@ export function guardarSobre(sobre: Sobre): void {
 /**
  * Suma a un sobre fijo del sistema (el colchón, la inversión). Si no existe
  * todavía, lo crea: el sistema no le pide a nadie que arme sus sobres a mano.
+ * @deprecated Usar abonarASobre en su lugar
  */
 export function aportarASobre(id: string, nombre: string, monto: number, meta?: number, color?: string): void {
   const sobres = getSobres();
@@ -1463,4 +1467,188 @@ export function guardarTarjetaCredito(tc: TarjetaCredito): void {
 
 export function eliminarTarjetaCredito(id: string): void {
   setTarjetasCredito(getTarjetasCredito().filter((t) => t.id !== id));
+}
+
+export function abonarASobre(
+  sobreId: string,
+  origenId: string,
+  monto: number,
+  origen: 'aporte_mensual' | 'abono' = 'abono',
+  destinoId?: string
+): { exito: boolean; error?: string } {
+  const sobres = getSobres();
+  const billeteras = getBilleteras();
+  
+  const idxSobre = sobres.findIndex((s) => s.id === sobreId);
+  const idxOrigen = billeteras.findIndex((b) => b.id === origenId);
+  
+  if (idxSobre < 0 || idxOrigen < 0) {
+    return { exito: false, error: 'Sobre o cuenta no encontrada' };
+  }
+
+  const sobre = { ...sobres[idxSobre] };
+  const cuentaOrigen = { ...billeteras[idxOrigen] };
+  const cuentaDestinoId = sobre.billeteraId || destinoId;
+
+  if (!sobre.billeteraId && !destinoId) {
+    return { exito: false, error: 'Se requiere una cuenta destino para guardar la plata' };
+  }
+
+  if (monto <= 0) {
+    return { exito: false, error: 'El monto debe ser mayor a 0' };
+  }
+
+  const sinSobreOrigen = sinSobre(cuentaOrigen, sobres);
+  if (monto > sinSobreOrigen) {
+    return { exito: false, error: `${cuentaOrigen.nombre} tiene $${sinSobreOrigen} sin sobre` };
+  }
+
+  if (origen === 'aporte_mensual' && movidoEsteMes(sobre) > 0) {
+    return { exito: false, error: 'Ya moviste el aporte de este mes' };
+  }
+
+  const fecha = new Date().toISOString();
+  let movimientos = getMovimientos();
+
+  if (origenId !== cuentaDestinoId) {
+    const idxDestino = billeteras.findIndex((b) => b.id === cuentaDestinoId);
+    if (idxDestino < 0) return { exito: false, error: 'Cuenta destino no encontrada' };
+    
+    const cuentaDestino = { ...billeteras[idxDestino] };
+    
+    cuentaOrigen.saldo -= monto;
+    cuentaDestino.saldo += monto;
+    
+    billeteras[idxOrigen] = cuentaOrigen;
+    billeteras[idxDestino] = cuentaDestino;
+
+    const mesesAbrev = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const ahora = new Date();
+    const fechaLegible = `${ahora.getDate().toString().padStart(2, '0')} ${mesesAbrev[ahora.getMonth()]} ${ahora.getFullYear()}`;
+
+    const nuevoMov: Movimiento = {
+      id: `mov-sobre-${Date.now()}`,
+      tipo: 'transferencia',
+      monto,
+      billeteraId: cuentaOrigen.id,
+      billeteraNombre: cuentaOrigen.nombre,
+      billeteraDestinoId: cuentaDestino.id,
+      sobreId: sobre.id,
+      categoria: 'Sobres',
+      fecha: fechaLegible,
+      nota: `A ${sobre.nombre}`,
+      descripcion: `A ${sobre.nombre}`,
+      creadoEn: fecha,
+    };
+    
+    movimientos = [nuevoMov, ...movimientos];
+    setMovimientos(movimientos);
+  }
+
+  if (!sobre.billeteraId) {
+    sobre.billeteraId = cuentaDestinoId;
+  }
+  
+  sobre.apartado += monto;
+  if (!sobre.historial) sobre.historial = [];
+  sobre.historial.push({
+    fecha,
+    monto,
+    origen,
+    billeteraId: origenId
+  });
+
+  sobres[idxSobre] = sobre;
+  
+  setBilleteras(billeteras);
+  setSobres(sobres);
+  
+  return { exito: true };
+}
+
+export function retirarDeSobre(
+  sobreId: string,
+  destinoId: string,
+  monto: number,
+  nota?: string
+): { exito: boolean; error?: string } {
+  const sobres = getSobres();
+  const billeteras = getBilleteras();
+  
+  const idxSobre = sobres.findIndex((s) => s.id === sobreId);
+  const idxDestino = billeteras.findIndex((b) => b.id === destinoId);
+  
+  if (idxSobre < 0 || idxDestino < 0) {
+    return { exito: false, error: 'Sobre o cuenta no encontrada' };
+  }
+
+  const sobre = { ...sobres[idxSobre] };
+  const cuentaDestino = { ...billeteras[idxDestino] };
+
+  if (monto > sobre.apartado) {
+    return { exito: false, error: `El sobre tiene $${sobre.apartado}` };
+  }
+
+  if (!sobre.billeteraId) {
+    return { exito: false, error: 'El sobre no tiene cuenta asociada' };
+  }
+  
+  const cuentaOrigenId = sobre.billeteraId;
+  const idxOrigen = billeteras.findIndex((b) => b.id === cuentaOrigenId);
+  
+  if (idxOrigen < 0) {
+    return { exito: false, error: 'Cuenta de origen no encontrada' };
+  }
+
+  const fecha = new Date().toISOString();
+  let movimientos = getMovimientos();
+
+  if (cuentaOrigenId !== destinoId) {
+    const cuentaOrigen = { ...billeteras[idxOrigen] };
+    
+    cuentaOrigen.saldo -= monto;
+    cuentaDestino.saldo += monto;
+    
+    billeteras[idxOrigen] = cuentaOrigen;
+    billeteras[idxDestino] = cuentaDestino;
+
+    const mesesAbrev = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const ahora = new Date();
+    const fechaLegible = `${ahora.getDate().toString().padStart(2, '0')} ${mesesAbrev[ahora.getMonth()]} ${ahora.getFullYear()}`;
+
+    const nuevoMov: Movimiento = {
+      id: `mov-retiro-${Date.now()}`,
+      tipo: 'transferencia',
+      monto,
+      billeteraId: cuentaOrigen.id,
+      billeteraNombre: cuentaOrigen.nombre,
+      billeteraDestinoId: cuentaDestino.id,
+      sobreId: sobre.id,
+      categoria: 'Sobres',
+      fecha: fechaLegible,
+      nota: nota || `Desde ${sobre.nombre}`,
+      descripcion: nota || `Desde ${sobre.nombre}`,
+      creadoEn: fecha,
+    };
+    
+    movimientos = [nuevoMov, ...movimientos];
+    setMovimientos(movimientos);
+  }
+
+  sobre.apartado -= monto;
+  if (!sobre.historial) sobre.historial = [];
+  sobre.historial.push({
+    fecha,
+    monto,
+    origen: 'retiro',
+    billeteraId: destinoId,
+    nota
+  });
+
+  sobres[idxSobre] = sobre;
+  
+  setBilleteras(billeteras);
+  setSobres(sobres);
+
+  return { exito: true };
 }

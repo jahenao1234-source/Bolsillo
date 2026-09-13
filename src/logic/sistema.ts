@@ -12,7 +12,7 @@
  * dónde se va su plata cuando algo se completa. Sin React y sin almacenamiento.
  */
 
-import { Deuda, Movimiento, Sobre, PerfilFlujo } from '../types';
+import { Deuda, Movimiento, Sobre, PerfilFlujo, Billetera } from '../types';
 import { calcularPlan, calcularFechaMesRelativo, ordenarDeudasSegunEstrategia } from './planDeudas';
 
 /** La v3 enseña un solo método: bola de nieve. Menos opciones, más guía. */
@@ -323,6 +323,20 @@ export function gastoDeLaSemana(movimientos: Movimiento[], hoy: Date = new Date(
 // ==========================================
 // PRO: BLINDAR Y CRECER (BASE CERO)
 // ==========================================
+
+export function esSobreDeAcumulacion(s: Sobre): boolean {
+  return s.id === ID_SOBRE_COLCHON || s.id === ID_SOBRE_INVERSION || s.grupo === undefined || s.grupo === 'libre' && s.id !== ID_LIBRE_GUSTOS;
+}
+
+export function enSobres(billeteraId: string, sobres: Sobre[]): number {
+  return sobres
+    .filter((s) => esSobreDeAcumulacion(s) && s.billeteraId === billeteraId)
+    .reduce((a, s) => a + s.apartado, 0);
+}
+
+export function sinSobre(b: Billetera, sobres: Sobre[]): number {
+  return b.saldo - enSobres(b.id, sobres);
+}
 
 export function metaFondoBlindado(gastosBasicos: number): number {
   return 3 * gastosBasicos;
