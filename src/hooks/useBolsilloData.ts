@@ -44,10 +44,8 @@ import {
   suscribirStore,
   getPerfilFlujo,
   setPerfilFlujo,
-  aportarASobre,
   asegurarSobresSistema,
   repartirBasicosDeNuevo,
-  moverAporteMensual,
   abonarASobre,
   retirarDeSobre,
 } from '../data/store';
@@ -141,10 +139,8 @@ export function useBolsilloData() {
     // Sistema v3
     perfilFlujo,
     setPerfilFlujo,
-    aportarASobre,
     asegurarSobresSistema,
     repartirBasicosDeNuevo,
-    moverAporteMensual,
     abonarASobre,
     retirarDeSobre,
     // Módulos Pro (Crecer)

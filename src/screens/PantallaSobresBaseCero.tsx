@@ -28,7 +28,6 @@ interface PantallaSobresBaseCeroProps {
   onRepartirBasicos: (perfil: PerfilFlujo | null) => void;
   onGuardarSobre: (sobre: Sobre) => void;
   onEliminarSobre: (id: string) => void;
-  onAportarASobre: (id: string, nombre: string, monto: number, meta?: number, color?: string) => void;
   onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string) => { exito: boolean; error?: string };
   onRetirarDeSobre: (sobreId: string, destinoId: string, monto: number, nota?: string) => { exito: boolean; error?: string };
   onVolver: () => void;
@@ -417,6 +416,10 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
           onCerrar={() => setModal(null)}
           onGuardar={(s) => {
             onGuardarSobre(s);
+            // Un sobre nuevo nace en $0: si hay cuentas, se le pone plata de una vez.
+            if (modal.modo === 'crear' && !modal.sobre && billeteras.length > 0) {
+              setModalMover({ modo: 'abonar', sobre: { ...s, apartado: 0 } });
+            }
             setModal(null);
           }}
         />

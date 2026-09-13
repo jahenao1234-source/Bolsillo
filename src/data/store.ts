@@ -40,6 +40,7 @@ import {
   CATS_GUSTOS,
   sinSobre,
   movidoEsteMes,
+  esSobreDeAcumulacion,
 } from '../logic/sistema';
 import { aporteDeSemana } from '../logic/retos';
 import { sangradoVigente } from '../logic/suscripciones';
@@ -1197,39 +1198,6 @@ export function repartirBasicosDeNuevo(perfil: PerfilFlujo | null): void {
   setSobres(nuevos);
 }
 
-/** @deprecated Usar abonarASobre en su lugar */
-export function moverAporteMensual(sobreId: string, monto: number): boolean {
-  const sobres = getSobres();
-  const idx = sobres.findIndex((s) => s.id === sobreId);
-  if (idx < 0) return false;
-
-  const sobre = { ...sobres[idx] };
-  const hoy = new Date();
-
-  const yaAporto = (sobre.historial || [])
-    .filter((h) => h.origen === 'aporte_mensual')
-    .some((h) => {
-      const f = new Date(h.fecha);
-      return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
-    });
-
-  if (yaAporto) return false;
-
-  sobre.apartado += monto;
-  if (!sobre.historial) sobre.historial = [];
-  sobre.historial.push({
-    fecha: hoy.toISOString(),
-    monto,
-    origen: 'aporte_mensual',
-  });
-
-  const nuevos = [...sobres];
-  nuevos[idx] = sobre;
-  setSobres(nuevos);
-
-  return true;
-}
-
 export function getSobres(): Sobre[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SOBRES);
@@ -1249,12 +1217,21 @@ export function setSobres(items: Sobre[]): void {
   }
 }
 
+/**
+ * Guarda nombre, meta, presupuesto, color y cuenta. El apartado y el historial
+ * NO se toman de aquí: solo abonarASobre y retirarDeSobre los cambian, porque
+ * son los que mueven la plata en las billeteras. Un sobre nuevo nace en $0.
+ */
 export function guardarSobre(sobre: Sobre): void {
   const items = getSobres();
   const idx = items.findIndex((s) => s.id === sobre.id);
+  const actual = idx >= 0 ? items[idx] : null;
   const normal: Sobre = {
     ...sobre,
-    apartado: Math.max(0, Math.round(sobre.apartado || 0)),
+    apartado: actual ? actual.apartado : 0,
+    historial: actual ? actual.historial : undefined,
+    // Si ya guarda plata, cambiar de cuenta es mover esa plata: va por cambiarCuentaSobre.
+    billeteraId: actual && actual.apartado > 0 && esSobreDeAcumulacion(actual) ? actual.billeteraId : sobre.billeteraId,
     meta: sobre.meta != null ? Math.max(0, Math.round(sobre.meta)) : undefined,
     creadoEn: sobre.creadoEn || new Date().toISOString(),
   };
@@ -1266,24 +1243,6 @@ export function guardarSobre(sobre: Sobre): void {
     nuevos = [...items, normal];
   }
   setSobres(nuevos);
-}
-
-/**
- * Suma a un sobre fijo del sistema (el colchón, la inversión). Si no existe
- * todavía, lo crea: el sistema no le pide a nadie que arme sus sobres a mano.
- * @deprecated Usar abonarASobre en su lugar
- */
-export function aportarASobre(id: string, nombre: string, monto: number, meta?: number, color?: string): void {
-  const sobres = getSobres();
-  const actual = sobres.find((x) => x.id === id);
-  guardarSobre({
-    id,
-    nombre: actual?.nombre ?? nombre,
-    meta: actual?.meta ?? meta,
-    apartado: Math.max(0, (actual?.apartado ?? 0) + Math.round(monto)),
-    color: actual?.color ?? color,
-    creadoEn: actual?.creadoEn ?? new Date().toISOString(),
-  });
 }
 
 export function eliminarSobre(id: string): void {

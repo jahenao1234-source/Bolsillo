@@ -311,7 +311,6 @@ export default function App() {
                     onRepartirBasicos={datos.repartirBasicosDeNuevo}
                     onGuardarSobre={datos.guardarSobre}
                     onEliminarSobre={datos.eliminarSobre}
-                    onAportarASobre={datos.aportarASobre}
                     onAbonarASobre={datos.abonarASobre}
                     onRetirarDeSobre={datos.retirarDeSobre}
                     onVolver={() => navegar('pro_inicio')}

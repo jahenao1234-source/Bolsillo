@@ -19,13 +19,9 @@ interface ModalSobreProps {
 export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, onGuardar }) => {
   const [nombre, setNombre] = useState(sobre?.nombre || '');
   const [metaStr, setMetaStr] = useState(sobre?.meta ? formatearCOP(sobre.meta) : '');
-  const [montoStr, setMontoStr] = useState(
-    modo === 'editar' && sobre ? (
-      (sobre.grupo === 'basico' || sobre.id === ID_LIBRE_GUSTOS)
-        ? (sobre.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : '')
-        : formatearCOP(sobre.apartado)
-    ) : (sobre?.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : '')
-  );
+  // Solo el presupuesto se escribe aquí. El apartado cambia al abonar o retirar,
+  // que mueven plata real entre cuentas: escribirlo a mano la crearía de la nada.
+  const [montoStr, setMontoStr] = useState(sobre?.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : '');
   const [color, setColor] = useState(sobre?.color || COLORES_SOBRE[0]);
   const [error, setError] = useState('');
 
@@ -60,7 +56,9 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
         id: sobre?.id || `sobre-${Date.now()}`,
         nombre: nombre.trim(),
         meta: num(metaStr) > 0 ? num(metaStr) : undefined,
-        apartado: modo === 'editar' ? num(montoStr) : num(montoStr),
+        apartado: sobre?.apartado ?? 0,
+        billeteraId: sobre?.billeteraId,
+        historial: sobre?.historial,
         color,
         creadoEn: sobre?.creadoEn || new Date().toISOString(),
       };
@@ -143,21 +141,6 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, o
                     onChange={fmtOnChange(setMontoStr)}
                     placeholder="$0"
                     autoFocus={esSistema}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors"
-                  />
-                </div>
-                )}
-                
-                {!esSistema && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-[color:var(--texto-2)] block">
-                    Apartado ya
-                  </label>
-                  <input
-                    type="text"
-                    value={montoStr}
-                    onChange={fmtOnChange(setMontoStr)}
-                    placeholder="$0"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors"
                   />
                 </div>
