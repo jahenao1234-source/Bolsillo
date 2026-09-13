@@ -30,6 +30,7 @@ interface PantallaSobresBaseCeroProps {
   onEliminarSobre: (id: string) => void;
   onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string) => { exito: boolean; error?: string };
   onRetirarDeSobre: (sobreId: string, destinoId: string, monto: number, nota?: string) => { exito: boolean; error?: string };
+  onCambiarCuentaSobre: (sobreId: string, nuevaId: string) => { exito: boolean; error?: string };
   onVolver: () => void;
   onIrAMiPlan?: () => void;
 }
@@ -44,6 +45,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   onGuardarSobre,
   onAbonarASobre,
   onRetirarDeSobre,
+  onCambiarCuentaSobre,
   onIrAMiPlan,
 }) => {
   const [modal, setModal] = useState<{ modo: ModoModal; sobre: Sobre | null } | null>(null);
@@ -74,13 +76,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
 
   const getColor = (s: Sobre) => COLOR_SOBRE_SISTEMA[s.id] || s.color || '#25C9BE';
 
-  const handleClickSobre = (s: Sobre) => {
-    if (s.id === ID_SOBRE_COLCHON || s.id === ID_SOBRE_INVERSION) {
-      setModal({ modo: 'crear', sobre: s }); // Se reutiliza modo crear/editar visualmente para fondo e inversion
-    } else {
-      setModal({ modo: 'editar', sobre: s });
-    }
-  };
+  const handleClickSobre = (s: Sobre) => setModal({ modo: 'editar', sobre: s });
 
   const getTextoCuenta = (sobre: Sobre) => {
     if (!sobre.billeteraId) return 'Sin cuenta todavía';
@@ -413,8 +409,17 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
         <ModalSobre
           modo={modal.modo}
           sobre={modal.sobre}
+          billeteras={billeteras}
           onCerrar={() => setModal(null)}
+          onAbonar={() => { setModalMover({ modo: 'abonar', sobre: modal.sobre! }); setModal(null); }}
+          onRetirar={() => { setModalMover({ modo: 'retirar', sobre: modal.sobre! }); setModal(null); }}
           onGuardar={(s) => {
+            const antes = modal.sobre;
+            // Cambiar de cuenta un sobre con plata es mover esa plata entre billeteras.
+            if (antes && s.billeteraId && s.billeteraId !== antes.billeteraId && antes.apartado > 0) {
+              const r = onCambiarCuentaSobre(antes.id, s.billeteraId);
+              if (!r.exito) { window.alert(r.error); return; }
+            }
             onGuardarSobre(s);
             // Un sobre nuevo nace en $0: si hay cuentas, se le pone plata de una vez.
             if (modal.modo === 'crear' && !modal.sobre && billeteras.length > 0) {

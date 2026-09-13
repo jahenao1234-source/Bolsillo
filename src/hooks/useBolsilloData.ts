@@ -48,6 +48,7 @@ import {
   repartirBasicosDeNuevo,
   abonarASobre,
   retirarDeSobre,
+  cambiarCuentaSobre,
 } from '../data/store';
 import {
   ResumenFinanciero,
@@ -143,6 +144,7 @@ export function useBolsilloData() {
     repartirBasicosDeNuevo,
     abonarASobre,
     retirarDeSobre,
+    cambiarCuentaSobre,
     // Módulos Pro (Crecer)
     presupuestos,
     gastoPorCategoria,

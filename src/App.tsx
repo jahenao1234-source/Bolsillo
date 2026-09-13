@@ -313,6 +313,7 @@ export default function App() {
                     onEliminarSobre={datos.eliminarSobre}
                     onAbonarASobre={datos.abonarASobre}
                     onRetirarDeSobre={datos.retirarDeSobre}
+                    onCambiarCuentaSobre={datos.cambiarCuentaSobre}
                     onVolver={() => navegar('pro_inicio')}
                     onIrAMiPlan={() => navegar('plan')}
                   />

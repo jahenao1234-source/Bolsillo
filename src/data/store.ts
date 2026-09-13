@@ -23,6 +23,7 @@ import {
   PerfilFlujo,
 } from '../types';
 import { calcularPlan } from '../logic/planDeudas';
+import { MESES_ABREV } from '../utils/fechas';
 import {
   mensualDesdeEA,
   repartoBasicoSugerido,
@@ -1609,5 +1610,54 @@ export function retirarDeSobre(
   setBilleteras(billeteras);
   setSobres(sobres);
 
+  return { exito: true };
+}
+
+/**
+ * Cambia la cuenta donde vive un sobre de ahorro. Si ya guarda plata, esa plata
+ * se mueve de verdad: sale de la cuenta vieja y entra a la nueva.
+ */
+export function cambiarCuentaSobre(sobreId: string, nuevaId: string): { exito: boolean; error?: string } {
+  const sobres = getSobres();
+  const billeteras = getBilleteras();
+  const idxSobre = sobres.findIndex((s) => s.id === sobreId);
+  const idxNueva = billeteras.findIndex((b) => b.id === nuevaId);
+  if (idxSobre < 0 || idxNueva < 0) return { exito: false, error: 'Sobre o cuenta no encontrada' };
+
+  const sobre = { ...sobres[idxSobre] };
+  if (sobre.billeteraId === nuevaId) return { exito: true };
+
+  const idxVieja = billeteras.findIndex((b) => b.id === sobre.billeteraId);
+  if (sobre.apartado > 0 && idxVieja >= 0) {
+    const vieja = { ...billeteras[idxVieja] };
+    const nueva = { ...billeteras[idxNueva] };
+    vieja.saldo -= sobre.apartado;
+    nueva.saldo += sobre.apartado;
+    billeteras[idxVieja] = vieja;
+    billeteras[idxNueva] = nueva;
+
+    const ahora = new Date();
+    const nota = `Cambio de cuenta de ${sobre.nombre}`;
+    const mov: Movimiento = {
+      id: `mov-cuenta-${Date.now()}`,
+      tipo: 'transferencia',
+      monto: sobre.apartado,
+      billeteraId: vieja.id,
+      billeteraNombre: vieja.nombre,
+      billeteraDestinoId: nueva.id,
+      sobreId: sobre.id,
+      categoria: 'Sobres',
+      fecha: `${ahora.getDate().toString().padStart(2, '0')} ${MESES_ABREV[ahora.getMonth()]} ${ahora.getFullYear()}`,
+      nota,
+      descripcion: nota,
+      creadoEn: ahora.toISOString(),
+    };
+    setBilleteras(billeteras);
+    setMovimientos([mov, ...getMovimientos()]);
+  }
+
+  sobre.billeteraId = nuevaId;
+  sobres[idxSobre] = sobre;
+  setSobres(sobres);
   return { exito: true };
 }
