@@ -161,16 +161,26 @@ export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
             {ordenados.length === 0 && <p className="text-xs text-texto-3 py-2">Todavía no hay movimientos.</p>}
             {ordenados.slice(0, visibles).map((m, i) => {
               const esIngreso = m.tipo === 'ingreso';
+              const esTransferencia = m.tipo === 'transferencia';
+              const destino = billeteras.find((b) => b.id === m.billeteraDestinoId)?.nombre || 'Otra cuenta';
+              
               return (
                 <div key={m.id} className={`flex items-center justify-between gap-3 py-2.5 ${i ? 'border-t border-hairline' : ''}`}>
                   <span className="min-w-0">
-                    <span className="block text-[13px] font-semibold truncate">{m.descripcion || m.nota || m.categoria}</span>
+                    <span className="block text-[13px] font-semibold truncate flex items-center gap-1.5">
+                      {esTransferencia && (
+                        <svg className="w-3.5 h-3.5 flex-none text-texto-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                      )}
+                      {esTransferencia ? `${m.billeteraNombre ?? 'Billetera'} → ${destino} · ${m.descripcion || m.nota}` : m.descripcion || m.nota || m.categoria}
+                    </span>
                     <span className="block text-[10.5px] text-texto-3 truncate">
-                      {m.categoria} · {m.billeteraNombre ?? 'Billetera'} · {m.fecha}
+                      {esTransferencia ? 'Sobres' : m.categoria} · {!esTransferencia && (m.billeteraNombre ?? 'Billetera') + ' · '} {m.fecha}
                     </span>
                   </span>
-                  <span className={`flex-none font-bold text-[13px] tabular-nums ${esIngreso ? 'text-positivo' : 'text-texto'}`}>
-                    {esIngreso ? '+' : '−'}
+                  <span className={`flex-none font-bold text-[13px] tabular-nums ${esTransferencia ? 'text-texto-2' : esIngreso ? 'text-positivo' : 'text-texto'}`}>
+                    {!esTransferencia && (esIngreso ? '+' : '−')}
                     {formatearCOP(m.monto)}
                   </span>
                 </div>

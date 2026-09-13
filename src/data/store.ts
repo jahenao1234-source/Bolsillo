@@ -613,7 +613,7 @@ export function getFlujoMes(mes?: string): FlujoMes {
     const monto = Math.abs(Number(m.monto) || 0);
     if (m.tipo === 'ingreso') {
       ingresos += monto;
-    } else {
+    } else if (m.tipo !== 'transferencia') {
       gastos += monto;
     }
   }
