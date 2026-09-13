@@ -57,16 +57,17 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
 
   return (
     <div 
-      className="rounded-[14px] border border-[var(--linea)] bg-[var(--superficie)] px-5 py-[18px] flex flex-col gap-[11px] cursor-pointer hover:border-[color:var(--texto-3)] transition-colors"
+      className="@container rounded-[14px] border border-[var(--linea)] bg-[var(--superficie)] px-4 py-3.5 gap-[9px] md:px-5 md:py-[18px] md:gap-[11px] flex flex-col cursor-pointer hover:border-[color:var(--texto-3)] transition-colors"
       onClick={onClick}
     >
+      {/* Nombre y cifra se achican con la tarjeta (cqw): en 4 columnas a 1280 px no caben a 17 y 19 px. */}
       <div className="flex justify-between items-baseline gap-2.5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <div className="w-[10px] h-[10px] rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-          <div className="font-bold text-[17px] text-[color:var(--texto)]">{nombre}</div>
+          <div className="font-bold text-[clamp(14px,6.2cqw,17px)] text-[color:var(--texto)] truncate">{nombre}</div>
           {chip}
         </div>
-        <div className="text-right">
+        <div className="text-right whitespace-nowrap">
           {derecha}
         </div>
       </div>

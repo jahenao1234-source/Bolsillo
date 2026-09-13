@@ -109,7 +109,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     }
 
     return (
-      <div className="mb-5 pt-4 md:pt-0">
+      <div className="mb-4 md:mb-5">
         <div className="flex justify-between items-center mb-2">
           <h1 className="font-display font-extrabold text-[21px] xl:text-[24px] text-[color:var(--texto)]">
             Tus sobres
@@ -153,10 +153,10 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
         <TarjetaSobre
           color={getColor(mercado)}
           nombre="Mercado"
-          derecha={gast > pres ? <span className="text-[color:var(--alerta)]">-{formatearCOP(gast - pres)} pasado</span> : <><span className="text-[19px] font-display font-extrabold" style={{ color: getColor(mercado) }}>{formatearCOP(pres - gast)}</span><span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1">disp.</span></>}
+          derecha={gast > pres ? <span className="text-[color:var(--alerta)]">-{formatearCOP(gast - pres)} pasado</span> : <><span className="text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" style={{ color: getColor(mercado) }}>{formatearCOP(pres - gast)}</span><span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1 @max-[15rem]:hidden">disp.</span></>}
           linea={<>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
           progreso={pres > 0 ? (gast / pres) * 100 : 0}
-          pie={(!MODULOS_LISTOS) ? "Mercado, aseo y despensa" : undefined}
+          pie={!MODULOS_LISTOS && !isMobile ? "Mercado, aseo y despensa" : undefined}
           puente={MODULOS_LISTOS ? { texto: "Abrir lista de compras", onClick: (e) => { e.stopPropagation(); } } : undefined}
           variante="completa"
           onClick={() => handleClickSobre(mercado)}
@@ -192,10 +192,10 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
             ) : gast > pres ? (
               <span className="text-[color:var(--alerta)]">-{formatearCOP(gast - pres)} pasado</span>
             ) : (
-              <><span style={{ color: mini ? color : 'var(--texto)' }} className={!mini ? "text-[19px] font-display font-extrabold" : ""}>{formatearCOP(pres - gast)}</span>{!mini && <span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1">disp.</span>}</>
+              <><span style={{ color: mini ? color : 'var(--texto)' }} className={!mini ? "text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" : ""}>{formatearCOP(pres - gast)}</span>{!mini && <span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1 @max-[15rem]:hidden">disp.</span>}</>
             )
           }
-          linea={mini && pagado ? undefined : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
+          linea={mini ? undefined : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
           progreso={pagado || gast > pres ? 100 : pres > 0 ? (gast / pres) * 100 : 0}
           pie={mini ? undefined : pie}
           variante={mini ? 'mini' : 'completa'}
@@ -205,8 +205,8 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     };
 
     return (
-      <div className="mb-5">
-        <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-[12px]">
+      <div className="mb-4 md:mb-5">
+        <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-2 md:mb-[12px]">
           Lo básico <span className="text-[14px] text-[color:var(--texto-3)] normal-case tracking-normal ml-2 tabular-nums font-medium">{formatearCOP(perfilFlujo?.gastosBasicos || 0)} al mes</span>
         </h2>
         {isMobile ? (
@@ -233,9 +233,9 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   const renderLibres = () => {
     if (estado.deudasActivas) {
       return (
-        <div className="mb-5">
-          <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-[12px]">
-            Lo libre <span className="text-[14px] text-[color:var(--texto-3)] normal-case tracking-normal ml-2 tabular-nums font-medium">{formatearCOP(estado.paraDeudas)} al mes · lo que antes iba a deudas</span>
+        <div className="mb-4 md:mb-5">
+          <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-2 md:mb-[12px]">
+            Lo libre <span className="text-[14px] text-[color:var(--texto-3)] normal-case tracking-normal ml-2 tabular-nums font-medium">{formatearCOP(estado.paraDeudas)} al mes<span className="max-md:hidden"> · lo que antes iba a deudas</span></span>
           </h2>
           <div className="rounded-[18px] border bg-[var(--superficie)] px-[18px] py-[17px] flex flex-col gap-[11px]" style={{ borderColor: 'color-mix(in srgb, #25C9BE 38%, var(--linea))' }}>
             <div className="flex items-center gap-2">
@@ -280,7 +280,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
           color={getColor(colchon)}
           nombre="Fondo blindado"
           chip={chip}
-          derecha={<span className={!isMobile ? "text-[19px] font-display font-extrabold" : "text-[14px] font-display font-extrabold"} style={{ color: isMobile ? getColor(colchon) : 'var(--texto)' }}>{formatearCOP(colchon.apartado)}</span>}
+          derecha={<span className={!isMobile ? "text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" : "text-[14px] font-display font-extrabold"} style={{ color: isMobile ? getColor(colchon) : 'var(--texto)' }}>{formatearCOP(colchon.apartado)}</span>}
           linea={lleno ? "Su parte ya pasó a inversión" : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(reparto.colchon)}/mes</span> {isMobile ? "de" : "· meta"} {formatearCOP(meta)}</>}
           progreso={(colchon.apartado / meta) * 100}
           marcaHito={colchon.apartado < 1000000 ? (1000000 / meta) * 100 : undefined}
@@ -300,7 +300,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
         <TarjetaSobre
           color={getColor(inversion)}
           nombre="Inversión"
-          derecha={<span className="text-[19px] font-display font-extrabold" style={{ color: isMobile ? getColor(inversion) : 'var(--texto)' }}>{formatearCOP(inversion.apartado)}</span>}
+          derecha={<span className="text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" style={{ color: isMobile ? getColor(inversion) : 'var(--texto)' }}>{formatearCOP(inversion.apartado)}</span>}
           linea={<>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(reparto.inversion)}/mes</span> {!isMobile && `· ${formatearCOP(inversion.apartado)} de ${formatearCOP(metaAnual)} este año`}</>}
           progreso={metaAnual > 0 ? (inversion.apartado / metaAnual) * 100 : 0}
           pie={(!MODULOS_LISTOS && !isMobile) ? "Se invierte en Activos" : undefined}
@@ -320,7 +320,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
         <TarjetaSobre
           color={getColor(gustos)}
           nombre="Gustos"
-          derecha={<><span className={!isMobile ? "text-[19px] font-display font-extrabold" : "text-[14px] font-display font-extrabold"} style={{ color: isMobile ? getColor(gustos) : 'var(--texto)' }}>{formatearCOP(pres - gast)}</span>{!isMobile && <span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1">disp.</span>}</>}
+          derecha={<><span className={!isMobile ? "text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" : "text-[14px] font-display font-extrabold"} style={{ color: isMobile ? getColor(gustos) : 'var(--texto)' }}>{formatearCOP(pres - gast)}</span>{!isMobile && <span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1 @max-[15rem]:hidden">disp.</span>}</>}
           linea={isMobile ? `de ${formatearCOP(pres)}` : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
           progreso={pres > 0 ? (gast / pres) * 100 : 0}
           pie={!isMobile ? "Gasta sin culpa y sin endeudarte" : undefined}
@@ -331,9 +331,9 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     };
 
     return (
-      <div className="mb-5">
-        <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-[12px]">
-          Lo libre <span className="text-[14px] text-[color:var(--texto-3)] normal-case tracking-normal ml-2 tabular-nums font-medium">{formatearCOP(estado.libre)} al mes · lo que antes iba a deudas</span>
+      <div className="mb-4 md:mb-5">
+        <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-2 md:mb-[12px]">
+          Lo libre <span className="text-[14px] text-[color:var(--texto-3)] normal-case tracking-normal ml-2 tabular-nums font-medium">{formatearCOP(estado.libre)} al mes<span className="max-md:hidden"> · lo que antes iba a deudas</span></span>
         </h2>
         {isMobile ? (
           <div className="flex flex-col gap-2.5">
@@ -358,7 +358,7 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     const totalPropio = propios.reduce((a, s) => a + s.apartado, 0);
 
     return (
-      <div className="mb-5">
+      <div className="mb-4 md:mb-5">
         <div 
           className="rounded-[14px] border border-[var(--linea)] bg-[var(--superficie)] px-5 py-3.5 flex justify-between items-center cursor-pointer hover:border-[color:var(--texto-3)] transition-colors"
           onClick={() => setPropiosAbiertos(!propiosAbiertos)}
