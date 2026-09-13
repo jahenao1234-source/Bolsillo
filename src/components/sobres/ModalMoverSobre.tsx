@@ -36,7 +36,8 @@ export const ModalMoverSobre: React.FC<ModalMoverSobreProps> = ({
   }, [billeteras, sobres]);
 
   // ABONAR: Dónde se guarda (destino)
-  const [destinoId, setDestinoId] = useState<string>(sobre.billeteraId || (billeteras[0]?.id ?? ''));
+  // Sin cuenta, la persona la elige: no se da por hecho que la plata va a la primera de la lista.
+  const [destinoId, setDestinoId] = useState<string>(sobre.billeteraId || '');
 
   // ABONAR: De qué cuenta sale (origen)
   const [origenAbonoId, setOrigenAbonoId] = useState<string>(() => {
@@ -74,7 +75,7 @@ export const ModalMoverSobre: React.FC<ModalMoverSobreProps> = ({
       if (!destinoId) return setError('Selecciona dónde vas a guardar la plata');
       const cuentaOrigen = cuentasConPlataSinSobre.find(c => c.b.id === origenAbonoId);
       if (cuentaOrigen && monto > cuentaOrigen.disponible) {
-        return setError(`${cuentaOrigen.b.nombre} solo tiene ${formatearCOP(cuentaOrigen.disponible)} sin sobre`);
+        return setError(`${cuentaOrigen.b.nombre} tiene ${formatearCOP(Math.max(0, cuentaOrigen.disponible))} sin sobre`);
       }
       const res = onConfirmar(monto, origenAbonoId, destinoId);
       if (!res.exito) setError(res.error || 'Error al abonar');
@@ -94,6 +95,7 @@ export const ModalMoverSobre: React.FC<ModalMoverSobreProps> = ({
   const cOrigen = billeteras.find(b => b.id === origenAbonoId);
   const cRetiro = billeteras.find(b => b.id === destinoRetiroId);
   const cOrigenRetiro = billeteras.find(b => b.id === sobre.billeteraId);
+  const disponibleOrigen = cuentasConPlataSinSobre.find(c => c.b.id === origenAbonoId)?.disponible ?? 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--base)]/80 backdrop-blur-md animate-fade-in">
@@ -139,6 +141,7 @@ export const ModalMoverSobre: React.FC<ModalMoverSobreProps> = ({
                     onChange={e => { setDestinoId(e.target.value); if (error) setError(''); }}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm text-[color:var(--texto)] focus:outline-none focus:border-[var(--acento)] transition-colors cursor-pointer"
                   >
+                    <option value="">Elige una cuenta</option>
                     {billeteras.map((b) => (
                       <option key={b.id} value={b.id}>{b.nombre}</option>
                     ))}
@@ -213,12 +216,20 @@ export const ModalMoverSobre: React.FC<ModalMoverSobreProps> = ({
                 </strong>
               </p>
               
-              {esAbonar && origenAbonoId && destinoId && origenAbonoId !== destinoId && cOrigen && cDestino && monto > 0 && (
+              {esAbonar && cOrigen && monto > disponibleOrigen && (
+                <p className="text-[color:var(--alerta)]">
+                  {cOrigen.nombre} tiene {formatearCOP(Math.max(0, disponibleOrigen))} sin sobre
+                </p>
+              )}
+              {esAbonar && origenAbonoId && destinoId && origenAbonoId !== destinoId && cOrigen && cDestino && monto > 0 && monto <= disponibleOrigen && (
                 <p className="opacity-80">
                   {cOrigen.nombre} queda en {formatearCOP(cOrigen.saldo - monto)} · {cDestino.nombre} en {formatearCOP(cDestino.saldo + monto)}
                 </p>
               )}
-              {!esAbonar && destinoRetiroId && sobre.billeteraId && destinoRetiroId !== sobre.billeteraId && cOrigenRetiro && cRetiro && monto > 0 && (
+              {!esAbonar && monto > sobre.apartado && (
+                <p className="text-[color:var(--alerta)]">El sobre tiene {formatearCOP(sobre.apartado)}</p>
+              )}
+              {!esAbonar && destinoRetiroId && sobre.billeteraId && destinoRetiroId !== sobre.billeteraId && cOrigenRetiro && cRetiro && monto > 0 && monto <= sobre.apartado && (
                 <p className="opacity-80">
                   {cOrigenRetiro.nombre} queda en {formatearCOP(cOrigenRetiro.saldo - monto)} · {cRetiro.nombre} en {formatearCOP(cRetiro.saldo + monto)}
                 </p>

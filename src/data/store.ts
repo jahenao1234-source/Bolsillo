@@ -1463,7 +1463,7 @@ export function abonarASobre(
 
   const sinSobreOrigen = sinSobre(cuentaOrigen, sobres);
   if (monto > sinSobreOrigen) {
-    return { exito: false, error: `${cuentaOrigen.nombre} tiene $${sinSobreOrigen} sin sobre` };
+    return { exito: false, error: `${cuentaOrigen.nombre} tiene ${formatearCOP(Math.max(0, sinSobreOrigen))} sin sobre` };
   }
 
   // El aporte del mes se puede mover por partes, sin pasarse de lo que le toca.
@@ -1552,8 +1552,11 @@ export function retirarDeSobre(
   const sobre = { ...sobres[idxSobre] };
   const cuentaDestino = { ...billeteras[idxDestino] };
 
+  if (monto <= 0) {
+    return { exito: false, error: 'El monto debe ser mayor a 0' };
+  }
   if (monto > sobre.apartado) {
-    return { exito: false, error: `El sobre tiene $${sobre.apartado}` };
+    return { exito: false, error: `El sobre tiene ${formatearCOP(sobre.apartado)}` };
   }
 
   if (!sobre.billeteraId) {
