@@ -50,6 +50,7 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, billeteras 
   const esSistema = sobre?.sistema;
   const esBasico = sobre?.grupo === 'basico';
   const esDetalleAhorro = modo === 'editar' && !!sobre && esSobreDeAcumulacion(sobre);
+  const esPresupuesto = !!esSistema && (esBasico || sobre?.id === ID_LIBRE_GUSTOS);
   const titulo = esDetalleAhorro ? sobre!.nombre : modo === 'crear' ? 'Nuevo sobre' : 'Editar sobre';
 
   const nombreCuenta = (id?: string) => billeteras.find((b) => b.id === id)?.nombre;
@@ -84,7 +85,7 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, billeteras 
         creadoEn: sobre?.creadoEn || new Date().toISOString(),
       };
     }
-    if (esDetalleAhorro) nuevo.billeteraId = cuentaId || undefined;
+    if (esDetalleAhorro || esPresupuesto) nuevo.billeteraId = cuentaId || undefined;
 
     onGuardar(nuevo);
   };
@@ -225,6 +226,19 @@ export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, billeteras 
               </div>
             )}
           </div>
+
+          {esPresupuesto && (
+            <div className="space-y-1.5">
+              <label className={claseRotulo}>Se paga desde</label>
+              <select value={cuentaId} onChange={(e) => setCuentaId(e.target.value)} className={`${claseCampo} cursor-pointer`}>
+                <option value="">Ninguna</option>
+                {billeteras.map((b) => (
+                  <option key={b.id} value={b.id}>{b.nombre}</option>
+                ))}
+              </select>
+              <p className="text-[11.5px] text-[color:var(--texto-3)]">Al registrar un gasto de este sobre, esta cuenta sale elegida.</p>
+            </div>
+          )}
 
           {!esSistema && (
             <div className="space-y-1.5">

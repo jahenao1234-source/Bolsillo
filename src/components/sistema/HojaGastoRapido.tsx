@@ -55,9 +55,12 @@ export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
   const [categoria, setCategoria] = useState('Comida');
   const [error, setError] = useState('');
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  // Si la persona eligió la billetera a mano, la categoría ya no la cambia.
+  const [elegidaAMano, setElegidaAMano] = useState(false);
 
   useEffect(() => {
     if (!abierto) return;
+    setElegidaAMano(false);
     setMontoStr('');
     setConcepto('');
     setCategoria('Comida');
@@ -70,7 +73,7 @@ export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
   }, [abierto]);
 
   useEffect(() => {
-    if (!abierto) return;
+    if (!abierto || elegidaAMano) return;
     let sId: string | undefined;
     if (CATS_ARRIENDO.includes(categoria)) sId = ID_BASICO_ARRIENDO;
     else if (CATS_MERCADO.includes(categoria)) sId = ID_BASICO_MERCADO;
@@ -84,7 +87,7 @@ export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
         setBilleteraId(sobre.billeteraId);
       }
     }
-  }, [categoria, sobres, billeteras, abierto]);
+  }, [categoria, sobres, billeteras, abierto, elegidaAMano]);
 
   if (!abierto) return null;
 
@@ -205,7 +208,7 @@ export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
             />
             <select
               value={billeteraId}
-              onChange={(e) => setBilleteraId(e.target.value)}
+              onChange={(e) => { setBilleteraId(e.target.value); setElegidaAMano(true); }}
               aria-label="De dónde salió"
               className={`${campo} text-sm`}
             >
