@@ -68,7 +68,7 @@ src/hooks/useBolsilloData.ts    ← el hook que usan las pantallas
 
 - **`PerfilFlujo`** `{ ingresoMensual, gastosBasicos, configuradoEn }`. `setPerfilFlujo` también fija `disponibleMensual = ingreso − básicos`: **la plata para deudas no se adivina**.
 - **`Deuda`** suma `tasaEA` (la manda; `tasaMensual` se deriva), `diaCorte`, `diaPago` y `cupo`.
-- **Sobres del sistema** (`sobre-colchon`, `sobre-inversion`, `basico-arriendo`, etc.) se aseguran siempre. Tienen `sistema: true` y no se borran. Se dividen por `grupo` (`'basico' | 'libre'`) o sin grupo (propios). Tienen `presupuestoMensual` para calcular el disponible y pueden tener un arreglo de `historial` de movimientos (`{ id, fecha, monto, descripcion }`).
+- **Sobres del sistema** (`sobre-colchon`, `sobre-inversion`, `basico-arriendo`, etc.) se aseguran siempre. Tienen `sistema: true` y no se borran. Se dividen por `grupo` (`'basico' | 'libre'`) o sin grupo (propios). Tienen `presupuestoMensual` para calcular el disponible y pueden tener un arreglo de `historial` de movimientos (`{ id, fecha, monto, origen: 'aporte_mensual' | 'rescate' | 'ajuste' | 'retiro', nota? }`).
 - **Movimiento** ahora tiene `sobreId` opcional para restar del presupuesto de sobres básicos o de gustos.
 - **Ejemplo** (`VITE_DATOS_EJEMPLO`, activo en desarrollo): Mastercard $1.200.000 (28% E.A.), Nu $2.500.000 (29%), libre inversión $6.100.000 (19,5%). Ingreso $3.200.000, básicos $2.230.000, **$970.000 para deudas**.
 
