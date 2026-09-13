@@ -373,6 +373,95 @@ export function fechaAporteEsteMes(sobre: Sobre, hoy: Date = new Date()): Date |
   return aporte ? new Date(aporte.fecha) : null;
 }
 
+export function inicioAnioPro(sobres: Sobre[]): Date | null {
+  const aportes = sobres
+    .filter(s => s.id === ID_SOBRE_COLCHON || s.id === ID_SOBRE_INVERSION)
+    .flatMap(s => s.historial || [])
+    .filter(h => h.origen === 'aporte_mensual');
+  if (aportes.length === 0) return null;
+  const fechas = aportes.map(h => new Date(h.fecha).getTime());
+  return new Date(Math.min(...fechas));
+}
+
+export function resumenAnioPro(sobres: Sobre[], reparto: { colchon: number, inversion: number }, hoy: Date = new Date()) {
+  const meta = (reparto.colchon + reparto.inversion) * 12;
+  const inicio = inicioAnioPro(sobres);
+  if (!inicio) return { meta, progreso: 0, mes: 0 };
+  
+  const unAnioDespues = new Date(inicio);
+  unAnioDespues.setFullYear(unAnioDespues.getFullYear() + 1);
+
+  const aportes = sobres
+    .filter(s => s.id === ID_SOBRE_COLCHON || s.id === ID_SOBRE_INVERSION)
+    .flatMap(s => s.historial || [])
+    .filter(h => h.origen === 'aporte_mensual')
+    .filter(h => {
+      const d = new Date(h.fecha);
+      return d >= inicio && d < unAnioDespues;
+    });
+  const progreso = aportes.reduce((a, h) => a + h.monto, 0);
+
+  let mesesDif = (hoy.getFullYear() - inicio.getFullYear()) * 12 + (hoy.getMonth() - inicio.getMonth()) + 1;
+  if (mesesDif < 1) mesesDif = 1;
+  if (mesesDif > 12) mesesDif = 12;
+
+  return { meta, progreso, mes: mesesDif };
+}
+
+export function siguientePaso(
+  estado: ReturnType<typeof estadoBaseCero>,
+  fase: 'deudas' | 'blindar' | 'crecer',
+  sobres: Sobre[],
+  reparto: { colchon: number, inversion: number },
+  hoy: Date = new Date(),
+  metaFondo: number
+) {
+  if (estado.deudasActivas) {
+    return {
+      texto: "Pagar tu plan de este mes",
+      detalle: "Tus deudas van primero",
+      cta: "Ir a Mi plan",
+      accionId: 'plan'
+    };
+  }
+
+  const colchon = sobres.find(s => s.id === ID_SOBRE_COLCHON);
+  const inversion = sobres.find(s => s.id === ID_SOBRE_INVERSION);
+
+  if (fase === 'blindar') {
+    if (!colchon || !fechaAporteEsteMes(colchon, hoy)) {
+      const apartado = colchon?.apartado || 0;
+      return {
+        texto: `Mover ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(reparto.colchon)} al fondo blindado`,
+        detalle: `Llega a ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(apartado + reparto.colchon)} de ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(metaFondo)}`,
+        cta: "Mover al fondo",
+        accionId: 'mover-fondo'
+      };
+    }
+  }
+
+  if (!inversion || !fechaAporteEsteMes(inversion, hoy)) {
+    const apartado = inversion?.apartado || 0;
+    return {
+      texto: `Mover ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(reparto.inversion)} a inversión`,
+      detalle: `Llega a ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(apartado + reparto.inversion)}`,
+      cta: "Mover a inversión",
+      accionId: 'mover-inversion'
+    };
+  }
+
+  const mesSiguiente = new Date(hoy);
+  mesSiguiente.setMonth(mesSiguiente.getMonth() + 1);
+  const nombreMesSiguiente = mesSiguiente.toLocaleString('es-CO', { month: 'long' }).toLowerCase();
+
+  return {
+    texto: "Todo tu mes tiene dueño",
+    detalle: `Tu próximo aporte: 1 de ${nombreMesSiguiente}`,
+    cta: undefined,
+    accionId: 'nada'
+  };
+}
+
 export function estadoBaseCero(perfil: PerfilFlujo | null, sobres: Sobre[], deudas: Deuda[]) {
   if (!perfil) return { ingreso: 0, basicosAsignado: 0, libre: 0, porAsignar: 0, paraDeudas: 0, deudasActivas: false };
 

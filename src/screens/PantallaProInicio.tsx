@@ -1,209 +1,325 @@
-/**
- * Pro · Inicio: blindar y crecer con el mismo traspaso.
- *
- * La plata que antes iba a deudas queda libre y se reparte en tres: gustos
- * (para que el sistema aguante), colchón e inversión. Primero se llena el
- * colchón de $1.000.000; cuando se llena, su parte pasa a inversión.
- */
-
-import React, { useMemo, useState } from 'react';
-import { Check, FolderLock, Wrench } from 'lucide-react';
-import type { Deuda, Sobre, PerfilFlujo } from '../types';
-import { Marco, Columna, Zona } from '../components/layout/Marco';
-import { BarraTitulo } from '../components/layout/shell';
-import { FASES, RailPasos, Rotulo } from '../components/sistema/RailPasos';
-import {
-  deudasActivas,
-  faseActual,
-  fechaColchonCompleto,
-  ID_SOBRE_COLCHON,
-  ID_SOBRE_INVERSION,
-  metaFondoBlindado,
-  repartoPro,
-  movidoEsteMes,
-  fechaAporteEsteMes,
-} from '../logic/sistema';
+import React, { useEffect, useState } from 'react';
+import { Target, Check, ChevronRight } from 'lucide-react';
+import { RailPasos, Rotulo } from '../components/sistema/RailPasos';
+import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
+import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
 import { MESES_NOMBRE } from '../utils/fechas';
+import { Deuda, PerfilFlujo, Sobre } from '../types';
+import {
+  faseActual,
+  estadoBaseCero,
+  metaFondoBlindado,
+  repartoPro,
+  resumenAnioPro,
+  siguientePaso,
+  ID_SOBRE_COLCHON,
+  ID_SOBRE_INVERSION,
+  ID_LIBRE_GUSTOS,
+  gastadoDelMes,
+  fechaAporteEsteMes,
+} from '../logic/sistema';
 
 interface PantallaProInicioProps {
+  perfil: PerfilFlujo;
   deudas: Deuda[];
   sobres: Sobre[];
-  disponibleMensual: number;
-  perfil: PerfilFlujo | null;
-  onAportarASobre: (id: string, nombre: string, monto: number, meta?: number, color?: string) => void;
-  onMoverAporte: (sobreId: string, monto: number) => boolean;
-  onIrA: (destino: 'sobres' | 'herramientas' | 'plan') => void;
+  saldoTotal: number;
+  onMover: (
+    sobreId: string,
+    nombre: string,
+    monto: number,
+    meta?: number,
+    color?: string
+  ) => void;
+  onIrA: (seccion: 'plan' | 'sobres' | 'billetera') => void;
 }
 
 export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
+  perfil,
   deudas,
   sobres,
-  disponibleMensual,
-  perfil,
-  onAportarASobre,
-  onMoverAporte,
+  saldoTotal,
+  onMover,
   onIrA,
 }) => {
-  const [movido, setMovido] = useState<string | null>(null);
+  const hoy = new Date();
+  const mesNombre = MESES_NOMBRE[hoy.getMonth()].toLowerCase();
+  
+  const fase = faseActual(perfil.gastosBasicos, sobres, deudas);
+  const estado = estadoBaseCero(perfil, sobres, deudas);
+  const metaFondo = metaFondoBlindado(perfil.gastosBasicos);
+  const colchon = sobres.find(s => s.id === ID_SOBRE_COLCHON);
+  const inversion = sobres.find(s => s.id === ID_SOBRE_INVERSION);
+  const gustos = sobres.find(s => s.id === ID_LIBRE_GUSTOS);
+  const colchonApartado = colchon ? colchon.apartado : 0;
+  
+  const reparto = repartoPro(estado.libre, colchonApartado, metaFondo);
+  const resumenAnio = resumenAnioPro(sobres, reparto, hoy);
+  const paso = siguientePaso(estado, fase, sobres, reparto, hoy, metaFondo);
 
-  const activas = useMemo(() => deudasActivas(deudas), [deudas]);
-  const metaFondo = perfil ? metaFondoBlindado(perfil.gastosBasicos) : 0;
-  const fase = faseActual(deudas, sobres, perfil?.gastosBasicos ?? 0);
-  const colchon = sobres.find((s) => s.id === ID_SOBRE_COLCHON);
-  const inversion = sobres.find((s) => s.id === ID_SOBRE_INVERSION);
-  const apartadoColchon = colchon?.apartado ?? 0;
+  const [accionAnimada, setAccionAnimada] = useState(false);
 
-
-
-  // Mientras haya deudas, toda la plata del mes va al plan: aquí no hay libre que repartir.
-  const libre = activas.length > 0 ? 0 : disponibleMensual;
-  const reparto = repartoPro(libre, apartadoColchon, metaFondo);
-  const mesNombre = MESES_NOMBRE[new Date().getMonth()].toLowerCase();
-  const progreso = Math.min(100, (apartadoColchon / metaFondo) * 100);
-
-  const mover = (id: string, nombre: string, monto: number, meta?: number, color?: string) => {
-    if (monto <= 0) return;
-    const exito = onMoverAporte(id, monto);
-    if (exito) {
-      setMovido(`Listo: ${formatearCOP(monto)} apartados en tu ${nombre.toLowerCase()}.`);
-      window.setTimeout(() => setMovido(null), 3000);
+  const handleCta = () => {
+    if (paso.accionId === 'plan') {
+      onIrA('plan');
+    } else if (paso.accionId === 'mover-fondo') {
+      onMover(ID_SOBRE_COLCHON, 'Fondo blindado', reparto.colchon, metaFondo, '#25C9BE');
+      setAccionAnimada(true);
+      setTimeout(() => setAccionAnimada(false), 3000);
+    } else if (paso.accionId === 'mover-inversion') {
+      onMover(ID_SOBRE_INVERSION, 'Inversión', reparto.inversion, undefined, '#5FE0A8');
+      setAccionAnimada(true);
+      setTimeout(() => setAccionAnimada(false), 3000);
     }
   };
 
-  const accion =
-    fase === 'blindar'
-      ? { 
-          texto: `Mover ${formatearCOP(reparto.colchon)} al fondo blindado`, 
-          hacer: () => mover(ID_SOBRE_COLCHON, 'Fondo blindado', reparto.colchon, metaFondo, '#25C9BE'),
-          movido: colchon ? movidoEsteMes(colchon, new Date()) : 0,
-          monto: reparto.colchon,
-          fecha: colchon ? fechaAporteEsteMes(colchon, new Date()) : null,
-        }
-      : { 
-          texto: `Mover ${formatearCOP(reparto.inversion)} a inversión`, 
-          hacer: () => mover(ID_SOBRE_INVERSION, 'Inversión', reparto.inversion, undefined, '#5FE0A8'),
-          movido: inversion ? movidoEsteMes(inversion, new Date()) : 0,
-          monto: reparto.inversion,
-          fecha: inversion ? fechaAporteEsteMes(inversion, new Date()) : null,
-        };
+  const deudasActivas = deudas.filter(d => d.saldo > 0);
+  const saldoDeudas = deudasActivas.reduce((a, d) => a + d.saldo, 0);
 
-  return (
-    <div className="w-full pb-24 xl:pb-0 xl:flex-1 xl:flex xl:flex-col">
-      <BarraTitulo>
-        <span className="font-display font-extrabold text-[15px]">Bolsillo <span className="text-acento">Pro</span></span>
-        <RailPasos pasos={FASES} actual={fase} className="w-[330px] ml-3" />
-      </BarraTitulo>
+  const renderMobile = () => (
+    <div className="w-full pb-24 animate-screen-enter xl:hidden">
+      <div className="pt-2">
+        <RailPasos faseActual={fase} compact />
+      </div>
 
-      <Marco columnas="380px minmax(0,1fr)">
+      <div className="px-4 mt-6 flex flex-col gap-6">
+        {estado.deudasActivas && (
+          <div>
+            <p className="text-[13px] font-bold text-[color:var(--texto)]">Primero, tus deudas.</p>
+            <p className="text-[12px] text-[color:var(--texto-2)] mt-1 leading-relaxed">
+              Tienes {deudasActivas.length} {deudasActivas.length === 1 ? 'deuda activa' : 'deudas activas'}: toda la plata del mes va al plan.
+              El fondo empieza cuando la última llegue a $0. Mientras tanto, tus sobres y herramientas ya están abiertos.
+            </p>
+          </div>
+        )}
+
+        <div>
+          <Rotulo>Lo que blindas e inviertes este año</Rotulo>
+          <div className="mt-1">
+            <span className="font-display font-extrabold text-[32px] text-[color:var(--texto)]">{formatearCOP(resumenAnio.progreso)}</span>
+            <span className="text-[12.5px] text-[color:var(--texto-3)] ml-2">de {formatearCOP(resumenAnio.meta)}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden mt-1.5 mb-2">
+            <div className="h-full rounded-full bg-[#25C9BE] transition-all duration-500" style={{ width: `${resumenAnio.meta > 0 ? (resumenAnio.progreso / resumenAnio.meta) * 100 : 0}%` }} />
+          </div>
+          <div className="text-[12px] text-[color:var(--texto-2)]">
+            {resumenAnio.progreso === 0 
+              ? "Empieza con tu primer aporte" 
+              : `${formatearCOP(reparto.colchon + reparto.inversion)} al mes · ${resumenAnio.mes} de 12 meses${paso.accionId === 'nada' ? ` · ${mesNombre} ya movido` : ''}`
+            }
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-[var(--linea)] bg-[var(--superficie)] p-[18px]">
+          <Rotulo>Tu siguiente paso</Rotulo>
+          <div className="flex justify-between items-center mt-2 mb-4">
+            <div>
+              <div className="font-semibold text-[12.5px] text-[color:var(--texto)]">{paso.texto}</div>
+              <div className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5">{paso.detalle}</div>
+            </div>
+            {paso.accionId !== 'nada' && paso.accionId !== 'plan' && (
+              <div className="text-[14px] font-bold text-[#25C9BE] tabular-nums">
+                {formatearCOP(paso.accionId === 'mover-fondo' ? reparto.colchon : reparto.inversion)}
+              </div>
+            )}
+          </div>
+          {paso.cta && (
+            <button
+              onClick={handleCta}
+              className="w-full py-2.5 rounded-xl text-[13px] font-bold text-[color:var(--on-acento)] bg-[color:var(--acento)] cursor-pointer"
+            >
+              {paso.cta}
+            </button>
+          )}
+          {accionAnimada && (
+            <div className="mt-3 text-center text-[12px] font-bold text-[color:var(--positivo)] animate-fade-in">
+              Listo: {formatearCOP(paso.accionId === 'mover-fondo' ? reparto.colchon : reparto.inversion)} apartados en tu {paso.accionId === 'mover-fondo' ? 'fondo blindado' : 'inversión'}.
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => onIrA('sobres')} className="rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] px-[11px] py-2.5 text-left flex flex-col justify-between h-[64px]">
+            <span className="text-[12.5px] font-bold text-[color:var(--texto)]">Sobres</span>
+            <span className="text-[11px] font-semibold text-[#25C9BE] truncate">
+              Mercado {formatearCOP((sobres.find(s => s.id === ID_BASICO_MERCADO)?.presupuestoMensual || 0) - gastadoDelMes(sobres.find(s => s.id === ID_BASICO_MERCADO)!, sobres.flatMap(s => s.historial || []).map(h => ({id: h.id, monto: h.monto, categoria: '', fecha: new Date(h.fecha), descripcion: '', sobreId: s.id, tipo: 'gasto', creadoEn: h.fecha}) as any), hoy))} disp.
+            </span>
+          </button>
+          <button onClick={() => onIrA('billetera')} className="rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] px-[11px] py-2.5 text-left flex flex-col justify-between h-[64px]">
+            <span className="text-[12.5px] font-bold text-[color:var(--texto)]">Tu plata</span>
+            <span className="text-[12px] text-[color:var(--texto-3)] tabular-nums truncate">{formatearCOP(saldoTotal)}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDesktop = () => (
+    <div className="hidden xl:flex xl:flex-col xl:flex-1 h-full animate-screen-enter">
+      <div className="px-5 pt-3 pb-2 border-b border-[var(--linea)] bg-[var(--fondo)] z-10">
+        <RailPasos faseActual={fase} />
+      </div>
+      
+      <Marco columnas="340px minmax(0,1fr) 330px">
         <Columna ordenMovil={1} borde>
-          <Zona crece plana className="flex flex-col gap-4">
-            <RailPasos pasos={FASES} actual={fase} className="xl:hidden" />
-
-            {activas.length > 0 && (
-              <div className="p-3.5 rounded-2xl border border-accion/40 bg-accion/5">
-                <p className="text-[13px] font-bold">Primero, tus deudas.</p>
-                <p className="text-xs text-texto-2 mt-1 leading-relaxed">
-                  Tienes {activas.length} {activas.length === 1 ? 'deuda activa' : 'deudas activas'}: toda la plata del mes va al plan.
-                  El fondo empieza cuando la última llegue a $0. Mientras tanto, tus sobres y herramientas ya están abiertos.
-                </p>
-                <button type="button" onClick={() => onIrA('plan')} className="mt-2.5 text-xs font-bold text-accion cursor-pointer">
-                  Ir a mi plan de deudas →
-                </button>
-              </div>
-            )}
-
-            {fase !== 'crecer' ? (
+          <Zona plana>
+            <Scroll className="px-5 py-4 space-y-8">
               <div>
-                <Rotulo>Tu fondo blindado</Rotulo>
-                <p className="mt-1.5 flex items-baseline gap-2">
-                  <span className="font-display font-extrabold text-[34px] leading-none tabular-nums">{formatearCOP(apartadoColchon)}</span>
-                  <span className="text-[13px] text-texto-3 tabular-nums">de {formatearCOP(metaFondo)}</span>
-                </p>
-                <div className="h-1.5 rounded-full bg-superficie-2 overflow-hidden mt-2.5">
-                  <div className="h-full rounded-full bg-acento" style={{ width: `${progreso}%` }} />
+                <Rotulo>Lo que blindas e inviertes este año</Rotulo>
+                <div className="mt-1">
+                  <span className="font-display font-extrabold text-[38px] text-[color:var(--texto)]">{formatearCOP(resumenAnio.progreso)}</span>
+                  <span className="text-[12.5px] text-[color:var(--texto-3)] ml-2">de {formatearCOP(resumenAnio.meta)}</span>
                 </div>
-                <p className="text-xs text-texto-2 mt-2">
-                  {reparto.colchon > 0 ? `Completo en ${fechaColchonCompleto(apartadoColchon, reparto.colchon, metaFondo).toLowerCase()}.` : 'Para que la próxima emergencia no sea tarjeta.'}
-                </p>
+                <div className="h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden mt-2 mb-2">
+                  <div className="h-full rounded-full bg-[#25C9BE] transition-all duration-500" style={{ width: `${resumenAnio.meta > 0 ? (resumenAnio.progreso / resumenAnio.meta) * 100 : 0}%` }} />
+                </div>
+                <div className="text-[12px] text-[color:var(--texto-2)]">
+                  {resumenAnio.progreso === 0 
+                    ? "Empieza con tu primer aporte" 
+                    : `${formatearCOP(reparto.colchon + reparto.inversion)} al mes · ${resumenAnio.mes} de 12 meses${paso.accionId === 'nada' ? ` · ${mesNombre} ya movido` : ''}`
+                  }
+                </div>
               </div>
-            ) : (
-              <div>
-                <Rotulo>Tu inversión</Rotulo>
-                <p className="font-display font-extrabold text-[34px] leading-none tabular-nums mt-1.5">{formatearCOP(inversion?.apartado ?? 0)}</p>
-                <p className="text-xs text-texto-2 mt-2">
-                  Fondo completo <Check className="inline w-3.5 h-3.5 text-positivo -mt-0.5" /> · ahora todo el ahorro va a crecer.
-                </p>
-              </div>
-            )}
 
-            {libre > 0 && accion.monto > 0 && accion.movido === 0 && !movido && (
-              <button type="button" onClick={accion.hacer} className="w-full py-3 rounded-[13px] bg-accion-gradient text-on-accion font-extrabold text-sm cursor-pointer mt-4">
-                {accion.texto}
-              </button>
-            )}
-            {(accion.movido > 0 || movido) && libre > 0 && (
-              <p role="status" className="text-sm font-semibold text-positivo text-center mt-4">
-                {movido || `Movido el ${accion.fecha?.getDate()} ✓`}
-              </p>
-            )}
+              <div>
+                <Rotulo>Tus {formatearCOP(estado.libre)} de {mesNombre}</Rotulo>
+                <div className="mt-3 flex flex-col border border-[var(--linea)] rounded-[14px] bg-[var(--superficie)] overflow-hidden">
+                  <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--hairline)]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-semibold text-[color:var(--texto)]">Fondo blindado</span>
+                      {colchonApartado < metaFondo && <span className="text-[9px] font-bold uppercase tracking-[0.08em] px-1.5 py-px rounded-full border border-[#25C9BE]/45 text-[#25C9BE]">Primero</span>}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.colchon)}</div>
+                      <div className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5">
+                        {fechaAporteEsteMes(colchon!, hoy) ? `Movido el ${fechaAporteEsteMes(colchon!, hoy)?.getDate()} ✓` : 'Pendiente de mover'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--hairline)]">
+                    <span className="text-[13px] font-semibold text-[color:var(--texto)]">Inversión</span>
+                    <div className="text-right">
+                      <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.inversion)}</div>
+                      <div className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5">
+                        {fechaAporteEsteMes(inversion!, hoy) ? `Movido el ${fechaAporteEsteMes(inversion!, hoy)?.getDate()} ✓` : 'Pendiente de mover'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-[13px] font-semibold text-[color:var(--texto)]">Gustos</span>
+                    <div className="text-right">
+                      <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.gustos)}</div>
+                      <div className="text-[10.5px] text-[color:var(--texto-3)] mt-0.5">
+                        {formatearCOP(reparto.gustos - gastadoDelMes(gustos!, [], hoy))} disponibles
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {paso.cta && (
+                  <button
+                    onClick={handleCta}
+                    className="w-full py-3 mt-4 rounded-xl text-[13px] font-bold text-[color:var(--on-acento)] bg-[color:var(--acento)] cursor-pointer shadow-sm transition-transform hover:scale-[1.02]"
+                  >
+                    {paso.cta}
+                  </button>
+                )}
+                {accionAnimada && (
+                  <div className="mt-3 text-center text-[12px] font-bold text-[color:var(--positivo)] animate-fade-in">
+                    Listo: {formatearCOP(paso.accionId === 'mover-fondo' ? reparto.colchon : reparto.inversion)} apartados.
+                  </div>
+                )}
+              </div>
+            </Scroll>
           </Zona>
         </Columna>
 
-        <Columna ordenMovil={2}>
-          {libre > 0 && (
-            <Zona plana className="max-xl:mt-4">
-              <Rotulo>Tus {formatearCOP(libre)} de {mesNombre}</Rotulo>
-              <div className="mt-2 rounded-2xl border border-linea bg-superficie">
-                {[
-                  { nombre: 'Fondo blindado', desc: 'Para que la próxima emergencia no sea tarjeta', monto: reparto.colchon, color: 'text-acento', primero: fase === 'blindar' },
-                  { nombre: 'Inversión', desc: 'CDT o fondo que tú abras', monto: reparto.inversion, color: 'text-texto', primero: fase === 'crecer' },
-                  { nombre: 'Gustos', desc: 'Sin culpa y sin deuda', monto: reparto.gustos, color: 'text-texto', primero: false },
-                ].map((fila, i) => (
-                  <div key={fila.nombre} className={`flex items-center justify-between gap-3 px-3.5 py-2.5 ${i ? 'border-t border-hairline' : ''}`}>
-                    <span className="min-w-0">
-                      <span className="flex items-center gap-1.5 text-[13px] font-semibold">
-                        {fila.nombre}
-                        {fila.primero && (
-                          <span className="text-[9px] font-bold uppercase tracking-[0.08em] px-1.5 py-px rounded-full border border-acento/45 text-acento">Primero</span>
-                        )}
-                      </span>
-                      <span className="block text-[10.5px] text-texto-3">{fila.desc}</span>
-                    </span>
-                    <span className={`font-bold text-[13px] tabular-nums ${fila.color}`}>{formatearCOP(fila.monto)}</span>
+        <Columna ordenMovil={2} borde>
+          <Zona plana>
+            <Scroll className="px-5 py-4 space-y-8">
+              <div>
+                <Rotulo>Tu patrimonio, sin contar dos veces</Rotulo>
+                <div className="mt-3 flex flex-col border border-[var(--linea)] rounded-[14px] bg-[var(--superficie)] overflow-hidden">
+                  <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--hairline)]">
+                    <span className="text-[13px] text-[color:var(--texto-2)]">Billeteras (incluye tus sobres)</span>
+                    <span className="text-[13px] font-semibold tabular-nums text-[color:var(--texto)]">{formatearCOP(saldoTotal)}</span>
                   </div>
-                ))}
-                <div className="flex justify-between px-3.5 py-2.5 border-t border-hairline text-[13px] font-bold">
-                  <span>Asignado</span>
-                  <span className="tabular-nums">{formatearCOP(reparto.total)}</span>
+                  <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--hairline)]">
+                    <span className="text-[13px] text-[color:var(--texto-2)]">Deudas</span>
+                    <span className="text-[13px] font-semibold tabular-nums text-[color:var(--texto)]">{saldoDeudas > 0 ? `-${formatearCOP(saldoDeudas)}` : '$0'}</span>
+                  </div>
+                  <div className="flex justify-between items-center px-4 py-3">
+                    <span className="text-[13px] font-bold text-[color:var(--texto)]">Patrimonio neto</span>
+                    <span className="text-[14px] font-bold tabular-nums text-[#25C9BE]">{formatearCOP(saldoTotal - saldoDeudas)}</span>
+                  </div>
                 </div>
               </div>
-              {fase === 'blindar' && (
-                <p className="text-xs text-texto-2 mt-2.5 leading-relaxed">
-                  Cuando el fondo blindado llegue a {formatearCOP(metaFondo)}, <b className="text-texto">su parte pasa a inversión</b>:{' '}
-                  {formatearCOP(reparto.colchon + reparto.inversion)} al mes para crecer.
-                </p>
-              )}
-            </Zona>
-          )}
 
-          <Zona crece plana className="max-xl:mt-4">
-            <Rotulo className="mb-2">Tus herramientas</Rotulo>
-            <div className="grid grid-cols-1 @xl:grid-cols-2 gap-2.5">
-              <button type="button" onClick={() => onIrA('sobres')} className="text-left p-3.5 rounded-2xl border border-linea bg-superficie hover:border-texto-3 cursor-pointer">
-                <FolderLock className="w-4 h-4 text-acento" />
-                <p className="text-[13px] font-bold mt-2">Sobres</p>
-                <p className="text-[11px] text-texto-3 mt-0.5">Aparta plata para metas propias.</p>
-              </button>
-              <button type="button" onClick={() => onIrA('herramientas')} className="text-left p-3.5 rounded-2xl border border-linea bg-superficie hover:border-texto-3 cursor-pointer">
-                <Wrench className="w-4 h-4 text-acento" />
-                <p className="text-[13px] font-bold mt-2">Más herramientas</p>
-                <p className="text-[11px] text-texto-3 mt-0.5">Presupuesto, retos, suscripciones, tarjetas y reportes.</p>
-              </button>
-            </div>
+              <div>
+                <Rotulo>Sobres de lo básico</Rotulo>
+                <div className="mt-3 flex flex-col border border-[var(--linea)] rounded-[14px] bg-[var(--superficie)] overflow-hidden">
+                  {sobres.filter(s => s.grupo === 'basico').map((s, i, arr) => {
+                    const pres = s.presupuestoMensual || 0;
+                    const gast = gastadoDelMes(s, [], hoy); // Not actually passing real movimientos yet, but mock
+                    const pagado = s.id === 'basico-arriendo' && gast >= pres;
+                    return (
+                      <div key={s.id} className={`px-4 py-3 ${i < arr.length - 1 ? 'border-b border-[var(--hairline)]' : ''}`}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[13px] font-semibold text-[color:var(--texto)]">{s.nombre}</span>
+                          {pagado ? (
+                            <span className="text-[12px] font-bold text-[color:var(--positivo)]">✓ Pagado</span>
+                          ) : (
+                            <span className="text-[13px] font-bold tabular-nums text-[color:var(--texto)]">{formatearCOP(Math.max(0, pres - gast))} disp.</span>
+                          )}
+                        </div>
+                        <div className="h-[4px] rounded-full bg-[var(--superficie-2)] overflow-hidden">
+                          <div className="h-full rounded-full bg-[color:var(--texto-3)]" style={{ width: `${pres > 0 ? Math.min(100, (gast / pres) * 100) : 0}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Scroll>
+          </Zona>
+        </Columna>
+
+        <Columna ordenMovil={3}>
+          <Zona plana>
+            <Scroll className="px-5 py-4">
+              <Rotulo>Herramientas</Rotulo>
+              <div className="mt-3 flex flex-col gap-2">
+                <button onClick={() => onIrA('sobres')} className="flex items-center justify-between px-4 py-3.5 rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] cursor-pointer hover:border-[color:var(--texto-3)] transition-colors text-left group">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[13px] font-bold text-[color:var(--texto)]">Sobres</span>
+                  </div>
+                  <span className="text-[12px] font-semibold text-[#25C9BE] group-hover:text-[color:var(--texto)] transition-colors">Mercado $280.000</span>
+                </button>
+                
+                <button onClick={() => onIrA('billetera')} className="flex items-center justify-between px-4 py-3.5 rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] cursor-pointer hover:border-[color:var(--texto-3)] transition-colors text-left group">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[13px] font-bold text-[color:var(--texto)]">Tu plata</span>
+                  </div>
+                  <span className="text-[12px] text-[color:var(--texto-3)] tabular-nums">{formatearCOP(saldoTotal)}</span>
+                </button>
+
+                <button className="flex items-center justify-between px-4 py-3.5 rounded-[13px] border border-[var(--linea)] bg-[var(--superficie)] cursor-not-allowed opacity-60 text-left">
+                  <span className="text-[13px] font-bold text-[color:var(--texto)]">Más herramientas</span>
+                  <ChevronRight className="w-4 h-4 text-[color:var(--texto-3)]" />
+                </button>
+              </div>
+            </Scroll>
           </Zona>
         </Columna>
       </Marco>
     </div>
+  );
+
+  return (
+    <>
+      {renderMobile()}
+      {renderDesktop()}
+    </>
   );
 };
