@@ -117,68 +117,60 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
 
   const renderMobile = () => {
     const PANEL = "rounded-[14px] border border-[var(--linea)] bg-[var(--superficie)] flex flex-col min-w-0";
-    const TITULO = "text-[11.5px] font-bold uppercase tracking-[0.1em] text-[color:var(--texto-2)]";
-    
+    const TITULO = "text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--texto-2)]";
+
     const diasDelMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
     const techo = perfil.gastosBasicos;
     const serie = serieGastoDelMes(movimientos, hoy);
     const gastadoMesTotal = serie.length > 0 ? serie[serie.length - 1].acumulado : 0;
     const pctGastado = techo > 0 ? (gastadoMesTotal / techo) * 100 : 0;
 
-    return (
-      <div className="w-full pb-24 animate-screen-enter xl:hidden flex flex-col gap-[10px] px-[14px] pt-4">
-        {estado.deudasActivas && (
-          <div className="px-1 mb-2">
-            <p className="text-[13px] font-bold text-[color:var(--texto)]">Primero, tus deudas.</p>
-            <p className="text-[12px] text-[color:var(--texto-2)] mt-1 leading-relaxed">
-              Tienes {deudasActivas.length} {deudasActivas.length === 1 ? 'deuda activa' : 'deudas activas'}: toda la plata del mes va al plan.
-              El fondo empieza cuando la última llegue a $0.
-            </p>
-          </div>
-        )}
+    // Cuatro sobres como máximo para que Inicio quepa en una pantalla. Con deudas,
+    // Gustos no tiene presupuesto y no se muestra.
+    const idsSobres = ['basico-mercado', 'basico-servicios', 'basico-transporte', ...(estado.deudasActivas ? ['basico-arriendo'] : [ID_LIBRE_GUSTOS])];
+    const sobresInicio = idsSobres.map((id) => sobres.find((x) => x.id === id)).filter(Boolean) as Sobre[];
 
-        {/* PANEL GASTADO EN {MES} */}
-        <div className={`${PANEL} px-[14px] py-[13px]`}>
-          <div className="flex justify-between items-center mb-3">
+    return (
+      // El padding lateral y el espacio de la barra de abajo ya los pone App.
+      // En tableta (md) los paneles van en dos columnas para no estirarse.
+      <div className="w-full animate-screen-enter xl:hidden grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        {/* GASTADO EN {MES} */}
+        <div className={`${PANEL} px-3.5 py-3 md:col-span-2`}>
+          <div className="flex justify-between items-center gap-3 mb-2">
             <div className={TITULO}>GASTADO EN {mesNombre}</div>
-            <div className="text-[11.5px] text-[color:var(--texto-2)] font-medium">{pctGastado.toFixed(1).replace('.', ',')}%</div>
+            <div className="text-[11.5px] text-[color:var(--texto-2)] font-medium tabular-nums whitespace-nowrap">{pctGastado.toFixed(1).replace('.', ',')}%</div>
           </div>
           <GraficoGastoMes serie={serie} techo={techo} diasDelMes={diasDelMes} mes={mesNombre} compacto={true} />
-          <div className="mt-3 flex items-baseline">
-            <span className="font-display font-extrabold text-[26px] tabular-nums text-[color:var(--texto)] leading-none">
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+            <span className="font-display font-extrabold text-[24px] tabular-nums text-[color:var(--texto)] leading-none">
               {formatearCOP(gastadoMesTotal)}
             </span>
-            <span className="text-[13px] text-[color:var(--texto-3)] ml-2">de {formatearCOP(techo)}</span>
+            <span className="text-[12.5px] text-[color:var(--texto-3)] whitespace-nowrap">de {formatearCOP(techo)}</span>
           </div>
         </div>
 
-        {/* Dos PANEL lado a lado */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <button onClick={() => onIrA('billetera')} className={`${PANEL} px-[14px] py-[13px] text-left hover:border-[color:var(--texto-3)] transition-colors cursor-pointer`}>
+        {/* MI PLATA y SIN DUEÑO */}
+        <div className="grid grid-cols-2 gap-2.5 md:col-span-2">
+          <button onClick={() => onIrA('billetera')} className={`${PANEL} px-3.5 py-3 text-left hover:border-[color:var(--texto-3)] transition-colors cursor-pointer`}>
             <div className={TITULO}>MI PLATA</div>
-            <div className="mt-2.5">
-              <div className="font-display font-extrabold text-[19px] tabular-nums text-[color:var(--texto)]">{formatearCOP(saldoTotal)}</div>
-              <div className="text-[11.5px] text-[color:var(--texto-2)] mt-0.5">{billeteras.length} {billeteras.length === 1 ? 'cuenta' : 'cuentas'}</div>
-            </div>
+            <div className="mt-1.5 font-display font-extrabold text-[18px] tabular-nums text-[color:var(--texto)] truncate">{formatearCOP(saldoTotal)}</div>
+            <div className="text-[11.5px] text-[color:var(--texto-2)]">{billeteras.length} {billeteras.length === 1 ? 'cuenta' : 'cuentas'}</div>
           </button>
-          <div className={`${PANEL} px-[14px] py-[13px]`}>
+          <div className={`${PANEL} px-3.5 py-3`}>
             <div className={TITULO}>SIN DUEÑO</div>
-            <div className="mt-2.5">
-              <div className="font-display font-extrabold text-[19px] tabular-nums text-[color:var(--texto)]">{formatearCOP(Math.max(0, estado.porAsignar))}</div>
-              <div className="text-[11.5px] text-[color:var(--texto-2)] mt-0.5">de {formatearCOP(estado.ingreso)}</div>
-            </div>
+            <div className="mt-1.5 font-display font-extrabold text-[18px] tabular-nums text-[color:var(--texto)] truncate">{formatearCOP(Math.max(0, estado.porAsignar))}</div>
+            <div className="text-[11.5px] text-[color:var(--texto-2)] truncate">de {formatearCOP(estado.ingreso)}</div>
           </div>
         </div>
 
-        {/* PANEL TUS SOBRES */}
-        <div className={`${PANEL} p-[14px]`}>
-          <div className="flex justify-between items-center mb-4">
+        {/* TUS SOBRES */}
+        <div className={`${PANEL} px-3.5 py-3`}>
+          <div className="flex justify-between items-center mb-2.5">
             <div className={TITULO}>TUS SOBRES</div>
-            <button onClick={() => onIrA('sobres')} className="text-[13px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
+            <button onClick={() => onIrA('sobres')} className="text-[12.5px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
           </div>
-          <div className="space-y-[13px]">
-            {[...sobres.filter(s => s.grupo === 'basico'), gustos].filter(Boolean).map((s) => {
-              const sObj = s as Sobre;
+          <div className="flex flex-col gap-2.5">
+            {sobresInicio.map((sObj) => {
               const pres = sObj.presupuestoMensual || 0;
               const gast = gastadoDelMes(sObj, movimientos, hoy);
               const disp = Math.max(0, pres - gast);
@@ -186,9 +178,9 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
               const color = COLOR_SOBRE_SISTEMA[sObj.id] || sObj.color || '#25C9BE';
               return (
                 <div key={sObj.id}>
-                  <div className="flex justify-between items-baseline mb-1.5">
-                    <span className="text-[13px] text-[color:var(--texto)] font-medium">{sObj.nombre}</span>
-                    <span className="text-[12.5px] font-bold text-[color:var(--texto)] tabular-nums">{formatearCOP(disp)}</span>
+                  <div className="flex justify-between items-baseline gap-3 mb-1">
+                    <span className="text-[13px] text-[color:var(--texto)] font-medium truncate">{sObj.nombre}</span>
+                    <span className="text-[12.5px] font-bold text-[color:var(--texto)] tabular-nums whitespace-nowrap">{formatearCOP(disp)}</span>
                   </div>
                   <div className="h-[6px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
@@ -199,29 +191,29 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           </div>
         </div>
 
-        {/* PANEL TU SIGUIENTE PASO */}
-        <div className={`${PANEL} p-[14px]`}>
-          <div className={TITULO}>TU SIGUIENTE PASO</div>
-          <div className="mt-3 flex flex-col items-start gap-2.5">
-            <div className="px-2 py-0.5 rounded-full border border-[var(--linea)] text-[11px] font-bold text-[color:var(--texto)] bg-[var(--superficie)]">
+        {/* TU SIGUIENTE PASO: la fase va en el chip, al lado del título */}
+        <div className={`${PANEL} px-3.5 py-3`}>
+          <div className="flex justify-between items-center gap-3">
+            <div className={TITULO}>TU SIGUIENTE PASO</div>
+            <div className="px-2 py-0.5 rounded-full border border-[var(--linea)] text-[10.5px] font-bold text-[color:var(--texto)] whitespace-nowrap">
               {fase === 'salir' ? 'Salir de deudas' : fase === 'blindar' ? 'Blindar' : 'Crecer'}
             </div>
-            <div className="text-[14px] font-bold text-[color:var(--texto)] leading-snug">{paso.texto}</div>
-            
-            {paso.cta && (
-              <button
-                onClick={handleCta}
-                className="w-full mt-1.5 rounded-[10px] py-2.5 text-[13px] font-bold text-[color:var(--on-boton-principal)] bg-[color:var(--boton-principal)] cursor-pointer hover:opacity-90 transition-opacity"
-              >
-                {textoCta}
-              </button>
-            )}
-            {accionAnimada && (
-              <div className="w-full text-center text-[12px] font-bold text-[color:var(--positivo)] animate-fade-in mt-1">
-                Listo: {formatearCOP(accionAnimada.monto)} apartados en tu {accionAnimada.destino}.
-              </div>
-            )}
           </div>
+          <div className="mt-2 text-[14px] font-bold text-[color:var(--texto)] leading-snug">{paso.texto}</div>
+          <div className="text-[12px] text-[color:var(--texto-2)]">{paso.detalle}</div>
+          {paso.cta && (
+            <button
+              onClick={handleCta}
+              className="w-full mt-2.5 md:mt-auto rounded-[10px] py-2.5 text-[13px] font-bold text-[color:var(--on-boton-principal)] bg-[color:var(--boton-principal)] cursor-pointer hover:opacity-90 transition-opacity"
+            >
+              {textoCta}
+            </button>
+          )}
+          {accionAnimada && (
+            <div className="w-full text-center text-[12px] font-bold text-[color:var(--positivo)] animate-fade-in mt-1.5">
+              Listo: {formatearCOP(accionAnimada.monto)} apartados en tu {accionAnimada.destino}.
+            </div>
+          )}
         </div>
       </div>
     );
