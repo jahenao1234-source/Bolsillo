@@ -23,6 +23,12 @@
   --color-azul: var(--azul);
   --color-on-acento: var(--on-acento);
   --color-on-accion: var(--on-accion);
+
+  --color-nav-activo: var(--nav-activo);
+  --color-on-nav-activo: var(--on-nav-activo);
+  --color-boton-principal: var(--boton-principal);
+  --color-on-boton-principal: var(--on-boton-principal);
+  --color-neutro: var(--neutro);
 }
 
 /* ============================================================= */
@@ -56,23 +62,29 @@
   --azul: #8AA9FF;        /* azul de categorias (mismo COLOR_TARJETA de la logica) */
   --on-acento: #04211F;   /* texto sobre teal */
   --on-accion: #2A1206;   /* texto sobre naranja */
+  --nav-activo: #25C9BE;
+  --on-nav-activo: #04211F;
+  --boton-principal: #FF7A3D;
+  --on-boton-principal: #2A1206;
+  --sombra-boton: 0 8px 20px -8px rgba(255, 122, 61, 0.45);
+  --neutro: #93B6B4;
 
   color-scheme: dark;
 }
 
 [data-theme="papel"] {
   /* TEMA CLARO */
-  --fondo: #F1F5F4;
-  --base: #E7EEEC;
+  --fondo: #ECECEA;
+  --base: #E4E4E1;
   --superficie: #FFFFFF;
-  --superficie-2: #E8F0EE;
-  --elevada: #FFFFFF;
-  --linea: rgba(16, 42, 40, 0.13);
-  --hairline: rgba(16, 42, 40, 0.07);
+  --superficie-2: #F6F6F4;
+  --elevada: #F0F0ED;
+  --linea: #E6E6E2;
+  --hairline: #EFEFEC;
 
-  --texto: #112320;
-  --texto-2: #5A706C;
-  --texto-3: #8AA09B;
+  --texto: #141414;
+  --texto-2: #6B6B66;
+  --texto-3: #85857F;
 
   --acento: #0C8C7E;      /* teal profundo (contraste sobre claro) */
   --acento-2: #12A897;
@@ -84,6 +96,12 @@
   --azul: #5B79D6;        /* azul de categorias, mas profundo para el tema claro */
   --on-acento: #FFFFFF;
   --on-accion: #2A1206;
+  --nav-activo: #141414;
+  --on-nav-activo: #FFFFFF;
+  --boton-principal: #141414;
+  --on-boton-principal: #FFFFFF;
+  --sombra-boton: none;
+  --neutro: #141414;
 
   color-scheme: light;
 }
@@ -148,6 +166,11 @@ h1, h2, h3, h4, .stat-value {
 .bg-accion-gradient {
   background: linear-gradient(150deg, var(--accion-2) 0%, var(--accion) 100%);
   color: var(--on-accion);
+}
+
+[data-theme="papel"] .bg-accion-gradient {
+  background: var(--boton-principal);
+  color: var(--on-boton-principal);
 }
 
 /* Tarjeta con hairline border */

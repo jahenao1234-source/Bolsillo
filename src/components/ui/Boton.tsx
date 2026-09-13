@@ -34,13 +34,13 @@ export const Boton: React.FC<BotonProps> = ({
   const clasesVariante = {
     platino: `
       btn-accion bg-accion-gradient
-      text-[color:var(--on-accion)] font-bold tracking-tight
-      shadow-[0_8px_20px_-8px_rgba(255,122,61,0.5)]
+      text-[color:var(--on-boton-principal)] font-bold tracking-tight
+      shadow-[var(--sombra-boton)]
       hover:opacity-95 active:scale-[0.98]
     `,
     primario: `
-      bg-[var(--accion)] text-[color:var(--on-accion)] font-bold tracking-tight
-      shadow-[0_8px_20px_-8px_rgba(255,122,61,0.45)]
+      bg-[var(--boton-principal)] text-[color:var(--on-boton-principal)] font-bold tracking-tight
+      shadow-[var(--sombra-boton)]
       hover:opacity-90 active:scale-[0.98]
     `,
     secundario: `

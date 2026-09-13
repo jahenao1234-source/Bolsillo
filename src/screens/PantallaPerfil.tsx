@@ -252,7 +252,7 @@ export const PantallaPerfil: React.FC<PantallaPerfilProps> = ({
                       <div>
                         <p className="text-sm font-medium text-[color:var(--texto)]">Tema visual</p>
                         <p className="text-xs text-[color:var(--texto-3)]">
-                          {esPapel ? 'Papel (cálido y claro)' : 'Medianoche (oscuro)'}
+                          {esPapel ? 'Claro' : 'Oscuro'}
                         </p>
                       </div>
                     </div>
@@ -268,7 +268,7 @@ export const PantallaPerfil: React.FC<PantallaPerfilProps> = ({
                             : 'text-[color:var(--texto-3)] hover:text-[color:var(--texto)]'
                         }`}
                       >
-                        Medianoche
+                        Oscuro
                       </button>
                       <button
                         type="button"
@@ -279,7 +279,7 @@ export const PantallaPerfil: React.FC<PantallaPerfilProps> = ({
                             : 'text-[color:var(--texto-3)] hover:text-[color:var(--texto)]'
                         }`}
                       >
-                        Papel
+                        Claro
                       </button>
                     </div>
                   </div>
