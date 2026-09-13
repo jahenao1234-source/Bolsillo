@@ -105,7 +105,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                 <p className="text-[13px] font-bold">Primero, tus deudas.</p>
                 <p className="text-xs text-texto-2 mt-1 leading-relaxed">
                   Tienes {activas.length} {activas.length === 1 ? 'deuda activa' : 'deudas activas'}: toda la plata del mes va al plan.
-                  El colchón empieza cuando la última llegue a $0. Mientras tanto, tus sobres y herramientas ya están abiertos.
+                  El fondo empieza cuando la última llegue a $0. Mientras tanto, tus sobres y herramientas ya están abiertos.
                 </p>
                 <button type="button" onClick={() => onIrA('plan')} className="mt-2.5 text-xs font-bold text-accion cursor-pointer">
                   Ir a mi plan de deudas →
@@ -132,7 +132,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                 <Rotulo>Tu inversión</Rotulo>
                 <p className="font-display font-extrabold text-[34px] leading-none tabular-nums mt-1.5">{formatearCOP(inversion?.apartado ?? 0)}</p>
                 <p className="text-xs text-texto-2 mt-2">
-                  Colchón completo <Check className="inline w-3.5 h-3.5 text-positivo -mt-0.5" /> · ahora todo el ahorro va a crecer.
+                  Fondo completo <Check className="inline w-3.5 h-3.5 text-positivo -mt-0.5" /> · ahora todo el ahorro va a crecer.
                 </p>
               </div>
             )}

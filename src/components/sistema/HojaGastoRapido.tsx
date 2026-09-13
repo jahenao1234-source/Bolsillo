@@ -140,7 +140,7 @@ export const HojaGastoRapido: React.FC<HojaGastoRapidoProps> = ({
                   {resultado.dias > 0 ? (
                     <> Sale de tu ataque de este mes: tu fecha de libertad <b className="text-texto">se corre {resultado.dias} {resultado.dias === 1 ? 'día' : 'días'}</b>.</>
                   ) : enFaseDeudas ? (
-                    <> Tu fecha de libertad no se mueve, pero el colchón de la semana se acabó.</>
+                    <> Tu fecha de libertad no se mueve, pero el margen de la semana se acabó.</>
                   ) : null}
                 </>
               ) : resultado.quedan !== null ? (
