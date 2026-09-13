@@ -352,18 +352,56 @@ export function repartoBasicoSugerido(gastosBasicos: number) {
 }
 
 export function gastadoDelMes(sobre: Sobre, movimientos: Movimiento[], hoy: Date = new Date()): number {
-  return movimientos
-    .filter((m) => m.tipo === 'gasto' && m.categoria !== 'Deudas' && !m.deudaId && m.creadoEn)
-    .filter((m) => {
-      const f = new Date(m.creadoEn as string);
-      return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
-    })
+  return gastosDelMes(movimientos, hoy)
     .filter(
       (m) =>
         m.sobreId === sobre.id ||
         (!m.sobreId && sobre.categorias && sobre.categorias.includes(m.categoria))
     )
     .reduce((a, m) => a + m.monto, 0);
+}
+
+export function gastosDelMes(movimientos: Movimiento[], hoy: Date = new Date()): Movimiento[] {
+  return movimientos
+    .filter((m) => m.tipo === 'gasto' && m.categoria !== 'Deudas' && !m.deudaId && m.creadoEn)
+    .filter((m) => {
+      const f = new Date(m.creadoEn as string);
+      return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+    });
+}
+
+export function serieGastoDelMes(movimientos: Movimiento[], hoy: Date = new Date()): { dia: number; acumulado: number }[] {
+  const gastos = gastosDelMes(movimientos, hoy);
+  const maxDia = hoy.getDate();
+  const serie = [];
+  let acumulado = 0;
+
+  for (let d = 1; d <= maxDia; d++) {
+    const gastosDia = gastos.filter(m => new Date(m.creadoEn as string).getDate() === d);
+    acumulado += gastosDia.reduce((a, m) => a + m.monto, 0);
+    serie.push({ dia: d, acumulado });
+  }
+  return serie;
+}
+
+export function gastoPorCategoriaDelMes(movimientos: Movimiento[], hoy: Date = new Date(), limite = 5): { categoria: string; monto: number; porcentaje: number }[] {
+  const gastos = gastosDelMes(movimientos, hoy);
+  const agrupado = gastos.reduce((acc, m) => {
+    acc[m.categoria] = (acc[m.categoria] || 0) + m.monto;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const ordenado = Object.entries(agrupado)
+    .map(([categoria, monto]) => ({ categoria, monto, porcentaje: 0 }))
+    .sort((a, b) => b.monto - a.monto);
+
+  const max = ordenado.length > 0 ? ordenado[0].monto : 1;
+  const top = ordenado.slice(0, limite);
+  
+  return top.map((x) => ({
+    ...x,
+    porcentaje: Math.round((x.monto / max) * 100),
+  }));
 }
 
 /** Lo que falta mover este mes del aporte que le toca al sobre. */
