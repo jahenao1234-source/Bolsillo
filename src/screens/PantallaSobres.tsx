@@ -240,9 +240,9 @@ export const PantallaSobres: React.FC<PantallaSobresProps> = ({
                             tamano="sm"
                             anchoCompleto
                             icono={<Plus className="w-3.5 h-3.5" />}
-                            onClick={() => setModal({ modo: 'alimentar', sobre: s })}
+                            onClick={() => setModal({ modo: 'editar', sobre: s })}
                           >
-                            Alimentar
+                            Editar
                           </Boton>
                         </div>
                       </Tarjeta>

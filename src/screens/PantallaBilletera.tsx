@@ -8,7 +8,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
-import type { Billetera, Deuda, Movimiento, PerfilFlujo } from '../types';
+import type { Billetera, Deuda, Movimiento, PerfilFlujo, Sobre } from '../types';
 import { Marco, Columna, Zona } from '../components/layout/Marco';
 import { BarraAcciones, BarraTitulo } from '../components/layout/shell';
 import { Rotulo } from '../components/sistema/RailPasos';
@@ -20,6 +20,7 @@ import { formatearCOP } from '../utils/format';
 
 interface PantallaBilleteraProps {
   billeteras: Billetera[];
+  sobres: Sobre[];
   saldoTotal: number;
   totalApartado: number;
   movimientos: Movimiento[];
@@ -35,6 +36,7 @@ const POR_PAGINA = 10;
 
 export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
   billeteras,
+  sobres,
   saldoTotal,
   totalApartado,
   movimientos,
@@ -208,6 +210,7 @@ export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
       <HojaGastoRapido
         abierto={gastoAbierto}
         billeteras={billeteras}
+        sobres={sobres}
         techoSemanal={techo}
         gastoSemana={gastoSemana}
         deudas={activas}

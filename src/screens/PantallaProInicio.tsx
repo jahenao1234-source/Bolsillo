@@ -29,6 +29,7 @@ interface PantallaProInicioProps {
   deudas: Deuda[];
   sobres: Sobre[];
   billeteras: Billetera[];
+  saldoTotal: number;
   onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string) => { exito: boolean; error?: string };
   onIrA: (seccion: 'plan' | 'sobres' | 'billetera') => void;
 }
@@ -36,6 +37,7 @@ interface PantallaProInicioProps {
 export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   perfil,
   deudas,
+  sobres,
   billeteras,
   saldoTotal,
   onAbonarASobre,

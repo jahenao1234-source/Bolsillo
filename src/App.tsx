@@ -276,6 +276,7 @@ export default function App() {
                 {seccion === 'billetera' && (
                   <PantallaBilletera
                     billeteras={billeteras}
+                    sobres={datos.sobres}
                     saldoTotal={saldoTotal}
                     totalApartado={datos.totalApartado}
                     movimientos={movimientos}

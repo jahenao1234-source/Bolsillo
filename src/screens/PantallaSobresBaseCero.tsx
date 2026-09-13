@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Target, Check, AlertTriangle, ArrowRight } from 'lucide-react';
 import { ModalSobre, ModoModal } from '../components/sobres/ModalSobre';
+import { ModalMoverSobre } from '../components/sobres/ModalMoverSobre';
 import { TarjetaSobre } from '../components/sobres/TarjetaSobre';
 import { formatearCOP } from '../utils/format';
 import { Sobre, Movimiento, Deuda, PerfilFlujo, Billetera } from '../types';

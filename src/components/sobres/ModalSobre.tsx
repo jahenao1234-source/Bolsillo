@@ -19,6 +19,7 @@ interface ModalSobreProps {
 export const ModalSobre: React.FC<ModalSobreProps> = ({ modo, sobre, onCerrar, onGuardar }) => {
   const [nombre, setNombre] = useState(sobre?.nombre || '');
   const [metaStr, setMetaStr] = useState(sobre?.meta ? formatearCOP(sobre.meta) : '');
+  const [montoStr, setMontoStr] = useState(
     modo === 'editar' && sobre ? (
       (sobre.grupo === 'basico' || sobre.id === ID_LIBRE_GUSTOS)
         ? (sobre.presupuestoMensual ? formatearCOP(sobre.presupuestoMensual) : '')
