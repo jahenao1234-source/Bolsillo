@@ -33,14 +33,14 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
   if (variante === 'mini') {
     return (
       <div 
-        className="rounded-2xl border border-[var(--linea)] bg-[var(--superficie)] px-[13px] py-3 flex flex-col gap-1.5 cursor-pointer hover:border-[var(--texto-3)] transition-colors"
+        className="rounded-[14px] border border-[var(--linea)] bg-[var(--superficie)] px-[11px] py-2.5 flex flex-col gap-[5px] cursor-pointer hover:border-[var(--texto-3)] transition-colors"
         onClick={onClick}
       >
         <div className="flex items-center gap-1.5">
-          <div className="w-[9px] h-[9px] rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-          <div className="text-[12.5px] font-bold text-[color:var(--texto)] truncate">{nombre}</div>
+          <div className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <div className="text-[11.5px] font-bold text-[color:var(--texto)] tracking-[-0.01em] whitespace-nowrap">{nombre}</div>
         </div>
-        <div className="text-[15px] font-bold text-[color:var(--texto)]">
+        <div className="font-display font-extrabold text-[14px] text-[color:var(--texto)]">
           {derecha}
         </div>
         {linea && (
@@ -48,7 +48,7 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
             {linea}
           </div>
         )}
-        <div className="h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden relative mt-1">
+        <div className="h-[7px] rounded-full bg-[var(--superficie-2)] overflow-hidden relative mt-1">
           <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(2, progreso)}%`, backgroundColor: color }} />
         </div>
       </div>
@@ -57,14 +57,13 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
 
   return (
     <div 
-      className="rounded-[18px] border bg-[var(--superficie)] px-[18px] py-[17px] flex flex-col gap-[11px] cursor-pointer hover:border-[color:var(--texto-3)] transition-colors"
-      style={{ borderColor: puente ? `color-mix(in srgb, ${color} 38%, var(--linea))` : 'var(--linea)' }}
+      className="rounded-[14px] border border-[var(--linea)] bg-[var(--superficie)] px-5 py-[18px] flex flex-col gap-[11px] cursor-pointer hover:border-[color:var(--texto-3)] transition-colors"
       onClick={onClick}
     >
       <div className="flex justify-between items-baseline gap-2.5">
         <div className="flex items-center gap-2">
-          <div className="w-[9px] h-[9px] rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-          <div className="font-bold text-[14.5px] text-[color:var(--texto)]">{nombre}</div>
+          <div className="w-[10px] h-[10px] rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <div className="font-bold text-[17px] text-[color:var(--texto)]">{nombre}</div>
           {chip}
         </div>
         <div className="text-right">
@@ -73,12 +72,12 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
       </div>
 
       {linea && (
-        <div className="text-[12.5px] text-[color:var(--texto-3)] -mt-[5px]">
+        <div className="text-[14px] text-[color:var(--texto-3)] -mt-[5px]">
           {linea}
         </div>
       )}
 
-      <div className="h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden relative">
+      <div className="h-[7px] rounded-full bg-[var(--superficie-2)] overflow-hidden relative">
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(2, progreso)}%`, backgroundColor: color }} />
         {marcaHito !== undefined && (
           <div 
@@ -90,15 +89,14 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
 
       {cuenta && (
         <div className="flex justify-between items-center mt-1">
-          <span className="text-[12px] text-[color:var(--texto-3)]">{cuenta.texto}</span>
+          <span className="text-[13.5px] text-[color:var(--texto-3)]">{cuenta.texto}</span>
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               cuenta.onAbonar(e);
             }}
-            className="text-[12.5px] font-bold cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-none p-0"
-            style={{ color: color }}
+            className="text-[13.5px] text-[color:var(--acento)] font-bold cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-none p-0"
           >
             + Abonar
           </button>
@@ -109,17 +107,12 @@ export const TarjetaSobre: React.FC<TarjetaSobreProps> = ({
         <button
           type="button"
           onClick={puente.onClick}
-          className="w-full py-2.5 rounded-xl text-[13px] font-bold mt-1 cursor-pointer transition-colors"
-          style={{
-            color: color,
-            backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`,
-            border: `1px solid color-mix(in srgb, ${color} 30%, transparent)`,
-          }}
+          className="w-full py-2.5 rounded-[10px] border border-[var(--linea)] bg-[var(--superficie-2)] text-[color:var(--texto)] text-[14px] font-bold mt-1 cursor-pointer hover:bg-[var(--elevada)] transition-colors"
         >
           {puente.texto} →
         </button>
       ) : pie ? (
-        <div className="text-center text-[12px] text-[color:var(--texto-3)] pt-2">
+        <div className="text-center text-[13.5px] text-[color:var(--texto-3)] pt-2">
           {pie}
         </div>
       ) : null}
