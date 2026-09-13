@@ -14,6 +14,7 @@
 
 import { Deuda, Movimiento, Sobre, PerfilFlujo, Billetera } from '../types';
 import { calcularPlan, calcularFechaMesRelativo, ordenarDeudasSegunEstrategia } from './planDeudas';
+import { formatearCOP } from '../utils/format';
 
 /** La v3 enseña un solo método: bola de nieve. Menos opciones, más guía. */
 export const ESTRATEGIA = 'bola_de_nieve' as const;
@@ -457,7 +458,6 @@ export function siguientePaso(
   const colchon = sobres.find(s => s.id === ID_SOBRE_COLCHON);
   const inversion = sobres.find(s => s.id === ID_SOBRE_INVERSION);
 
-  const cop = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n);
 
   // Un aporte puede moverse por partes: el paso sigue abierto mientras falte plata.
   if (fase === 'blindar') {
@@ -465,8 +465,8 @@ export function siguientePaso(
     if (falta > 0) {
       const apartado = colchon?.apartado || 0;
       return {
-        texto: `Mover ${cop(falta)} al fondo blindado`,
-        detalle: `Llega a ${cop(apartado + falta)} de ${cop(metaFondo)}`,
+        texto: `Mover ${formatearCOP(falta)} al fondo blindado`,
+        detalle: `Llega a ${formatearCOP(apartado + falta)} de ${formatearCOP(metaFondo)}`,
         cta: falta < reparto.colchon ? "Mover lo que falta" : "Mover al fondo",
         accionId: 'mover-fondo'
       };
@@ -477,8 +477,8 @@ export function siguientePaso(
   if (faltaInversion > 0) {
     const apartado = inversion?.apartado || 0;
     return {
-      texto: `Mover ${cop(faltaInversion)} a inversión`,
-      detalle: `Llega a ${cop(apartado + faltaInversion)}`,
+      texto: `Mover ${formatearCOP(faltaInversion)} a inversión`,
+      detalle: `Llega a ${formatearCOP(apartado + faltaInversion)}`,
       cta: faltaInversion < reparto.inversion ? "Mover lo que falta" : "Mover a inversión",
       accionId: 'mover-inversion'
     };
