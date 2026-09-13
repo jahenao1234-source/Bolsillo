@@ -92,7 +92,7 @@ export default function App() {
   }, [modo, seccion]);
 
   const navegar = (destino: SeccionApp) => {
-    if (destino === 'pro_inicio' || destino === 'sobres' || destino === 'herramientas') setModoElegido('pro');
+    if (destino === 'sobres' || destino === 'herramientas') setModoElegido('pro');
     if (destino === 'plan' || destino === 'deudas') setModoElegido('deuda');
     setSeccion(destino);
     contenidoRef.current?.scrollTo({ top: 0 });
@@ -296,6 +296,7 @@ export default function App() {
                     deudas={deudas}
                     sobres={datos.sobres}
                     saldoTotal={saldoTotal}
+                    disponibleMensual={disponibleMensual}
                     onAbonarASobre={datos.abonarASobre}
                     onIrA={navegar}
                   />

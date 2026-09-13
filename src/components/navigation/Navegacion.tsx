@@ -35,6 +35,7 @@ interface ItemNav {
 
 export const ITEMS_POR_MODO: Record<ModoApp, ItemNav[]> = {
   deuda: [
+    { id: 'pro_inicio', etiqueta: 'Inicio', icono: Home },
     { id: 'plan', etiqueta: 'Mi plan', icono: Target },
     { id: 'deudas', etiqueta: 'Deudas', icono: CreditCard },
     { id: 'billetera', etiqueta: 'Billetera', icono: Wallet },
@@ -47,7 +48,10 @@ export const ITEMS_POR_MODO: Record<ModoApp, ItemNav[]> = {
   ],
 };
 
-export const INICIO_POR_MODO: Record<ModoApp, SeccionApp> = { deuda: 'plan', pro: 'pro_inicio' };
+export const INICIO_POR_MODO: Record<ModoApp, SeccionApp> = {
+  deuda: 'pro_inicio',
+  pro: 'pro_inicio',
+};
 
 interface NavProps {
   modo: ModoApp;

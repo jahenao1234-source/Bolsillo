@@ -26,6 +26,7 @@ import {
   fechaAporteEsteMes,
   Fase,
   COLOR_SOBRE_SISTEMA,
+  escaleraAtaque,
 } from '../logic/sistema';
 
 import { GraficoGastoMes } from '../components/sistema/GraficoGastoMes';
@@ -38,8 +39,9 @@ interface PantallaProInicioProps {
   billeteras: Billetera[];
   movimientos: Movimiento[];
   saldoTotal: number;
+  disponibleMensual: number;
   onAbonarASobre: (sobreId: string, origenId: string, monto: number, origen?: 'aporte_mensual' | 'abono', destinoId?: string, tope?: number) => { exito: boolean; error?: string };
-  onIrA: (seccion: 'plan' | 'sobres' | 'billetera') => void;
+  onIrA: (seccion: 'plan' | 'sobres' | 'billetera' | 'deudas') => void;
 }
 
 export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
@@ -49,6 +51,7 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
   billeteras,
   movimientos,
   saldoTotal,
+  disponibleMensual,
   onAbonarASobre,
   onIrA,
 }) => {
@@ -163,32 +166,69 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           </div>
         </div>
 
-        {/* TUS SOBRES */}
+        {/* TUS DEUDAS o TUS SOBRES */}
         <div className={`${PANEL} px-3.5 py-3`}>
-          <div className="flex justify-between items-center mb-2.5">
-            <div className={TITULO}>TUS SOBRES</div>
-            <button onClick={() => onIrA('sobres')} className="text-[12.5px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
-          </div>
-          <div className="flex flex-col gap-2.5">
-            {sobresInicio.map((sObj) => {
-              const pres = sObj.presupuestoMensual || 0;
-              const gast = gastadoDelMes(sObj, movimientos, hoy);
-              const disp = Math.max(0, pres - gast);
-              const pct = pres > 0 ? Math.round((gast / pres) * 100) : 0;
-              const color = COLOR_SOBRE_SISTEMA[sObj.id] || sObj.color || '#25C9BE';
-              return (
-                <div key={sObj.id}>
-                  <div className="flex justify-between items-baseline gap-3 mb-1">
-                    <span className="text-[13px] text-[color:var(--texto)] font-medium truncate">{sObj.nombre}</span>
-                    <span className="text-[12.5px] font-bold text-[color:var(--texto)] tabular-nums whitespace-nowrap">{formatearCOP(disp)}</span>
-                  </div>
-                  <div className="h-[6px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {estado.deudasActivas ? (
+            <>
+              <div className="flex justify-between items-center mb-2.5">
+                <div className={TITULO}>TUS DEUDAS</div>
+                <button onClick={() => onIrA('deudas')} className="text-[12.5px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todas →</button>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {escaleraAtaque(deudas, disponibleMensual).slice(0, 3).map((escalon, index) => {
+                  const d = deudas.find(x => x.id === escalon.deudaId);
+                  if (!d) return null;
+                  const mo = d.montoOriginal || 0;
+                  const pct = mo > 0 ? ((mo - d.saldo) / mo) * 100 : 0;
+                  return (
+                    <div key={d.id}>
+                      <div className="flex justify-between items-baseline gap-3 mb-1">
+                        <span className="text-[13px] text-[color:var(--texto)] font-medium truncate min-w-0">
+                          {d.nombre}
+                          {index === 0 && <span className="ml-1.5 px-1.5 py-px rounded-full border border-[var(--acento)]/35 text-[color:var(--acento)] text-[10.5px] font-bold">Ataque</span>}
+                        </span>
+                        <span className="text-[12.5px] font-bold text-[color:var(--texto)] tabular-nums whitespace-nowrap">{formatearCOP(d.saldo)}</span>
+                      </div>
+                      <div className="h-[6px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-[var(--acento)]" style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+                      </div>
+                      <div className="text-[12px] text-[color:var(--texto-3)] mt-1">Sale en {escalon.hasta}</div>
+                    </div>
+                  );
+                })}
+                {deudas.filter(d => d.saldo > 0).length > 3 && (
+                  <div className="text-[12px] text-[color:var(--texto-3)]">y {deudas.filter(d => d.saldo > 0).length - 3} más</div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between items-center mb-2.5">
+                <div className={TITULO}>TUS SOBRES</div>
+                <button onClick={() => onIrA('sobres')} className="text-[12.5px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {sobresInicio.map((sObj) => {
+                  const pres = sObj.presupuestoMensual || 0;
+                  const gast = gastadoDelMes(sObj, movimientos, hoy);
+                  const disp = Math.max(0, pres - gast);
+                  const pct = pres > 0 ? Math.round((gast / pres) * 100) : 0;
+                  const color = COLOR_SOBRE_SISTEMA[sObj.id] || sObj.color || '#25C9BE';
+                  return (
+                    <div key={sObj.id}>
+                      <div className="flex justify-between items-baseline gap-3 mb-1">
+                        <span className="text-[13px] text-[color:var(--texto)] font-medium truncate">{sObj.nombre}</span>
+                        <span className="text-[12.5px] font-bold text-[color:var(--texto)] tabular-nums whitespace-nowrap">{formatearCOP(disp)}</span>
+                      </div>
+                      <div className="h-[6px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         {/* TU SIGUIENTE PASO: la fase va en el chip, al lado del título */}
@@ -364,37 +404,71 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
 
         {/* Fila 2: TUS SOBRES y ÚLTIMOS MOVIMIENTOS */}
         <div className="col-span-2 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-4 min-h-0">
-          {/* PANEL TUS SOBRES */}
+          {/* PANEL TUS SOBRES o TUS DEUDAS */}
           <div className={PANEL}>
-            <div className="flex justify-between items-center mb-4">
-              <div className={TITULO}>TUS SOBRES</div>
-              <button onClick={() => onIrA('sobres')} className="text-[13px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
-            </div>
-            <div className="space-y-[13px]">
-              {/* Con deudas, Gustos no tiene presupuesto: no se muestra en $0. */}
-              {[...sobres.filter(s => s.grupo === 'basico'), estado.deudasActivas ? undefined : gustos].filter(Boolean).map((s) => {
-                const sObj = s as Sobre;
-                const pres = sObj.presupuestoMensual || 0;
-                const gast = gastadoDelMes(sObj, movimientos, hoy);
-                const disp = Math.max(0, pres - gast);
-                const pct = pres > 0 ? Math.round((gast / pres) * 100) : 0;
-                const color = COLOR_SOBRE_SISTEMA[sObj.id] || sObj.color || '#25C9BE';
-                return (
-                  <div key={sObj.id}>
-                    <div className="flex justify-between items-baseline gap-3 mb-1.5">
-                      <div className="text-[13px] text-[color:var(--texto-2)] truncate min-w-0">
-                        <span className="text-[color:var(--texto)] font-medium">{sObj.nombre}</span>
-                        <span className="tabular-nums"> · {formatearCOP(disp)} disp.</span>
+            {estado.deudasActivas ? (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <div className={TITULO}>TUS DEUDAS</div>
+                  <button onClick={() => onIrA('deudas')} className="text-[13px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todas →</button>
+                </div>
+                <div className="space-y-[13px]">
+                  {escaleraAtaque(deudas, disponibleMensual).map((escalon, index) => {
+                    const d = deudas.find(x => x.id === escalon.deudaId);
+                    if (!d) return null;
+                    const mo = d.montoOriginal || 0;
+                    const pct = mo > 0 ? ((mo - d.saldo) / mo) * 100 : 0;
+                    return (
+                      <div key={d.id}>
+                        <div className="flex justify-between items-baseline gap-3 mb-1.5">
+                          <div className="text-[13px] text-[color:var(--texto)] font-medium truncate min-w-0">
+                            {d.nombre}
+                            {index === 0 && <span className="ml-1.5 px-1.5 py-px rounded-full border border-[var(--acento)]/35 text-[color:var(--acento)] text-[10.5px] font-bold">Ataque</span>}
+                          </div>
+                          <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)] whitespace-nowrap">{formatearCOP(d.saldo)}</div>
+                        </div>
+                        <div className="h-[7px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-[var(--acento)]" style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+                        </div>
+                        <div className="text-[12px] text-[color:var(--texto-3)] mt-1">Sale en {escalon.hasta}</div>
                       </div>
-                      <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)] whitespace-nowrap">{pct}%</div>
-                    </div>
-                    <div className="h-[7px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-4">
+                  <div className={TITULO}>TUS SOBRES</div>
+                  <button onClick={() => onIrA('sobres')} className="text-[13px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
+                </div>
+                <div className="space-y-[13px]">
+                  {/* Con deudas, Gustos no tiene presupuesto: no se muestra en $0. */}
+                  {[...sobres.filter(s => s.grupo === 'basico'), gustos].filter(Boolean).map((s) => {
+                    const sObj = s as Sobre;
+                    const pres = sObj.presupuestoMensual || 0;
+                    const gast = gastadoDelMes(sObj, movimientos, hoy);
+                    const disp = Math.max(0, pres - gast);
+                    const pct = pres > 0 ? Math.round((gast / pres) * 100) : 0;
+                    const color = COLOR_SOBRE_SISTEMA[sObj.id] || sObj.color || '#25C9BE';
+                    return (
+                      <div key={sObj.id}>
+                        <div className="flex justify-between items-baseline gap-3 mb-1.5">
+                          <div className="text-[13px] text-[color:var(--texto-2)] truncate min-w-0">
+                            <span className="text-[color:var(--texto)] font-medium">{sObj.nombre}</span>
+                            <span className="tabular-nums"> · {formatearCOP(disp)} disp.</span>
+                          </div>
+                          <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)] whitespace-nowrap">{pct}%</div>
+                        </div>
+                        <div className="h-[7px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {/* PANEL ÚLTIMOS MOVIMIENTOS */}
