@@ -251,21 +251,21 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
     const colores = ['var(--azul)', 'var(--positivo)', 'var(--alerta)', 'var(--acento)', 'var(--texto-3)'];
 
     return (
-      <div className="hidden xl:grid xl:flex-1 gap-4 grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(0,0.95fr)] grid-rows-[auto_1fr] animate-screen-enter pb-4">
-        {/* PANEL 1: GASTADO EN MES */}
-        <div className={PANEL}>
+      <div className="hidden xl:grid xl:flex-1 gap-4 grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)_minmax(0,0.95fr)] grid-rows-[minmax(0,1fr)_auto] animate-screen-enter pb-4">
+        {/* PANEL 1: GASTADO EN MES. Los tamaños siguen el ancho del panel (cqw), no el de la pantalla. */}
+        <div className={`${PANEL} @container`}>
           <div className={TITULO}>GASTADO EN {mesNombre}</div>
-          <div className="mt-4 flex-1 min-h-0">
+          <div className="mt-5 flex-1 min-h-[96px]">
             <GraficoGastoMes serie={serie} techo={techo} diasDelMes={diasDelMes} mes={mesNombre} />
           </div>
-          <div className="mt-4 flex justify-between items-end">
-            <div className="flex items-baseline">
-              <span className="font-display font-extrabold text-[34px] tabular-nums text-[color:var(--texto)] leading-none">
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+            <div className="flex flex-wrap items-baseline gap-x-2 min-w-0">
+              <span className="font-display font-extrabold text-[clamp(24px,7cqw,34px)] tabular-nums text-[color:var(--texto)] leading-none">
                 {formatearCOP(gastadoMesTotal)}
               </span>
-              <span className="text-[17px] text-[color:var(--texto-3)] ml-2">de {formatearCOP(techo)}</span>
+              <span className="text-[clamp(13px,3cqw,16px)] text-[color:var(--texto-3)] whitespace-nowrap">de {formatearCOP(techo)}</span>
             </div>
-            <div className="text-[13px] text-[color:var(--texto-2)] mb-1">
+            <div className="text-[13px] text-[color:var(--texto-2)] whitespace-nowrap">
               <span className="font-medium text-[color:var(--texto)]">{pctGastado.toFixed(1).replace('.', ',')}% del mes</span>
               <span className={vasBien ? "text-[color:var(--texto-2)]" : "text-[color:var(--alerta)]"}>
                 {vasBien ? ' · vas bien' : ' · vas rápido'}
@@ -275,44 +275,42 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
         </div>
 
         {/* PANEL 2: TU MES CON DUEÑO */}
-        <div className={PANEL}>
+        <div className={`${PANEL} @container`}>
           <div className={TITULO}>TU MES CON DUEÑO</div>
-          <div className="mt-6 flex items-center justify-between">
-            <div className="relative w-[150px] h-[150px] flex-shrink-0">
-              <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+          {/* La dona se achica con el panel; la leyenda pone la etiqueta arriba y la cifra abajo para no pelear por el ancho. */}
+          <div className="mt-5 flex-1 flex items-center gap-[clamp(12px,5cqw,24px)]">
+            <div className="relative w-[clamp(88px,36cqw,150px)] aspect-square flex-shrink-0">
+              <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90" aria-hidden="true">
                 <circle cx="60" cy="60" r="46" fill="none" stroke="var(--superficie-2)" strokeWidth="16" />
                 <circle cx="60" cy="60" r="46" fill="none" stroke="var(--neutro)" strokeWidth="16" strokeDasharray={`${dashBasico} ${circ}`} strokeDashoffset="0" />
                 <circle cx="60" cy="60" r="46" fill="none" stroke="var(--acento)" strokeWidth="16" strokeDasharray={`${circ - dashBasico} ${circ}`} strokeDashoffset={-dashBasico} />
               </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center rotate-0">
-                <span className="text-[19px] font-extrabold text-[color:var(--texto)]">{formatearCOP(Math.max(0, estado.porAsignar))}</span>
-                <span className="text-[9.5px] text-[color:var(--texto-2)] mt-0.5">sin dueño</span>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="font-display font-extrabold text-[clamp(14px,5.5cqw,19px)] tabular-nums text-[color:var(--texto)] leading-none">{formatearCOP(Math.max(0, estado.porAsignar))}</span>
+                <span className="text-[clamp(9px,2.6cqw,10.5px)] text-[color:var(--texto-2)] mt-1">sin dueño</span>
               </div>
             </div>
-            
-            <div className="flex-1 ml-6 space-y-4">
-              <div>
-                <div className="flex justify-between items-end mb-1.5">
-                  <span className="text-[13px] font-bold text-[color:var(--texto)]">Lo básico</span>
-                  <span className="text-[13px] font-bold text-[color:var(--texto)]">{formatearCOP(perfil.gastosBasicos)}</span>
-                </div>
-                <div className="h-[7px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--neutro)]" style={{ width: `${pctBasico * 100}%` }} />
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-end mb-1.5">
-                  <span className="text-[13px] font-bold text-[color:var(--texto)]">{estado.deudasActivas ? 'A tus deudas' : 'Lo libre'}</span>
-                  <span className="text-[13px] font-bold text-[color:var(--texto)]">{formatearCOP(estado.deudasActivas ? estado.paraDeudas : estado.libre)}</span>
-                </div>
-                <div className="h-[7px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--acento)]" style={{ width: `${(1 - pctBasico) * 100}%` }} />
-                </div>
-              </div>
 
-              <div className="pt-2 text-[13px] text-[color:var(--texto-2)] text-right">
-                {formatearCOP(estado.ingreso)} de ingreso
+            <div className="flex-1 min-w-0 flex flex-col gap-3">
+              {[
+                { etiqueta: 'Lo básico', monto: perfil.gastosBasicos, pct: pctBasico, color: 'var(--neutro)' },
+                {
+                  etiqueta: estado.deudasActivas ? 'A tus deudas' : 'Lo libre',
+                  monto: estado.deudasActivas ? estado.paraDeudas : estado.libre,
+                  pct: 1 - pctBasico,
+                  color: 'var(--acento)',
+                },
+              ].map((f) => (
+                <div key={f.etiqueta} className="min-w-0">
+                  <div className="text-[12.5px] text-[color:var(--texto-2)] truncate">{f.etiqueta}</div>
+                  <div className="text-[clamp(13px,4cqw,15px)] font-bold tabular-nums text-[color:var(--texto)] truncate">{formatearCOP(f.monto)}</div>
+                  <div className="mt-1.5 h-[6px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(1, f.pct)) * 100}%`, backgroundColor: f.color }} />
+                  </div>
+                </div>
+              ))}
+              <div className="text-[12px] text-[color:var(--texto-3)] truncate">
+                Ingreso <span className="tabular-nums text-[color:var(--texto-2)]">{formatearCOP(estado.ingreso)}</span>
               </div>
             </div>
           </div>
@@ -327,9 +325,9 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
             ) : (
               topCategorias.map((c, i) => (
                 <div key={c.categoria}>
-                  <div className="flex justify-between text-[14px] mb-1.5">
-                    <span className="text-[color:var(--texto)]">{c.categoria}</span>
-                    <span className="font-bold text-[color:var(--texto)]">{formatearCOP(c.monto)}</span>
+                  <div className="flex justify-between gap-3 text-[14px] mb-1.5">
+                    <span className="text-[color:var(--texto)] truncate min-w-0">{c.categoria}</span>
+                    <span className="font-bold tabular-nums text-[color:var(--texto)] whitespace-nowrap">{formatearCOP(c.monto)}</span>
                   </div>
                   <div className="h-[7px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
                     <div className="h-full" style={{ width: `${c.porcentaje}%`, backgroundColor: colores[i] }} />
@@ -381,7 +379,8 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
               <button onClick={() => onIrA('sobres')} className="text-[13px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
             </div>
             <div className="space-y-[13px]">
-              {[...sobres.filter(s => s.grupo === 'basico'), gustos].filter(Boolean).map((s) => {
+              {/* Con deudas, Gustos no tiene presupuesto: no se muestra en $0. */}
+              {[...sobres.filter(s => s.grupo === 'basico'), estado.deudasActivas ? undefined : gustos].filter(Boolean).map((s) => {
                 const sObj = s as Sobre;
                 const pres = sObj.presupuestoMensual || 0;
                 const gast = gastadoDelMes(sObj, movimientos, hoy);
@@ -390,11 +389,12 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
                 const color = COLOR_SOBRE_SISTEMA[sObj.id] || sObj.color || '#25C9BE';
                 return (
                   <div key={sObj.id}>
-                    <div className="flex justify-between items-baseline mb-1.5">
-                      <div className="text-[13px] text-[color:var(--texto-2)]">
-                        <span className="text-[color:var(--texto)] font-medium">{sObj.nombre}</span> · {formatearCOP(disp)} disp.
+                    <div className="flex justify-between items-baseline gap-3 mb-1.5">
+                      <div className="text-[13px] text-[color:var(--texto-2)] truncate min-w-0">
+                        <span className="text-[color:var(--texto)] font-medium">{sObj.nombre}</span>
+                        <span className="tabular-nums"> · {formatearCOP(disp)} disp.</span>
                       </div>
-                      <div className="text-[13px] font-bold text-[color:var(--texto)]">{pct}%</div>
+                      <div className="text-[13px] font-bold tabular-nums text-[color:var(--texto)] whitespace-nowrap">{pct}%</div>
                     </div>
                     <div className="h-[7px] bg-[var(--superficie-2)] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: color }} />
@@ -406,20 +406,21 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
           </div>
 
           {/* PANEL ÚLTIMOS MOVIMIENTOS */}
-          <div className={PANEL}>
+          <div className={`${PANEL} @container`}>
             <div className="flex justify-between items-center mb-4">
               <div className={TITULO}>ÚLTIMOS MOVIMIENTOS</div>
               <button onClick={() => onIrA('billetera')} className="text-[13px] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] font-medium cursor-pointer">Ver todos →</button>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              <table className="w-full text-left border-collapse min-w-[500px]">
+            {/* Nunca scroll horizontal: si el panel es angosto se quitan columnas: primero Cuenta, luego Fecha. */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <table className="w-full table-fixed text-left border-collapse">
                 <thead>
                   <tr>
-                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap">Concepto</th>
-                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap">Cuenta</th>
-                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap">Tipo</th>
-                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap">Fecha</th>
-                    <th className="pb-2 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] whitespace-nowrap text-right">Monto</th>
+                    <th className="pb-2 pr-2.5 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)]">Concepto</th>
+                    <th className="hidden @min-[36rem]:table-cell w-[26%] pb-2 px-2.5 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)]">Cuenta</th>
+                    <th className="w-[118px] pb-2 px-2.5 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)]">Tipo</th>
+                    <th className="hidden @min-[25rem]:table-cell w-[68px] pb-2 px-2.5 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)]">Fecha</th>
+                    <th className="w-[104px] pb-2 pl-2.5 border-b border-[var(--linea)] text-[12px] font-semibold text-[color:var(--texto-2)] text-right">Monto</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -470,28 +471,28 @@ export const PantallaProInicio: React.FC<PantallaProInicioProps> = ({
 
                       return (
                         <tr key={m.id}>
-                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap">
-                            <div className="flex items-center gap-2.5">
+                          <td className="py-2.5 pr-2.5 border-b border-[var(--hairline)]">
+                            <div className="flex items-center gap-2.5 min-w-0">
                               <div className="w-[26px] h-[26px] rounded-full bg-[var(--superficie-2)] border border-[var(--linea)] flex items-center justify-center flex-shrink-0">
                                 <span className="text-[11px] font-bold text-[color:var(--texto-2)]">{inicial}</span>
                               </div>
-                              <span className="text-[14px] text-[color:var(--texto)]">{desc}</span>
+                              <span className="text-[14px] text-[color:var(--texto)] truncate" title={desc}>{desc}</span>
                             </div>
                           </td>
-                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap">
-                            <span className="text-[14px] text-[color:var(--texto)]">{cuentaStr}</span>
+                          <td className="hidden @min-[36rem]:table-cell py-2.5 px-2.5 border-b border-[var(--hairline)]">
+                            <span className="block text-[14px] text-[color:var(--texto)] truncate" title={cuentaStr}>{cuentaStr}</span>
                           </td>
-                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap">
+                          <td className="py-2.5 px-2.5 border-b border-[var(--hairline)] whitespace-nowrap">
                             <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-bold ${tipoEstilo}`}>
                               <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                              {tipoTexto}
+                              {tipoTexto === 'Transferencia' ? 'Traslado' : tipoTexto}
                             </div>
                           </td>
-                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap">
-                            <span className="text-[14px] text-[color:var(--texto)]">{dia} {mes}</span>
+                          <td className="hidden @min-[25rem]:table-cell py-2.5 px-2.5 border-b border-[var(--hairline)] whitespace-nowrap">
+                            <span className="text-[14px] tabular-nums text-[color:var(--texto)]">{dia} {mes}</span>
                           </td>
-                          <td className="py-2.5 px-[10px] border-b border-[var(--hairline)] whitespace-nowrap text-right">
-                            <span className="text-[14px] text-[color:var(--texto)]">{montoStr}</span>
+                          <td className="py-2.5 pl-2.5 border-b border-[var(--hairline)] whitespace-nowrap text-right">
+                            <span className="text-[14px] tabular-nums text-[color:var(--texto)]">{montoStr}</span>
                           </td>
                         </tr>
                       );
