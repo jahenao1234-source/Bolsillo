@@ -26,6 +26,16 @@ export const ID_SOBRE_COLCHON = 'sobre-colchon';
 export const ID_SOBRE_INVERSION = 'sobre-inversion';
 export const ID_LIBRE_GUSTOS = 'libre-gustos';
 
+export const COLOR_SOBRE_SISTEMA: Record<string, string> = {
+  'basico-arriendo': '#25C9BE',
+  'basico-mercado': '#5FE0A8',
+  'basico-servicios': '#8AA9FF',
+  'basico-transporte': '#8AA9FF',
+  'sobre-colchon': '#25C9BE',
+  'sobre-inversion': '#8AA9FF',
+  'libre-gustos': '#FF7A3D'
+};
+
 export const CATS_ARRIENDO = ['Arriendo', 'Vivienda'];
 export const CATS_MERCADO = ['Comida', 'Mercado', 'Alimentación'];
 export const CATS_SERVICIOS = ['Servicios'];

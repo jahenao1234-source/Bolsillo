@@ -1,16 +1,13 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Plus, Target, Check, AlertTriangle, ChevronRight, Mail, RotateCcw, ChevronDown } from 'lucide-react';
-import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
-import { BarraTitulo } from '../components/layout/shell';
-import { Boton } from '../components/ui/Boton';
-import { Chip } from '../components/ui/Chip';
-import { Rotulo } from '../components/sistema/RailPasos';
+import React, { useState, useEffect } from 'react';
+import { Target, Check, AlertTriangle, ArrowRight } from 'lucide-react';
 import { ModalSobre, ModoModal } from '../components/sobres/ModalSobre';
+import { TarjetaSobre } from '../components/sobres/TarjetaSobre';
 import { formatearCOP } from '../utils/format';
 import { Sobre, Movimiento, Deuda, PerfilFlujo } from '../types';
 import {
   estadoBaseCero,
   gastadoDelMes,
+  fechaAporteEsteMes,
   ID_BASICO_MERCADO,
   ID_SOBRE_COLCHON,
   ID_SOBRE_INVERSION,
@@ -18,6 +15,7 @@ import {
   MODULOS_LISTOS,
   metaFondoBlindado,
   repartoPro,
+  COLOR_SOBRE_SISTEMA,
 } from '../logic/sistema';
 
 interface PantallaSobresBaseCeroProps {
@@ -40,11 +38,17 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   movimientos,
   onRepartirBasicos,
   onGuardarSobre,
-  onVolver,
   onIrAMiPlan,
 }) => {
   const [modal, setModal] = useState<{ modo: ModoModal; sobre: Sobre | null } | null>(null);
   const [propiosAbiertos, setPropiosAbiertos] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const hoy = new Date();
   const estado = estadoBaseCero(perfilFlujo, sobres, deudas);
@@ -58,124 +62,161 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   const colchonSobre = sobres.find(s => s.id === ID_SOBRE_COLCHON);
   const colchonApartado = colchonSobre ? colchonSobre.apartado : 0;
   const reparto = repartoPro(estado.libre, colchonApartado, metaFondo);
+  
+  const mesNombre = hoy.toLocaleString('es-CO', { month: 'long' }).toLowerCase();
 
-  const renderLineaBaseCero = () => {
+  const getColor = (s: Sobre) => COLOR_SOBRE_SISTEMA[s.id] || s.color || '#25C9BE';
+
+  const handleClickSobre = (s: Sobre) => {
+    if (s.id === ID_SOBRE_COLCHON || s.id === ID_SOBRE_INVERSION) {
+      setModal({ modo: 'crear', sobre: s }); // Se reutiliza modo crear/editar visualmente para fondo e inversion
+    } else {
+      setModal({ modo: 'editar', sobre: s });
+    }
+  };
+
+  const renderEncabezado = () => {
+    let frase = '';
+    let tieneBoton = false;
+    
+    if (estado.deudasActivas) {
+      frase = isMobile 
+        ? `${formatearCOP(estado.paraDeudas)} a tu plan de deudas`
+        : `Tus ${formatearCOP(estado.ingreso)} de ${mesNombre}: ${formatearCOP(perfilFlujo?.gastosBasicos || 0)} lo básico + ${formatearCOP(estado.paraDeudas)} a tu plan de deudas.`;
+    } else if (estado.porAsignar === 0) {
+      frase = isMobile
+        ? `${formatearCOP(estado.ingreso)} con dueño · $0 sin dueño`
+        : `Tus ${formatearCOP(estado.ingreso)} de ${mesNombre}, con dueño antes de gastarlos: ${formatearCOP(perfilFlujo?.gastosBasicos || 0)} lo básico + ${formatearCOP(estado.libre)} lo libre · $0 sin dueño.`;
+    } else if (estado.porAsignar > 0) {
+      frase = isMobile
+        ? `Te faltan ${formatearCOP(estado.porAsignar)} por asignar`
+        : `Tus ${formatearCOP(estado.ingreso)} de ${mesNombre}: ${formatearCOP(totalBasicos)} lo básico + ${formatearCOP(estado.libre)} lo libre. Te faltan ${formatearCOP(estado.porAsignar)} por asignar en lo básico.`;
+      tieneBoton = true;
+    } else {
+      frase = isMobile
+        ? `Asignaste ${formatearCOP(Math.abs(estado.porAsignar))} de más en lo básico`
+        : `Tus ${formatearCOP(estado.ingreso)} de ${mesNombre}: ${formatearCOP(totalBasicos)} lo básico + ${formatearCOP(estado.libre)} lo libre. Asignaste ${formatearCOP(Math.abs(estado.porAsignar))} de más en lo básico.`;
+      tieneBoton = true;
+    }
+
     return (
-      <div className="mb-6">
-        <Rotulo className="mb-2">Línea de base cero</Rotulo>
-        <div className="p-4 rounded-2xl bg-[var(--superficie)] border border-[var(--linea)] flex flex-col gap-1">
-          <div className="text-sm font-semibold tabular-nums text-[color:var(--texto)]">
-            {formatearCOP(perfilFlujo?.gastosBasicos ?? 0)} lo básico + {formatearCOP(estado.deudasActivas ? estado.paraDeudas : estado.libre)} {estado.deudasActivas ? 'a tu plan de deudas' : 'lo libre'} = {formatearCOP(estado.ingreso)}
-            {!estado.deudasActivas && estado.porAsignar === 0 && ' · $0 sin dueño'}
-          </div>
-          {estado.porAsignar !== 0 && (
-            <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-[var(--linea)]">
-              <div className="flex items-center gap-2 text-[color:var(--alerta)] text-xs font-semibold">
-                <AlertTriangle className="w-4 h-4" /> 
-                {estado.porAsignar > 0 
-                  ? `Te faltan ${formatearCOP(estado.porAsignar)} por asignar en lo básico`
-                  : `Asignaste ${formatearCOP(Math.abs(estado.porAsignar))} de más en lo básico`}
-              </div>
-              <Boton
-                variante="secundario"
-                tamano="sm"
-                icono={<RotateCcw className="w-3.5 h-3.5" />}
-                onClick={() => onRepartirBasicos(perfilFlujo)}
-              >
+      <div className="mb-6 xl:mb-8 pt-4 md:pt-0">
+        <div className="flex justify-between items-center mb-2">
+          <h1 className="font-display font-extrabold text-[21px] xl:text-[24px] text-[color:var(--texto)]">
+            Tus sobres
+          </h1>
+          <button
+            onClick={() => setModal({ modo: 'crear', sobre: null })}
+            className="px-3.5 py-2 rounded-[11px] border border-[var(--linea)] bg-[var(--superficie-2)] text-[13px] font-bold text-[color:var(--texto)] cursor-pointer"
+          >
+            + Nuevo{isMobile ? '' : ' sobre'}
+          </button>
+        </div>
+        <div className="text-[13.5px] text-[color:var(--texto-2)]">
+          {frase.split(/(\$[0-9.,]+)/).map((part, i) => 
+            part.startsWith('$') ? <span key={i} className="font-bold text-[color:var(--texto)] tabular-nums">{part}</span> : part
+          )}
+          {tieneBoton && (
+            <>
+              {' '}
+              <button onClick={() => onRepartirBasicos(perfilFlujo)} className="text-[color:var(--acento)] font-bold cursor-pointer hover:underline">
                 Repartir de nuevo
-              </Boton>
-            </div>
+              </button>
+            </>
           )}
         </div>
       </div>
     );
   };
 
-  const renderFilaBasica = (s: Sobre) => {
-    const presupuesto = s.presupuestoMensual || 0;
-    const gastado = gastadoDelMes(s, movimientos, hoy);
-    const disponible = presupuesto - gastado;
-    const color = s.color || 'var(--acento)';
-
-    return (
-      <div 
-        key={s.id} 
-        className="flex items-center justify-between py-2.5 border-t border-hairline group cursor-pointer"
-        onClick={() => setModal({ modo: 'editar', sobre: s })}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg grid place-items-center" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
-            <span className="w-3 h-3 rounded-full" style={{ background: color }} />
-          </div>
-          <div>
-            <div className="font-semibold text-[13px] text-[color:var(--texto)] group-hover:text-[color:var(--acento)] transition-colors">
-              {s.nombre}
-            </div>
-            <div className="text-[11px] text-[color:var(--texto-3)] tabular-nums">
-              {formatearCOP(presupuesto)} al mes
-            </div>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="font-bold text-[13px] tabular-nums text-[color:var(--texto)]">
-            {formatearCOP(disponible)}
-          </div>
-          <div className="text-[10px] text-[color:var(--texto-3)]">Disponible</div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderMercado = (s: Sobre) => {
-    const presupuesto = s.presupuestoMensual || 0;
-    const gastado = gastadoDelMes(s, movimientos, hoy);
-    const disponible = Math.max(0, presupuesto - gastado);
-    const pct = presupuesto > 0 ? Math.min(100, (gastado / presupuesto) * 100) : 0;
-    const color = s.color || 'var(--acento)';
-
-    return (
-      <div 
-        key={s.id} 
-        className="mb-2 p-3.5 rounded-2xl bg-superficie border border-linea cursor-pointer hover:border-texto-3 transition-colors"
-        onClick={() => setModal({ modo: 'editar', sobre: s })}
-      >
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <h3 className="font-bold text-[13px] text-[color:var(--texto)]">{s.nombre}</h3>
-            <p className="text-[11px] text-[color:var(--texto-3)] mt-0.5">{formatearCOP(presupuesto)} al mes</p>
-          </div>
-          <div className="text-right">
-            <div className="font-display font-extrabold text-[15px] tabular-nums text-[color:var(--acento)]">
-              {formatearCOP(disponible)}
-            </div>
-            <div className="text-[10px] text-[color:var(--texto-3)] mt-0.5">Disponible</div>
-          </div>
-        </div>
-        <div className="h-1.5 rounded-full bg-[var(--linea)] overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(2, pct)}%`, background: color }} />
-        </div>
-        {MODULOS_LISTOS && s.modulo === 'lista_compras' && (
-          <div className="mt-3">
-            <Boton variante="fantasma" tamano="sm" anchoCompleto onClick={(e) => { e.stopPropagation(); }}>
-              Abrir lista de compras de este sobre
-            </Boton>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const renderBasicos = () => {
     const mercado = basicos.find(s => s.id === ID_BASICO_MERCADO);
-    const otros = basicos.filter(s => s.id !== ID_BASICO_MERCADO);
+    const arriendo = basicos.find(s => s.id === 'basico-arriendo');
+    const servicios = basicos.find(s => s.id === 'basico-servicios');
+    const transporte = basicos.find(s => s.id === 'basico-transporte');
+    
+    // Fallbacks if not found (for dev/tests)
+    const renderMercado = () => {
+      if (!mercado) return null;
+      const pres = mercado.presupuestoMensual || 0;
+      const gast = gastadoDelMes(mercado, movimientos, hoy);
+      return (
+        <TarjetaSobre
+          color={getColor(mercado)}
+          nombre="Mercado"
+          derecha={gast > pres ? <span className="text-[color:var(--alerta)]">-{formatearCOP(gast - pres)} pasado</span> : <><span className="text-[17px] font-display font-extrabold" style={{ color: getColor(mercado) }}>{formatearCOP(pres - gast)}</span><span className="text-[12px] text-[color:var(--texto-3)] font-normal ml-1">disp.</span></>}
+          linea={<>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
+          progreso={pres > 0 ? (gast / pres) * 100 : 0}
+          pie={(!MODULOS_LISTOS) ? "Mercado, aseo y despensa" : undefined}
+          puente={MODULOS_LISTOS ? { texto: "Abrir lista de compras", onClick: (e) => { e.stopPropagation(); } } : undefined}
+          variante="completa"
+          onClick={() => handleClickSobre(mercado)}
+        />
+      );
+    };
+
+    const renderB = (s: Sobre | undefined, pieTxt: string, mini: boolean) => {
+      if (!s) return null;
+      const pres = s.presupuestoMensual || 0;
+      const gast = gastadoDelMes(s, movimientos, hoy);
+      const isArriendo = s.id === 'basico-arriendo';
+      const pagado = isArriendo && gast >= pres;
+      const color = getColor(s);
+      
+      let pie = pieTxt;
+      if (isArriendo) {
+        if (pagado) {
+          const ultimaFecha = new Date(); // ToDo: find last movement date
+          pie = `Pagado el ${ultimaFecha.getDate()} de ${ultimaFecha.toLocaleString('es-CO', { month: 'long' })}`;
+        } else {
+          pie = "Se paga una vez al mes";
+        }
+      }
+
+      return (
+        <TarjetaSobre
+          color={color}
+          nombre={s.nombre}
+          derecha={
+            pagado ? (
+              <span className="text-[12px] font-bold text-[color:var(--positivo)]">✓ Pagado</span>
+            ) : gast > pres ? (
+              <span className="text-[color:var(--alerta)]">-{formatearCOP(gast - pres)} pasado</span>
+            ) : (
+              <><span style={{ color: mini ? color : 'var(--texto)' }}>{formatearCOP(pres - gast)}</span>{!mini && <span className="text-[12px] text-[color:var(--texto-3)] font-normal ml-1">disp.</span>}</>
+            )
+          }
+          linea={mini && pagado ? undefined : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
+          progreso={pagado || gast > pres ? 100 : pres > 0 ? (gast / pres) * 100 : 0}
+          pie={mini ? undefined : pie}
+          variante={mini ? 'mini' : 'completa'}
+          onClick={() => handleClickSobre(s)}
+        />
+      );
+    };
 
     return (
-      <div className="mb-6">
-        <Rotulo className="mb-2">Lo básico · {formatearCOP(totalBasicos)}</Rotulo>
-        {mercado && renderMercado(mercado)}
-        <div className="flex flex-col mt-2">
-          {otros.map(renderFilaBasica)}
-        </div>
+      <div className="mb-6 xl:mb-8">
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.15em] text-[color:var(--texto-3)] mb-[12px]">
+          Lo básico <span className="text-[12.5px] text-[color:var(--texto-2)] normal-case tracking-normal ml-2 tabular-nums font-semibold">{formatearCOP(perfilFlujo?.gastosBasicos || 0)} al mes</span>
+        </h2>
+        {isMobile ? (
+          <div className="flex flex-col gap-2.5">
+            {renderMercado()}
+            <div className="grid grid-cols-3 gap-2.5">
+              {renderB(arriendo, "", true)}
+              {renderB(servicios, "", true)}
+              {renderB(transporte, "", true)}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3.5">
+            {renderMercado()}
+            {renderB(arriendo, "Se paga una vez al mes", false)}
+            {renderB(servicios, "Luz, agua, gas e internet", false)}
+            {renderB(transporte, "Para ir a trabajar", false)}
+          </div>
+        )}
       </div>
     );
   };
@@ -183,20 +224,30 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   const renderLibres = () => {
     if (estado.deudasActivas) {
       return (
-        <div className="mb-6">
-          <Rotulo className="mb-2">Lo libre</Rotulo>
-          <div className="p-4 rounded-2xl bg-[var(--acento)]/10 border border-[var(--acento)]/20">
-            <p className="text-[13px] text-[color:var(--texto)] leading-relaxed mb-4">
-              Lo libre empieza cuando termines tus deudas. Mientras tanto, toda esa plata va a tu plan.
-            </p>
-            <Boton 
-              variante="primario" 
-              tamano="sm" 
-              iconoDerecha={<ChevronRight className="w-4 h-4" />}
+        <div className="mb-6 xl:mb-8">
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.15em] text-[color:var(--texto-3)] mb-[12px]">
+            Lo libre <span className="text-[12.5px] text-[color:var(--texto-2)] normal-case tracking-normal ml-2 tabular-nums font-semibold">{formatearCOP(estado.paraDeudas)} al mes · lo que antes iba a deudas</span>
+          </h2>
+          <div className="rounded-[18px] border bg-[var(--superficie)] px-[18px] py-[17px] flex flex-col gap-[11px]" style={{ borderColor: 'color-mix(in srgb, #25C9BE 38%, var(--linea))' }}>
+            <div className="flex items-center gap-2">
+              <div className="w-[9px] h-[9px] rounded-full flex-shrink-0 bg-[#25C9BE]" />
+              <div className="font-bold text-[14.5px] text-[color:var(--texto)]">Lo libre empieza cuando termines tus deudas</div>
+            </div>
+            <div className="text-[12.5px] text-[color:var(--texto-3)] -mt-[5px]">
+              Tus <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(estado.paraDeudas)}</span> del mes van a tu plan
+            </div>
+            <button
+              type="button"
               onClick={onIrAMiPlan}
+              className="w-full py-2.5 rounded-xl text-[13px] font-bold mt-1 cursor-pointer transition-colors"
+              style={{
+                color: '#25C9BE',
+                backgroundColor: `color-mix(in srgb, #25C9BE 10%, transparent)`,
+                border: `1px solid color-mix(in srgb, #25C9BE 30%, transparent)`,
+              }}
             >
-              Ir a Mi plan
-            </Boton>
+              Ir a Mi plan →
+            </button>
           </div>
         </div>
       );
@@ -206,205 +257,139 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     const inversion = libres.find(s => s.id === ID_SOBRE_INVERSION);
     const gustos = libres.find(s => s.id === ID_LIBRE_GUSTOS);
 
-    return (
-      <div className="mb-6">
-        <Rotulo className="mb-2">Lo libre · {formatearCOP(estado.libre)}</Rotulo>
-        <div className="flex flex-col">
-          {colchon && (
-            <div 
-              className="py-2.5 border-t border-hairline first:border-0 cursor-pointer group"
-              onClick={() => setModal({ modo: 'editar', sobre: colchon })}
-            >
-              <div className="flex justify-between items-start mb-0.5">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="font-semibold text-[13px] text-[color:var(--texto)] group-hover:text-[color:var(--acento)] transition-colors">{colchon.nombre}</h3>
-                  {colchon.apartado < metaFondo && <span className="text-[9px] font-bold uppercase tracking-[0.08em] px-1.5 py-px rounded-full border border-acento/45 text-acento">Primero</span>}
-                </div>
-                <div className="font-bold text-[13px] tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.colchon)} al mes</div>
-              </div>
-              <p className="text-[11px] text-[color:var(--texto-3)] tabular-nums">
-                {formatearCOP(colchon.apartado)} de {formatearCOP(metaFondo)}
-              </p>
-            </div>
-          )}
-          {inversion && (
-            <div 
-              className="py-2.5 border-t border-hairline cursor-pointer group"
-              onClick={() => setModal({ modo: 'editar', sobre: inversion })}
-            >
-              <div className="flex justify-between items-start mb-0.5">
-                <h3 className="font-semibold text-[13px] text-[color:var(--texto)] group-hover:text-[color:var(--acento)] transition-colors">{inversion.nombre}</h3>
-                <div className="font-bold text-[13px] tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.inversion)} al mes</div>
-              </div>
-              <p className="text-[11px] text-[color:var(--texto-3)] tabular-nums">
-                {formatearCOP(inversion.apartado)} sin invertir
-              </p>
-            </div>
-          )}
-          {gustos && (
-            <div 
-              className="py-2.5 border-t border-hairline cursor-pointer group"
-              onClick={() => setModal({ modo: 'editar', sobre: gustos })}
-            >
-              <div className="flex justify-between items-start mb-0.5">
-                <h3 className="font-semibold text-[13px] text-[color:var(--texto)] group-hover:text-[color:var(--acento)] transition-colors">{gustos.nombre}</h3>
-                <div className="font-bold text-[13px] tabular-nums text-[color:var(--texto)]">{formatearCOP(reparto.gustos)} al mes</div>
-              </div>
-              <p className="text-[11px] text-[color:var(--texto-3)] tabular-nums">
-                {formatearCOP(reparto.gustos - gastadoDelMes(gustos, movimientos, hoy))} disponible este mes
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
+    const renderFondo = () => {
+      if (!colchon) return null;
+      const meta = metaFondo;
+      const lleno = colchon.apartado >= meta;
+      
+      const chip = lleno 
+        ? <span className="text-[9px] font-bold uppercase tracking-[0.08em] px-1.5 py-px rounded-full border border-[var(--positivo)]/45 text-[color:var(--positivo)]">Completo</span>
+        : <span className="text-[9px] font-bold uppercase tracking-[0.08em] px-1.5 py-px rounded-full border border-[#25C9BE]/45 text-[#25C9BE]">Primero</span>;
 
-  const renderPropios = () => {
+      return (
+        <TarjetaSobre
+          color={getColor(colchon)}
+          nombre="Fondo blindado"
+          chip={chip}
+          derecha={<span className="text-[17px] font-display font-extrabold" style={{ color: isMobile ? getColor(colchon) : 'var(--texto)' }}>{formatearCOP(colchon.apartado)}</span>}
+          linea={lleno ? "Su parte ya pasó a inversión" : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(reparto.colchon)}/mes</span> {isMobile ? "de" : "· meta"} {formatearCOP(meta)}</>}
+          progreso={(colchon.apartado / meta) * 100}
+          marcaHito={colchon.apartado < 1000000 ? (1000000 / meta) * 100 : undefined}
+          pie={!isMobile ? (colchon.apartado < 1000000 ? "Primer hito: $1.000.000" : "Para que la próxima emergencia no sea tarjeta") : undefined}
+          puente={(!isMobile && false) ? { texto: "Qué hacer si compras a cuotas", onClick: (e) => { e.stopPropagation(); } } : undefined} // TODO: Prompt 5
+          variante={isMobile ? 'mini' : 'completa'}
+          onClick={() => handleClickSobre(colchon)}
+        />
+      );
+    };
+
+    const renderInversion = () => {
+      if (!inversion) return null;
+      const metaAnual = reparto.inversion * 12;
+      return (
+        <TarjetaSobre
+          color={getColor(inversion)}
+          nombre="Inversión"
+          derecha={<span className="text-[17px] font-display font-extrabold" style={{ color: isMobile ? getColor(inversion) : 'var(--texto)' }}>{formatearCOP(inversion.apartado)}</span>}
+          linea={<>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(reparto.inversion)}/mes</span> {!isMobile && `· ${formatearCOP(inversion.apartado)} de ${formatearCOP(metaAnual)} este año`}</>}
+          progreso={metaAnual > 0 ? (inversion.apartado / metaAnual) * 100 : 0}
+          pie={(!MODULOS_LISTOS && !isMobile) ? "Se invierte en Activos" : undefined}
+          puente={MODULOS_LISTOS ? { texto: "Registrar en un CDT o fondo", onClick: (e) => { e.stopPropagation(); } } : undefined}
+          variante="completa" // Siempre completa, incluso en celular
+          onClick={() => handleClickSobre(inversion)}
+        />
+      );
+    };
+
+    const renderGustos = () => {
+      if (!gustos) return null;
+      const pres = reparto.gustos;
+      const gast = gastadoDelMes(gustos, movimientos, hoy);
+      return (
+        <TarjetaSobre
+          color={getColor(gustos)}
+          nombre="Gustos"
+          derecha={<><span className="text-[17px] font-display font-extrabold" style={{ color: isMobile ? getColor(gustos) : 'var(--texto)' }}>{formatearCOP(pres - gast)}</span>{!isMobile && <span className="text-[12px] text-[color:var(--texto-3)] font-normal ml-1">disp.</span>}</>}
+          linea={isMobile ? `de ${formatearCOP(pres)}` : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
+          progreso={pres > 0 ? (gast / pres) * 100 : 0}
+          pie={!isMobile ? "Gasta sin culpa y sin endeudarte" : undefined}
+          variante={isMobile ? 'mini' : 'completa'}
+          onClick={() => handleClickSobre(gustos)}
+        />
+      );
+    };
+
     return (
-      <div className="mb-6">
-        <Rotulo className="mb-2">Tus sobres propios</Rotulo>
-        {propios.length === 0 ? (
-          <p className="text-[13px] text-[color:var(--texto-3)] py-4">No tienes sobres extra creados por ti.</p>
+      <div className="mb-6 xl:mb-8">
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.15em] text-[color:var(--texto-3)] mb-[12px]">
+          Lo libre <span className="text-[12.5px] text-[color:var(--texto-2)] normal-case tracking-normal ml-2 tabular-nums font-semibold">{formatearCOP(estado.libre)} al mes · lo que antes iba a deudas</span>
+        </h2>
+        {isMobile ? (
+          <div className="flex flex-col gap-2.5">
+            {renderInversion()}
+            <div className="grid grid-cols-2 gap-2.5">
+              {renderFondo()}
+              {renderGustos()}
+            </div>
+          </div>
         ) : (
-          <div className="flex flex-col">
-            {(!propiosAbiertos && propios.length > 3) ? (
-              <>
-                {propios.slice(0, 3).map(renderFilaPropio)}
-                <button
-                  type="button"
-                  className="w-full py-3 text-[13px] font-bold text-[color:var(--acento)] border-t border-hairline flex items-center justify-center gap-2 cursor-pointer"
-                  onClick={() => setPropiosAbiertos(true)}
-                >
-                  Ver tus {propios.length} sobres propios <ChevronDown className="w-4 h-4" />
-                </button>
-              </>
-            ) : (
-              propios.map(renderFilaPropio)
-            )}
+          <div className="grid grid-cols-2 xl:grid-cols-3 gap-3.5">
+            {renderFondo()}
+            {renderInversion()}
+            {renderGustos()}
           </div>
         )}
       </div>
     );
   };
 
-  const renderFilaPropio = (s: Sobre) => {
-    const color = s.color || 'var(--acento)';
+  const renderPropios = () => {
+    const totalPropio = propios.reduce((a, s) => a + s.apartado, 0);
+
     return (
-      <div 
-        key={s.id} 
-        className="flex items-center justify-between py-2.5 border-t border-hairline group cursor-pointer first:border-0"
-        onClick={() => setModal({ modo: 'editar', sobre: s })}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg grid place-items-center" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)` }}>
-            <Mail className="w-4 h-4" style={{ color }} />
+      <div className="mb-8">
+        <div 
+          className="rounded-[14px] border border-[var(--linea)] bg-[var(--superficie-2)] px-[18px] py-[13px] flex justify-between items-center cursor-pointer hover:border-[color:var(--texto-3)] transition-colors"
+          onClick={() => setPropiosAbiertos(!propiosAbiertos)}
+        >
+          <div className="text-[13px] text-[color:var(--texto-2)]">
+            Tus sobres propios · <span className="font-bold text-[color:var(--texto)]">{propios.length}</span>{propios.length > 0 && <> · <span className="font-bold text-[color:var(--texto)]">{formatearCOP(totalPropio)}</span> apartados</>}
           </div>
-          <div>
-            <div className="font-semibold text-[13px] text-[color:var(--texto)] group-hover:text-[color:var(--acento)] transition-colors">
-              {s.nombre}
-            </div>
-            {s.meta && (
-              <div className="text-[11px] text-[color:var(--texto-3)] tabular-nums flex items-center gap-1">
-                <Target className="w-3 h-3" /> {formatearCOP(s.meta)}
+          <div className="text-[13px] font-bold text-[color:var(--acento)]">
+            {propios.length > 0 ? (propiosAbiertos ? "Cerrar" : "Ver →") : "Crear uno →"}
+          </div>
+        </div>
+
+        {propiosAbiertos && propios.length > 0 && (
+          <div className="mt-4 flex flex-col gap-2 pl-2">
+            {propios.map(s => (
+              <div 
+                key={s.id} 
+                className="flex items-center justify-between py-2.5 border-b border-[var(--linea)] last:border-0 group cursor-pointer"
+                onClick={() => setModal({ modo: 'editar', sobre: s })}
+              >
+                <div className="flex flex-col">
+                  <div className="font-semibold text-[13px] text-[color:var(--texto)] group-hover:text-[color:var(--acento)] transition-colors">{s.nombre}</div>
+                  {s.meta && <div className="text-[11px] text-[color:var(--texto-3)] tabular-nums mt-0.5">Meta: {formatearCOP(s.meta)}</div>}
+                </div>
+                <div className="text-right flex flex-col items-end">
+                  <div className="font-bold text-[13px] tabular-nums" style={{ color: s.color || 'var(--acento)' }}>{formatearCOP(s.apartado)}</div>
+                  <button onClick={(e) => { e.stopPropagation(); setModal({ modo: 'alimentar', sobre: s }); }} className="text-[11px] font-bold text-[color:var(--acento)] mt-0.5 hover:underline cursor-pointer">Alimentar</button>
+                </div>
               </div>
-            )}
+            ))}
           </div>
-        </div>
-        <div className="text-right">
-          <div className="font-bold text-[13px] tabular-nums" style={{ color }}>
-            {formatearCOP(s.apartado)}
-          </div>
-          <div className="text-[10px] text-[color:var(--texto-3)] flex items-center justify-end gap-1">
-             {s.meta && s.apartado >= s.meta && <Check className="w-3 h-3 text-[color:var(--positivo)]" />}
-             Apartado
-          </div>
-        </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
-      <BarraTitulo>
-        <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--acento)]">
-          Base Cero
-        </span>
-        <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)]">
-          Sobres
-        </h1>
-      </BarraTitulo>
-
-      <header className="md:hidden flex items-center justify-between gap-3 pt-1 px-4 mb-2">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onVolver}
-            className="p-2 rounded-xl bg-[var(--superficie)] border border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] cursor-pointer transition-colors"
-            aria-label="Volver"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <span className="text-[10px] font-semibold text-[color:var(--acento)] uppercase tracking-wider">
-              Base Cero
-            </span>
-            <h1 className="text-xl font-bold font-display tracking-tight text-[color:var(--texto)]">
-              Sobres
-            </h1>
-          </div>
-        </div>
-        <Boton
-          variante="secundario"
-          tamano="sm"
-          icono={<Plus className="w-4 h-4" />}
-          onClick={() => setModal({ modo: 'crear', sobre: null })}
-        >
-          Crear
-        </Boton>
-      </header>
-      
-      <div className="hidden md:flex justify-end px-4 py-2">
-        <Boton
-          variante="secundario"
-          tamano="sm"
-          icono={<Plus className="w-4 h-4" />}
-          onClick={() => setModal({ modo: 'crear', sobre: null })}
-        >
-          Crear sobre propio
-        </Boton>
-      </div>
-
-      <Marco columnas="minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
-        <Columna ordenMovil={1}>
-          <Zona plana>
-            <Scroll className="px-4 xl:px-5 py-3">
-              <div className="xl:hidden">
-                {renderLineaBaseCero()}
-              </div>
-              {renderBasicos()}
-            </Scroll>
-          </Zona>
-        </Columna>
-
-        <Columna ordenMovil={2} borde>
-          <Zona plana>
-            <Scroll className="px-4 xl:px-5 py-3">
-              <div className="hidden xl:block">
-                {renderLineaBaseCero()}
-              </div>
-              {renderLibres()}
-            </Scroll>
-          </Zona>
-        </Columna>
-        
-        <Columna ordenMovil={3} borde>
-          <Zona plana>
-            <Scroll className="px-4 xl:px-5 py-3">
-              {renderPropios()}
-            </Scroll>
-          </Zona>
-        </Columna>
-      </Marco>
+    <div className="w-full min-h-full px-4 md:px-[24px] max-w-[1200px] mx-auto pb-24 xl:pb-0 animate-screen-enter">
+      {renderEncabezado()}
+      {renderBasicos()}
+      {renderLibres()}
+      {renderPropios()}
 
       {modal && (
         <ModalSobre
