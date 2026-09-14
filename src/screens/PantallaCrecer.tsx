@@ -1,25 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import {
-  PieChart,
-  Mail,
-  Trophy,
-  Flame,
-  Repeat,
-  CreditCard,
-  BarChart3,
-  ArrowRight,
-  Sparkles,
-} from 'lucide-react';
 import { Presupuesto, Sobre, RetoAhorro, Suscripcion, TarjetaCredito, Billetera, Movimiento, Deuda } from '../types';
-import { Chip } from '../components/ui/Chip';
-import { TarjetaModulo } from '../components/ui/TarjetaModulo';
-import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
-import { BarraTitulo, BarraAcciones, useCajonEmpuja } from '../components/layout/shell';
-import { getContextoMes } from '../logic/resumenMes';
-import { calcularHallazgos, historial } from '../logic/reportes';
+import { historial } from '../logic/reportes';
 import { cicloDe, montoVigente } from '../logic/suscripciones';
-import { mejorTarjetaHoy, cupoDeTarjeta, deudaDeTarjeta } from '../logic/tarjetas';
+import { mejorTarjetaHoy } from '../logic/tarjetas';
 import { formatearCOP } from '../utils/format';
+import { aporteDeSemana } from '../logic/retos';
+import { MESES_ABREV } from '../utils/fechas';
 import { PantallaPresupuesto } from './PantallaPresupuesto';
 import { PantallaSobres } from './PantallaSobres';
 import { PantallaRetos } from './PantallaRetos';
@@ -89,55 +75,24 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     onEliminarTarjeta,
   } = props;
 
-  const cajonEmpuja = useCajonEmpuja();
   const [modulo, setModulo] = useState<Modulo>('hub');
 
-  // Al re-seleccionar "Crecer" en la nav, vuelve al hub.
   useEffect(() => {
     setModulo('hub');
   }, [props.resetToken]);
 
-  const resumenPresupuesto = useMemo(() => {
-    const totalTope = presupuestos.reduce((s, p) => s + p.tope, 0);
-    const totalGastado = presupuestos.reduce((s, p) => s + (gastoPorCategoria[p.categoria] || 0), 0);
-    const pct = totalTope > 0 ? Math.round((totalGastado / totalTope) * 100) : 0;
-    return { totalTope, totalGastado, pct, n: presupuestos.length };
-  }, [presupuestos, gastoPorCategoria]);
-
-  const resumenRetos = useMemo(() => {
-    const activos = retos.filter((r) => !r.completado).length;
-    const acumulado = retos.reduce((s, r) => s + r.acumulado, 0);
-    const mejorRacha = retos.reduce((m, r) => Math.max(m, r.racha), 0);
-    return { activos, acumulado, mejorRacha };
-  }, [retos]);
-
-  // ------------------------------------------------------------------
-  // El tablero de Pro. Cada módulo trae su cifra, su forma y lo que toca
-  // hacer ahora: seis tarjetas iguales y mudas eran un menú disfrazado.
-  // ------------------------------------------------------------------
   const hoy = useMemo(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }, []);
 
-  const contexto = useMemo(() => getContextoMes(), []);
-
-  /** El tope que va a reventar primero: el que más porcentaje lleva. */
-  const topeApretado = useMemo(() => {
-    const conUso = presupuestos
-      .map((p) => ({
-        categoria: p.categoria,
-        tope: p.tope,
-        gastado: gastoPorCategoria[p.categoria] || 0,
-        pct: p.tope > 0 ? ((gastoPorCategoria[p.categoria] || 0) / p.tope) * 100 : 0,
-      }))
-      .sort((a, b) => b.pct - a.pct);
-    return conUso[0] ?? null;
-  }, [presupuestos, gastoPorCategoria]);
+  const resumenRetos = useMemo(() => {
+    const activos = retos.filter((r) => !r.completado).length;
+    return { activos };
+  }, [retos]);
 
   const retoActivo = useMemo(() => retos.find((r) => !r.completado) ?? null, [retos]);
 
-  /** Los próximos cobros de suscripción, para que la tarjeta diga cuándo. */
   const proximosCobros = useMemo(
     () =>
       suscripciones
@@ -149,15 +104,6 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
   );
 
   const mejorTarjeta = useMemo(() => mejorTarjetaHoy(tarjetas, hoy), [tarjetas, hoy]);
-
-  const cuposTarjetas = useMemo(
-    () =>
-      tarjetas.map((tc) => ({
-        tc,
-        cupo: cupoDeTarjeta(tc, deudaDeTarjeta(tc, props.deudas)),
-      })),
-    [tarjetas, props.deudas]
-  );
 
   const entradaCierre = useMemo(
     () => ({
@@ -174,40 +120,6 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
   const cierres = useMemo(() => historial(entradaCierre, hoy, 6), [entradaCierre, hoy]);
   const cerrados = useMemo(() => cierres.filter((c) => !c.enCurso), [cierres]);
   const ultimoCierre = cerrados[cerrados.length - 1] ?? null;
-
-  const hallazgos = useMemo(
-    () =>
-      ultimoCierre
-        ? calcularHallazgos({
-            movimientos: props.movimientos,
-            deudas: props.deudas,
-            suscripciones,
-            cierres,
-            cierre: ultimoCierre,
-            esPro: true,
-            formato: formatearCOP,
-          })
-        : [],
-    [props.movimientos, props.deudas, suscripciones, cierres, ultimoCierre]
-  );
-
-  /** Lo apartado, repartido entre sobres y retos, para la cinta de la izquierda. */
-  const repartoApartado = useMemo(() => {
-    const partes = [
-      ...sobres.map((s) => ({
-        nombre: `Sobre · ${s.nombre}`,
-        monto: s.apartado,
-        color: s.color || 'var(--positivo)',
-      })),
-      ...retos.map((r) => ({
-        nombre: `Reto · ${r.nombre}`,
-        monto: r.acumulado,
-        color: r.color || 'var(--accion)',
-      })),
-    ].filter((p) => p.monto > 0);
-    const total = partes.reduce((s, p) => s + p.monto, 0);
-    return { partes, total };
-  }, [sobres, retos]);
 
   if (modulo === 'presupuesto') {
     return (
@@ -293,405 +205,177 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
     );
   }
 
+  type Grupo = {
+    titulo: string;
+    descripcion: string;
+    herramientas: {
+      id: Modulo;
+      nombre: string;
+      cifra: string;
+      unidad: string;
+      detalle: string;
+      chip?: { texto: string; clase: string };
+    }[];
+  };
+
+  const grupos: Grupo[] = [
+    {
+      titulo: 'Controlar el mes',
+      descripcion: 'Que lo del mes alcance y no se vaya en cobros que no usas.',
+      herramientas: [
+        {
+          id: 'suscripciones' as Modulo,
+          nombre: 'Suscripciones',
+          cifra: formatearCOP(sangradoMensual),
+          unidad: 'al mes',
+          detalle: proximosCobros[0]
+            ? `${proximosCobros[0].sus.nombre} cobra ${formatearCOP(proximosCobros[0].monto)} el ${proximosCobros[0].ciclo.fin.getDate()} ${MESES_ABREV[proximosCobros[0].ciclo.fin.getMonth()].toLowerCase()}`
+            : 'Anota lo que te cobran solo cada mes',
+          chip: proximosCobros[0] && proximosCobros[0].ciclo.faltan <= 3
+            ? {
+                texto: proximosCobros[0].ciclo.esFinDePromo
+                  ? `Se acaba la promo en ${proximosCobros[0].ciclo.faltan} días`
+                  : proximosCobros[0].ciclo.faltan === 0
+                  ? 'Cobra hoy'
+                  : proximosCobros[0].ciclo.faltan === 1
+                  ? 'Cobra mañana'
+                  : `Cobra en ${proximosCobros[0].ciclo.faltan} días`,
+                clase: 'aviso',
+              }
+            : undefined,
+        },
+      ],
+    },
+    {
+      titulo: 'Protegerme',
+      descripcion: 'Que las deudas no vuelvan y el banco no te cobre de más.',
+      herramientas: [
+        {
+          id: 'tarjetas' as Modulo,
+          nombre: 'Tarjetas',
+          cifra: String(tarjetas.length),
+          unidad: tarjetas.length === 1 ? 'tarjeta' : 'tarjetas',
+          detalle: mejorTarjeta
+            ? `Hoy conviene ${mejorTarjeta.tc.nombre}: pagas en ${mejorTarjeta.plazo.dias} días sin intereses`
+            : 'Anota tus fechas de corte y pago',
+        },
+      ],
+    },
+    {
+      titulo: 'Crecer',
+      descripcion: 'Que tu plata trabaje y adelante tu retiro.',
+      herramientas: [
+        {
+          id: 'retos' as Modulo,
+          nombre: 'Retos',
+          cifra: String(resumenRetos.activos),
+          unidad: 'activos',
+          detalle: retoActivo
+            ? `${retoActivo.nombre} · semana ${retoActivo.semanaActual} de ${retoActivo.semanasTotales} · llevas ${formatearCOP(retoActivo.acumulado)}`
+            : 'Empieza un reto de ahorro',
+          chip: retoActivo
+            ? { texto: `Aporta ${formatearCOP(aporteDeSemana(retoActivo, retoActivo.semanaActual))}`, clase: 'acento' }
+            : undefined,
+        },
+      ],
+    },
+    {
+      titulo: 'Ver cómo voy',
+      descripcion: 'El cierre de cada mes.',
+      herramientas: [
+        {
+          id: 'reportes' as Modulo,
+          nombre: 'Reportes',
+          cifra: ultimoCierre ? formatearCOP(ultimoCierre.queda) : '—',
+          unidad: ultimoCierre ? `sobró en ${ultimoCierre.etiqueta.toLowerCase()}` : '',
+          detalle: ultimoCierre
+            ? `Cierre de ${ultimoCierre.etiquetaLarga || ultimoCierre.etiqueta} listo`
+            : 'Con un mes cerrado aparece tu primer reporte',
+        },
+      ],
+    },
+  ];
+
+  const conChip = grupos.flatMap((g) => g.herramientas).filter((h) => h.chip).length;
 
   return (
-    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
-      {/* ===================== Barra de contexto (escritorio) ===================== */}
-      <BarraTitulo>
-        <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)]">Crecer</h1>
-        <span className="w-px h-4 bg-[var(--linea)]" />
-        <Chip variante="aqua">✦ Bolsillo Pro</Chip>
-        <Chip>6 herramientas · nada bloqueado</Chip>
-      </BarraTitulo>
-
-      <BarraAcciones>
-        <Chip>
-          {contexto.nombre} · día {contexto.dia} de {contexto.diasDelMes}
-        </Chip>
-      </BarraAcciones>
-
-      {/* ===================== Cabecera de móvil ===================== */}
-      <header className="md:hidden pt-1 mb-1">
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[color:var(--acento)] uppercase tracking-wider">
-          <Sparkles className="w-3.5 h-3.5" />
-          Bolsillo Pro
-        </span>
-        <h1 className="text-2xl font-bold font-display tracking-tight text-[color:var(--texto)]">
-          Crecer
-        </h1>
-      </header>
-
-      <Marco columnas={cajonEmpuja ? '300px minmax(0,1fr)' : '336px minmax(0,1fr)'}>
-        {/* ---------- Columna 1: lo apartado y lo que Bolsillo notó ---------- */}
-        <Columna ordenMovil={1} borde>
-          <Zona className="xl:!py-[18px]">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
-              Apartado en total
-            </p>
-            <p className="font-display font-black text-[38px] leading-none tabular-nums text-[color:var(--positivo)] mt-2">
-              {formatearCOP(repartoApartado.total)}
-            </p>
-            <p className="text-[11.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-              {sobres.length > 0 && `${formatearCOP(totalApartado)} en sobres`}
-              {sobres.length > 0 && resumenRetos.acumulado > 0 && ' y '}
-              {resumenRetos.acumulado > 0 && `${formatearCOP(resumenRetos.acumulado)} en retos`}
-              {repartoApartado.total === 0 && 'Todavía no has apartado nada.'}
-            </p>
-          </Zona>
-
-          {repartoApartado.partes.length > 0 && (
-            <Zona>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
-                Dónde está apartado
-              </p>
-              <div className="flex h-[22px] rounded-md overflow-hidden gap-0.5 mt-2.5 mb-2">
-                {repartoApartado.partes.map((p) => (
-                  <span
-                    key={p.nombre}
-                    style={{
-                      width: `${(p.monto / repartoApartado.total) * 100}%`,
-                      background: p.color,
-                    }}
-                  />
-                ))}
-              </div>
-              <div className="flex flex-col">
-                {repartoApartado.partes.map((p) => (
-                  <div
-                    key={p.nombre}
-                    className="flex items-center gap-2.5 py-1.5 border-b border-[var(--hairline)] last:border-b-0"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-[2px] flex-none"
-                      style={{ background: p.color }}
-                    />
-                    <span className="flex-1 text-[11.5px] text-[color:var(--texto-2)] truncate">
-                      {p.nombre}
-                    </span>
-                    <span className="font-display font-bold text-[12px] tabular-nums text-[color:var(--texto)]">
-                      {formatearCOP(p.monto)}
-                    </span>
-                    <span className="text-[10px] text-[color:var(--texto-3)] tabular-nums w-9 text-right">
-                      {Math.round((p.monto / repartoApartado.total) * 100)}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </Zona>
-          )}
-
-          <Zona crece sinPadding>
-            <div className="p-4 xl:px-[17px] xl:py-[13px] xl:pb-1.5 flex items-baseline justify-between gap-3">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
-                Lo que Bolsillo notó
-              </p>
-              {ultimoCierre && (
-                <span className="text-[10.5px] text-[color:var(--texto-3)]">
-                  {ultimoCierre.etiqueta}
-                </span>
-              )}
-            </div>
-
-            {hallazgos.length > 0 ? (
-              <Scroll className="px-4 xl:px-[17px] pb-2">
-                <div className="flex flex-col">
-                  {hallazgos.map((h) => (
-                    <div
-                      key={h.id}
-                      className="py-2.5 border-b border-[var(--hairline)] last:border-b-0"
-                    >
-                      <p className="text-[12px] font-medium text-[color:var(--texto)] leading-snug">
-                        {h.titulo}
-                      </p>
-                      <p className="text-[10.5px] text-[color:var(--texto-3)] leading-relaxed mt-1">
-                        {h.detalle}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </Scroll>
-            ) : (
-              <p className="px-4 xl:px-[17px] pb-3 text-[11px] text-[color:var(--texto-3)] leading-relaxed">
-                Con un mes cerrado empiezan a salir los hallazgos que solo se ven con historia.
-              </p>
+    <div className="pant">
+      <div className="cab">
+        <div>
+          <h1>Herramientas</h1>
+          <p>
+            Agrupadas por lo que te resuelven.
+            {conChip > 0 && (
+              <> <b>{conChip}</b> te {conChip === 1 ? 'pide' : 'piden'} algo esta semana.</>
             )}
+          </p>
+        </div>
+      </div>
 
-            <div className="px-4 xl:px-[17px] pt-2 pb-3 xl:pb-[13px]">
-              <button
-                type="button"
-                onClick={() => setModulo('reportes')}
-                className="text-[11px] font-semibold text-[color:var(--acento)] hover:underline cursor-pointer flex items-center gap-1"
-              >
-                Abrir Reportes <ArrowRight className="w-3 h-3" />
-              </button>
+      <div className="rejilla llena" style={{ '--cols': 'minmax(0,0.6fr) minmax(0,1fr) minmax(0,1fr)' } as React.CSSProperties}>
+        {grupos.map((g) => (
+          <React.Fragment key={g.titulo}>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, minWidth: 0 }}>
+              <h2 className="titulo">{g.titulo}</h2>
+              <p className="nota solo-escritorio" style={{ margin: 0 }}>{g.descripcion}</p>
             </div>
-          </Zona>
-        </Columna>
 
-        {/* ---------- Columna 2: las seis herramientas ---------- */}
-        <Columna ordenMovil={2}>
-          <Zona>
-            <div className="flex items-baseline justify-between gap-3">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--texto-3)]">
-                  Tus herramientas
-                </p>
-                <h2 className="font-display font-bold text-[15px] text-[color:var(--texto)] mt-1.5">
-                  Cada una con lo que{' '}
-                  <span className="text-[color:var(--acento)]">toca hacer ahora</span>
-                </h2>
+            {g.herramientas.length === 2 ? (
+              <div className="par ancho-2" style={{ gap: 14 }}>
+                {g.herramientas.map((h) => (
+                  <div
+                    key={h.id}
+                    className="panel"
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => setModulo(h.id)}
+                    onKeyDown={(e) => e.key === 'Enter' && setModulo(h.id)}
+                    style={{ height: '100%', cursor: 'pointer' }}
+                  >
+                    <div className="panel-cab" style={{ flexWrap: 'wrap' }}>
+                      <b>{h.nombre}</b>
+                      {h.chip && <span className={`chip ${h.chip.clase}`}>{h.chip.texto}</span>}
+                    </div>
+                    <div>
+                      <span className="cifra-m">{h.cifra}</span> <span className="de">{h.unidad}</span>
+                    </div>
+                    <div className="fila solo-escritorio" style={{ marginTop: 'auto' }}>
+                      <span className="nota">{h.detalle}</span>
+                      <span className="link acento">Abrir →</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <span className="text-[11px] text-[color:var(--texto-3)] whitespace-nowrap">
-                Toca una para abrirla
-              </span>
-            </div>
-          </Zona>
-
-          <Zona crece sinPadding>
-            <div
-              className={`grid gap-3 p-4 xl:p-[17px] xl:h-full ${
-                cajonEmpuja ? 'sm:grid-cols-2' : 'sm:grid-cols-2 xl:grid-cols-3'
-              } xl:auto-rows-fr`}
-            >
-              {/* --- Presupuesto (Eliminado en Base Cero: reemplazado por sobres de lo básico) --- */}
-
-              {/* --- Sobres --- */}
-              <TarjetaModulo
-                color="var(--positivo)"
-                icono={<Mail className="w-3.5 h-3.5" />}
-                nombre="Sobres digitales"
-                etiqueta={sobres.length > 0 ? `${sobres.length} sobres` : undefined}
-                cifra={formatearCOP(totalApartado)}
-                accion={sobres.length > 0 ? 'Mandar lo libre a un sobre' : 'Crear tu primer sobre'}
-                onClick={() => setModulo('sobres')}
-              >
-                {sobres.length > 0 ? (
-                  <div className="flex flex-col gap-1.5 mt-2.5">
-                    {sobres.slice(0, 3).map((s) => (
-                      <div key={s.id}>
-                        <div className="flex justify-between gap-2 text-[10.5px]">
-                          <span className="text-[color:var(--texto-3)] truncate">{s.nombre}</span>
-                          <span className="font-display font-semibold tabular-nums text-[color:var(--texto-2)]">
-                            {formatearCOP(s.apartado)}
-                          </span>
-                        </div>
-                        {s.meta && s.meta > 0 && (
-                          <span className="block h-[3px] rounded-sm bg-[var(--hairline)] overflow-hidden mt-1">
-                            <span
-                              className="block h-full rounded-sm bg-[var(--positivo)]"
-                              style={{ width: `${Math.min(100, (s.apartado / s.meta) * 100)}%` }}
-                            />
-                          </span>
-                        )}
-                      </div>
-                    ))}
+            ) : (
+              <div className="ancho-2">
+                {g.herramientas.map((h) => (
+                  <div
+                    key={h.id}
+                    className="panel"
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => setModulo(h.id)}
+                    onKeyDown={(e) => e.key === 'Enter' && setModulo(h.id)}
+                    style={{ height: '100%', cursor: 'pointer' }}
+                  >
+                    <div className="panel-cab" style={{ flexWrap: 'wrap' }}>
+                      <b>{h.nombre}</b>
+                      {h.chip && <span className={`chip ${h.chip.clase}`}>{h.chip.texto}</span>}
+                    </div>
+                    <div>
+                      <span className="cifra-m">{h.cifra}</span> <span className="de">{h.unidad}</span>
+                    </div>
+                    <div className="fila solo-escritorio" style={{ marginTop: 'auto' }}>
+                      <span className="nota">{h.detalle}</span>
+                      <span className="link acento">Abrir →</span>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                    Aparta lo intocable antes de gastarlo.
-                  </p>
-                )}
-              </TarjetaModulo>
-
-              {/* --- Retos --- */}
-              <TarjetaModulo
-                color="var(--accion)"
-                icono={<Trophy className="w-3.5 h-3.5" />}
-                nombre="Retos de ahorro"
-                etiqueta={
-                  resumenRetos.mejorRacha > 0 ? `🔥 racha ${resumenRetos.mejorRacha}` : undefined
-                }
-                etiquetaTono="ok"
-                cifra={formatearCOP(resumenRetos.acumulado)}
-                sufijo={retoActivo ? `de ${formatearCOP(retoActivo.metaTotal)}` : undefined}
-                accion={retoActivo ? `Aportar la semana ${retoActivo.semanaActual}` : 'Crear un reto'}
-                onClick={() => setModulo('retos')}
-              >
-                {retoActivo ? (
-                  <>
-                    <div className="flex items-end gap-[3px] h-[26px] mt-2.5">
-                      {Array.from({ length: 10 }).map((_, i) => {
-                        const bloques = Math.max(1, Math.ceil(retoActivo.semanasTotales / 10));
-                        const hechos = Math.floor((retoActivo.semanaActual - 1) / bloques);
-                        return (
-                          <span
-                            key={i}
-                            className="flex-1 rounded-t-[2px]"
-                            style={{
-                              height: '100%',
-                              background: 'var(--accion)',
-                              opacity: i < hechos ? 1 : 0.3,
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                    <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                      {retoActivo.nombre} · semana {retoActivo.semanaActual} de{' '}
-                      {retoActivo.semanasTotales}.
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                    Junta tu primer millón con un reto guiado.
-                  </p>
-                )}
-              </TarjetaModulo>
-
-              {/* --- Suscripciones --- */}
-              <TarjetaModulo
-                color="var(--acento-2)"
-                icono={<Repeat className="w-3.5 h-3.5" />}
-                nombre="Suscripciones"
-                etiqueta={
-                  suscripciones.length > 0
-                    ? `${suscripciones.filter((s) => s.activa).length} activas`
-                    : undefined
-                }
-                cifra={formatearCOP(sangradoMensual)}
-                sufijo="/mes"
-                accion={
-                  proximosCobros[0]
-                    ? proximosCobros[0].ciclo.esFinDePromo
-                    ? `A ${proximosCobros[0].sus.nombre} se le acaba la promo en ${proximosCobros[0].ciclo.faltan} días`
-                    : proximosCobros[0].ciclo.esFinDePromo
-                    ? `A ${proximosCobros[0].sus.nombre} se le acaba la promo en ${proximosCobros[0].ciclo.faltan} días`
-                    : `${proximosCobros[0].sus.nombre} se cobra en ${proximosCobros[0].ciclo.faltan} días`
-                    : 'Registrar tus suscripciones'
-                }
-                onClick={() => setModulo('suscripciones')}
-              >
-                {proximosCobros.length > 0 ? (
-                  <div className="flex flex-col gap-1.5 mt-2.5">
-                    {proximosCobros.map(({ sus, ciclo, monto }) => (
-                      <div key={sus.id} className="flex justify-between gap-2 text-[10.5px]">
-                        <span className="text-[color:var(--texto-3)] truncate">
-                          {ciclo.faltan === 0
-                            ? 'hoy'
-                            : `en ${ciclo.faltan}d`}{' '}
-                          · {sus.nombre}
-                        </span>
-                        <span className="font-display font-semibold tabular-nums text-[color:var(--texto-2)]">
-                          {formatearCOP(monto)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                    Caza los cobros que se comen tu sueldo.
-                  </p>
-                )}
-              </TarjetaModulo>
-
-              {/* --- Tarjetas --- */}
-              <TarjetaModulo
-                color="var(--alerta)"
-                icono={<CreditCard className="w-3.5 h-3.5" />}
-                nombre="Tarjetas y corte"
-                etiqueta={
-                  tarjetas.length > 0
-                    ? `${tarjetas.length} tarjeta${tarjetas.length === 1 ? '' : 's'}`
-                    : undefined
-                }
-                cifra={mejorTarjeta ? String(mejorTarjeta.plazo.dias) : '—'}
-                sufijo={mejorTarjeta ? 'días sin interés' : undefined}
-                accion={
-                  tarjetas.length > 0 ? '¿A cuántas cuotas la difiero?' : 'Agregar tu tarjeta'
-                }
-                onClick={() => setModulo('tarjetas')}
-              >
-                {mejorTarjeta ? (
-                  <>
-                    <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                      Si compras hoy con {mejorTarjeta.tc.nombre}.
-                    </p>
-                    <div className="flex flex-col gap-1.5 mt-2.5">
-                      {cuposTarjetas.slice(0, 2).map(({ tc, cupo }) => (
-                        <div key={tc.id}>
-                          <div className="flex justify-between gap-2 text-[10.5px]">
-                            <span className="text-[color:var(--texto-3)] truncate">{tc.nombre}</span>
-                            <span
-                              className={`font-display font-semibold tabular-nums ${
-                                cupo.estado === 'riesgo'
-                                  ? 'text-[color:var(--alerta)]'
-                                  : 'text-[color:var(--texto-2)]'
-                              }`}
-                            >
-                              {Math.round(cupo.pct)}% del cupo
-                            </span>
-                          </div>
-                          <span className="block h-[3px] rounded-sm bg-[var(--hairline)] overflow-hidden mt-1">
-                            <span
-                              className="block h-full rounded-sm"
-                              style={{
-                                width: `${Math.min(100, cupo.pct)}%`,
-                                background:
-                                  cupo.estado === 'riesgo' ? 'var(--alerta)' : 'var(--acento)',
-                              }}
-                            />
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                    Sabe con cuál pagar para no pagar intereses.
-                  </p>
-                )}
-              </TarjetaModulo>
-
-              {/* --- Reportes --- */}
-              <TarjetaModulo
-                color="var(--acento)"
-                icono={<BarChart3 className="w-3.5 h-3.5" />}
-                nombre="Reportes"
-                etiqueta={ultimoCierre ? `${ultimoCierre.etiqueta} cerrado` : undefined}
-                cifra={ultimoCierre ? formatearCOP(ultimoCierre.queda) : '—'}
-                sufijo={ultimoCierre ? 'te sobraron' : undefined}
-                accion="Ver el mes cerrado · exportar"
-                onClick={() => setModulo('reportes')}
-              >
-                {cerrados.length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-[3px] h-[30px] mt-2.5">
-                      {cerrados.slice(-5).map((c) => {
-                        const tope = Math.max(
-                          ...cerrados.slice(-5).map((x) => Math.abs(x.queda)),
-                          1
-                        );
-                        const alto = Math.max(8, (Math.abs(c.queda) / tope) * 100);
-                        return (
-                          <span
-                            key={`${c.anio}-${c.mes}`}
-                            className="flex-1 rounded-[2px]"
-                            style={{
-                              height: `${alto}%`,
-                              alignSelf: c.queda < 0 ? 'flex-start' : 'flex-end',
-                              background: c.queda < 0 ? 'var(--alerta)' : 'var(--acento)',
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                    <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                      {cerrados.length} meses cerrados
-                      {ultimoCierre &&
-                        ` · ${ultimoCierre.pctQueda} de cada 100 pesos te quedaron`}
-                      .
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-[10.5px] text-[color:var(--texto-3)] mt-2 leading-relaxed">
-                    Lo que solo se ve con varios meses · exportable.
-                  </p>
-                )}
-              </TarjetaModulo>
-            </div>
-          </Zona>
-        </Columna>
-      </Marco>
+                ))}
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
     </div>
   );
 };
