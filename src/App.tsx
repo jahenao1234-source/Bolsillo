@@ -227,7 +227,7 @@ export default function App() {
             </header>
 
             {/* Barra de contexto del escritorio: cada pantalla la llena por portal */}
-            <div className="no-imprimir hidden md:flex items-center justify-between gap-5 px-5 pt-4 pb-1 min-h-[38px] flex-none">
+            <div className="no-imprimir hidden md:flex items-center justify-between gap-5 px-5 pt-2.5 pb-0 min-h-[36px] flex-none">
               <div ref={setSlotBarra} className="flex items-center gap-3 min-w-0" />
               <div className="flex items-center gap-2 flex-none">
                 <div ref={setSlotAcciones} className="flex items-center gap-2" />
@@ -243,7 +243,7 @@ export default function App() {
 
             <div
               ref={contenidoRef}
-              className="contenido-kit app-contenido flex-1 xl:flex xl:flex-col px-4 sm:px-6 md:px-5 py-5 md:pt-3 pb-24 md:pb-5 w-full"
+              className="contenido-kit app-contenido flex-1 xl:flex xl:flex-col px-4 sm:px-6 md:px-5 py-5 md:pt-2 pb-24 md:pb-3 w-full"
             >
               <div key={seccion} className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 {seccion === 'plan' && (
