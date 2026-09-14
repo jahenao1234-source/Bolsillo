@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -10,15 +10,15 @@ import {
   AlertTriangle,
   Zap,
   Wallet,
-} from 'lucide-react';
-import { Billetera, Movimiento, PromoSuscripcion, Suscripcion, TarjetaCredito } from '../types';
-import { Tarjeta } from '../components/ui/Tarjeta';
-import { Boton } from '../components/ui/Boton';
-import { formatearCOP } from '../utils/format';
-import { Chip } from '../components/ui/Chip';
-import { Marco, Columna, Zona, Scroll } from '../components/layout/Marco';
-import { BarraTitulo, BarraAcciones, useCajonEmpuja } from '../components/layout/shell';
-import { NotaModulo } from '../components/ui/NotaModulo';
+} from "lucide-react";
+import { Billetera, Movimiento, PromoSuscripcion, Suscripcion, TarjetaCredito } from "../types";
+import { Tarjeta } from "../components/ui/Tarjeta";
+import { Boton } from "../components/ui/Boton";
+import { formatearCOP } from "../utils/format";
+import { Chip } from "../components/ui/Chip";
+import { Marco, Columna, Zona, Scroll } from "../components/layout/Marco";
+import { BarraTitulo, BarraAcciones, useCajonEmpuja } from "../components/layout/shell";
+import { NotaModulo } from "../components/ui/NotaModulo";
 import {
   DURACIONES_PROMO,
   DIAS_DE_AVISO,
@@ -30,13 +30,17 @@ import {
   montoVigente,
   sangradoNormal,
   sangradoVigente,
-} from '../logic/suscripciones';
+  esFuga,
+  diasSinUso,
+  cobrosDesde,
+  cobrosDelMes
+} from "../logic/suscripciones";
 import {
   MESES_ABREV,
   MESES_NOMBRE,
   fechaConDiaSemana,
   fechaISOLocal,
-} from '../utils/fechas';
+} from "../utils/fechas";
 
 interface PantallaSuscripcionesProps {
   suscripciones: Suscripcion[];
@@ -46,68 +50,27 @@ interface PantallaSuscripcionesProps {
   ingresoMensual: number;
   onGuardarSuscripcion: (sus: Suscripcion) => void;
   onEliminarSuscripcion: (id: string) => void;
-  onRegistrarMovimiento: (movimiento: Omit<Movimiento, 'id'>) => void;
+  onRegistrarMovimiento: (movimiento: Omit<Movimiento, "id">) => void;
   onVolver: () => void;
 }
 
-const COLORES = ['#5FE0A8', '#25C9BE', '#FF7A3D', '#8AA9FF', '#F2C879', '#E89385'];
+const COLORES = ["#5FE0A8", "#25C9BE", "#FF7A3D", "#8AA9FF", "#F2C879", "#E89385"];
 
-/** El día en formato ISO corto, que es como se guarda `ultimoCobro`. */
 function isoDia(fecha: Date): string {
-  const mes = `${fecha.getMonth() + 1}`.padStart(2, '0');
-  const dia = `${fecha.getDate()}`.padStart(2, '0');
+  const mes = `${fecha.getMonth() + 1}`.padStart(2, "0");
+  const dia = `${fecha.getDate()}`.padStart(2, "0");
   return `${fecha.getFullYear()}-${mes}-${dia}`;
 }
 
-/** "15 sep 2026", el formato legible que usan los movimientos. */
 function fechaLegible(fecha: Date): string {
-  return `${`${fecha.getDate()}`.padStart(2, '0')} ${MESES_ABREV[fecha.getMonth()]} ${fecha.getFullYear()}`;
+  return `${`${fecha.getDate()}`.padStart(2, "0")} ${MESES_ABREV[fecha.getMonth()]} ${fecha.getFullYear()}`;
 }
 
 function etiquetaFaltan(dias: number): string {
-  if (dias === 0) return 'hoy';
-  if (dias === 1) return 'mañana';
-  return `en ${dias} días`;
+  if (dias === 0) return "Hoy";
+  if (dias === 1) return "Mañana";
+  return `En ${dias} días`;
 }
-
-// ============================================================
-// La barra del ciclo: cuánto falta para que se renueve
-// ============================================================
-const BarraCiclo: React.FC<{ sus: Suscripcion; hoy: Date }> = ({ sus, hoy }) => {
-  const ciclo = cicloDe(sus, hoy);
-  const urgente = ciclo.faltan <= DIAS_DE_AVISO;
-  const color = urgente ? 'var(--accion)' : 'var(--acento)';
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[12.5px] font-semibold text-[color:var(--texto)]">
-          {ciclo.esFinDePromo ? 'Te quedan ' : 'Se renueva '}
-          <strong className="font-bold" style={{ color }}>
-            {ciclo.esFinDePromo
-              ? `${ciclo.faltan} ${ciclo.faltan === 1 ? 'día' : 'días'} de prueba`
-              : etiquetaFaltan(ciclo.faltan)}
-          </strong>
-        </span>
-        <span className="text-[10.5px] text-[color:var(--texto-3)] whitespace-nowrap tabular-nums">
-          {ciclo.transcurridos} de {ciclo.totalDias} días
-        </span>
-      </div>
-
-      <div className="h-1.5 rounded-full bg-[var(--superficie-2)] overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${Math.max(2, ciclo.pct)}%`, background: color }}
-        />
-      </div>
-
-      <span className="text-[11px] text-[color:var(--texto-3)]">
-        {ciclo.esFinDePromo ? 'Termina ' : ''}
-        {fechaConDiaSemana(ciclo.fin)}
-      </span>
-    </div>
-  );
-};
 
 export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
   suscripciones,
@@ -140,16 +103,27 @@ export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
   const aviso = useMemo(() => avisoPrincipal(suscripciones, hoy), [suscripciones, hoy]);
   const vigente = sangradoVigente(suscripciones, hoy);
   const normal = sangradoNormal(suscripciones);
-  const hayPromos = normal > vigente;
-  const pctIngreso = ingresoMensual > 0 ? (vigente / ingresoMensual) * 100 : 0;
-  // La barra va de 0 a 20% para que la marca del 10% quede a la mitad y se lea.
-  const anchoPeso = Math.min(100, (pctIngreso / 20) * 100);
-
   const activas = suscripciones.filter((s) => s.activa);
+  
+  const fugas = useMemo(() => activas.filter(s => esFuga(s, hoy)).sort((a, b) => montoVigente(b, hoy) - montoVigente(a, hoy)), [activas, hoy]);
+  const fuga = fugas[0] || null;
+  const cobros = useMemo(() => cobrosDelMes(activas, hoy), [activas, hoy]);
+
+  const nombrePago = (pagaCon?: { tipo: "billetera" | "tarjeta"; id: string }) => {
+    if (!pagaCon) return "—";
+    if (pagaCon.tipo === "billetera") {
+      const b = billeteras.find(x => x.id === pagaCon.id);
+      return b ? b.nombre : "—";
+    }
+    if (pagaCon.tipo === "tarjeta") {
+      const t = tarjetas.find(x => x.id === pagaCon.id);
+      return t ? t.nombre : "—";
+    }
+    return "—";
+  };
 
   const toggleActiva = (s: Suscripcion) => onGuardarSuscripcion({ ...s, activa: !s.activa });
 
-  /** "Me la quedo": la promo se acaba y queda como suscripción normal. */
   const quedarse = (s: Suscripcion) => {
     const fin = s.promo ? fechaISOLocal(s.promo.hasta) : null;
     onGuardarSuscripcion({
@@ -159,7 +133,6 @@ export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
     });
   };
 
-  /** "La voy a cancelar": se pausa aquí; cancelarla de verdad es con el proveedor. */
   const cancelar = (s: Suscripcion) => onGuardarSuscripcion({ ...s, activa: false, promo: undefined });
 
   const registrarCobro = (
@@ -170,10 +143,10 @@ export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
     actualizarPrecio: boolean
   ) => {
     onRegistrarMovimiento({
-      tipo: 'gasto',
+      tipo: "gasto",
       monto,
       billeteraId,
-      categoria: sus.categoria || 'Suscripciones',
+      categoria: sus.categoria || "Suscripciones",
       fecha: fechaLegible(fecha),
       nota: `${sus.nombre} · cobro de ${MESES_NOMBRE[fecha.getMonth()].toLowerCase()}`,
       descripcion: `${sus.nombre} · cobro de ${MESES_NOMBRE[fecha.getMonth()].toLowerCase()}`,
@@ -189,370 +162,235 @@ export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
     setCobrando(null);
   };
 
+  const sumarResto = activas.filter(s => !esFuga(s, hoy)).reduce((a, b) => a + montoVigente(b, hoy), 0);
+  const sumarFugas = fugas.reduce((a, b) => a + montoVigente(b, hoy), 0);
+  const nombresFugas = fugas.map(f => f.nombre).join(", ");
+  const nombresResto = activas.filter(s => !esFuga(s, hoy)).map(f => f.nombre).join(", ");
+  const pctFugas = vigente > 0 ? Math.round((sumarFugas / vigente) * 100) : 0;
+  const pctResto = vigente > 0 ? Math.round((sumarResto / vigente) * 100) : 0;
+
   return (
-    <div className="w-full pb-24 xl:pb-0 animate-screen-enter xl:flex-1 xl:flex xl:flex-col xl:gap-2.5">
-      <BarraTitulo>
-        <span className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[color:var(--acento)]">
-          Crecer · Pro
-        </span>
-        <h1 className="font-display font-bold text-[15.5px] text-[color:var(--texto)]">
-          Suscripciones
-        </h1>
-        <span className="w-px h-4 bg-[var(--linea)]" />
-        <Chip>{suscripciones.filter((s) => s.activa).length} activas</Chip>
-        {vigente > 0 && <Chip>{formatearCOP(vigente)} al mes</Chip>}
-      </BarraTitulo>
-
-      <BarraAcciones>
-        <Boton
-          variante="primario"
-          tamano="sm"
-          icono={<Plus className="w-4 h-4" />}
-          onClick={() => setModal({ editando: null })}
-        >
-          Suscripción
-        </Boton>
-      </BarraAcciones>
-
-      {/* Cabecera de móvil */}
-      <header className="md:hidden flex items-center justify-between gap-3 pt-1">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onVolver}
-            className="p-2 rounded-xl bg-[var(--superficie)] border border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] cursor-pointer transition-colors"
-            aria-label="Volver a Crecer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <span className="text-xs font-semibold text-[color:var(--acento)] uppercase tracking-wider">
-              Crecer · Pro
-            </span>
-            <h1 className="text-2xl font-bold font-display tracking-tight text-[color:var(--texto)]">
-              Suscripciones
-            </h1>
-          </div>
+    <div className="pant">
+      <header className="cab">
+        <div>
+          <h1>Suscripciones</h1>
+          <p>
+            Te cobran solas <b className="num">{formatearCOP(vigente)} al mes</b>, {formatearCOP(vigente * 12)} al año.
+            {fugas.length > 0 && ` ${fugas.length === 1 ? "Una de ellas no la estás usando." : `${fugas.length} no las estás usando.`}`}
+            {normal > vigente && ` Cuando terminen las promos serán ${formatearCOP(normal)}.`}
+          </p>
         </div>
-        <Boton
-          variante="primario"
-          tamano="sm"
-          icono={<Plus className="w-4 h-4" />}
-          onClick={() => setModal({ editando: null })}
-        >
-          Nueva
-        </Boton>
+        <div className="acciones">
+          <button className="link" onClick={onVolver}>← Herramientas</button>
+          <button className="btn2" onClick={() => setModal({ editando: null })}>+ Nueva</button>
+        </div>
       </header>
 
-      <Marco columnas="356px minmax(0,1fr)">
-        <Columna ordenMovil={1} borde>
-          <Zona crece sinPadding>
-            <Scroll className="px-4 xl:px-[17px] py-3">
-              {/* ===== El aviso: lo que este módulo viene a resolver ===== */}
-              {aviso && (
-                <div
-                  className="rounded-2xl border p-5 flex flex-col gap-2.5"
-                  style={{
-                    borderColor: 'color-mix(in srgb, var(--accion) 45%, transparent)',
-                    background: 'color-mix(in srgb, var(--accion) 10%, var(--superficie))',
-                  }}
-                >
-                  <span className="self-start inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider text-[color:var(--accion)] border border-[var(--accion)]/40 rounded-full px-2.5 py-0.5">
-                    <Zap className="w-3 h-3" /> Ojo con esta
-                  </span>
+      <div className="rejilla llena" style={{ "--cols": "minmax(0,1.25fr) minmax(0,1.1fr) minmax(0,1fr)" } as React.CSSProperties}>
+        
+        {aviso?.tipo === "promo" ? (
+          <section className="panel riesgo">
+            <h2 className="titulo">Se acaba una promo <span className="chip aviso">{etiquetaFaltan(aviso.dias)}</span></h2>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{aviso.sus.nombre}</div>
+            <div className="nota">Pasas de {formatearCOP(aviso.sus.promo?.monto || 0)} a {formatearCOP(aviso.sus.monto)} al mes el {aviso.ciclo.fin.getDate()} {MESES_ABREV[aviso.ciclo.fin.getMonth()].toLowerCase()}.</div>
+            <div><span className="cifra-xl">{formatearCOP(aviso.sus.monto)}</span> <span className="de">al mes</span></div>
+            <div style={{ marginTop: "auto", display: "flex", gap: 14, flexWrap: "wrap" }}>
+              <button className="btn" onClick={() => cancelar(aviso.sus)}>La voy a cancelar</button>
+              <button className="link" onClick={() => quedarse(aviso.sus)}>Me la quedo</button>
+            </div>
+          </section>
+        ) : fuga ? (
+          <section className="panel riesgo">
+            <div className="panel-cab">
+              <h2 className="titulo">Fuga activa</h2>
+              <span className="chip mal">{diasSinUso(fuga, hoy)} días sin uso</span>
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{fuga.nombre}</div>
+            <div className="nota">
+              Último uso el {fechaISOLocal(fuga.ultimoUso!)?.getDate()} {MESES_ABREV[fechaISOLocal(fuga.ultimoUso!)!.getMonth()].toLowerCase()}. Desde entonces te cobró {cobrosDesde(fuga, fechaISOLocal(fuga.ultimoUso!)!, hoy)} {cobrosDesde(fuga, fechaISOLocal(fuga.ultimoUso!)!, hoy) === 1 ? "vez" : "veces"}: <b className="num">{formatearCOP(montoVigente(fuga, hoy) * cobrosDesde(fuga, fechaISOLocal(fuga.ultimoUso!)!, hoy))}</b> sin usarla.
+            </div>
+            <div className="fila" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
+              <span>
+                <span className="cifra-xl mal">{formatearCOP(montoVigente(fuga, hoy) * 12)}</span> <span className="de">al año</span>
+              </span>
+              <span className="nota num">{formatearCOP(montoVigente(fuga, hoy))} al mes</span>
+            </div>
+            <div className="nota solo-movil">Si la cancelas, esos {formatearCOP(montoVigente(fuga, hoy))} al mes quedan libres.</div>
+            <div style={{ marginTop: "auto", display: "flex", gap: 14, flexWrap: "wrap" }}>
+              <button className="btn" onClick={() => cancelar(fuga)}>Cancelar {fuga.nombre}</button>
+              <button className="link" onClick={() => onGuardarSuscripcion({ ...fuga, ultimoUso: new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000).toISOString() })}>Sí la uso</button>
+              <span className="nota suave solo-escritorio" style={{ marginLeft: "auto" }}>Próximo cobro {cicloDe(fuga, hoy).fin.getDate()} {MESES_ABREV[cicloDe(fuga, hoy).fin.getMonth()].toLowerCase()}</span>
+            </div>
+          </section>
+        ) : aviso?.tipo === "cobro" ? (
+          <section className="panel destacado">
+            <h2 className="titulo">Próximo cobro <span className="chip aviso">{etiquetaFaltan(aviso.dias)}</span></h2>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{aviso.sus.nombre}</div>
+            <div className="nota">Te va a cobrar {formatearCOP(montoVigente(aviso.sus, hoy))} con {nombrePago(aviso.sus.pagaCon)}.</div>
+            <div><span className="cifra-xl">{formatearCOP(montoVigente(aviso.sus, hoy))}</span></div>
+            <div style={{ marginTop: "auto", display: "flex", gap: 14, flexWrap: "wrap" }}>
+              <button className="btn" onClick={() => setCobrando(aviso.sus)}>Registrar el cobro</button>
+            </div>
+          </section>
+        ) : (
+          <section className="panel">
+            <h2 className="titulo">Todo en orden</h2>
+            <div className="nota">Ningún cobro en los próximos días y ninguna suscripción sin uso.</div>
+          </section>
+        )}
 
-                  <h2 className="font-display font-black text-xl sm:text-[21px] tracking-tight text-[color:var(--texto)]">
-                    {aviso.tipo === 'promo'
-                      ? `La prueba de ${aviso.sus.nombre} termina ${etiquetaFaltan(aviso.dias)}`
-                      : `${aviso.sus.nombre} se renueva ${etiquetaFaltan(aviso.dias)}`}
-                  </h2>
-
-                  <p className="text-[13px] text-[color:var(--texto-2)]">
-                    {aviso.tipo === 'promo' ? (
-                      <>
-                        El <strong className="text-[color:var(--texto)]">{aviso.ciclo.fin.getDate()} de {MESES_NOMBRE[aviso.ciclo.fin.getMonth()].toLowerCase()}</strong> pasa de{' '}
-                        <strong className="text-[color:var(--texto)]">{formatearCOP(aviso.sus.promo?.monto ?? 0)}</strong> a{' '}
-                        <strong className="text-[color:var(--texto)]">{formatearCOP(aviso.sus.monto)} al mes</strong>. Si no la cancelas, son{' '}
-                        <strong className="text-[color:var(--texto)]">{formatearCOP(aviso.sus.monto * 12)} al año</strong> por algo que empezaste a probar.
-                      </>
-                    ) : (
-                      <>
-                        Te van a cobrar <strong className="text-[color:var(--texto)]">{formatearCOP(montoVigente(aviso.sus, hoy))}</strong>{' '}
-                        {fechaConDiaSemana(aviso.ciclo.fin)}. Si ya no la usas, este es el momento de cancelarla.
-                      </>
-                    )}
-                  </p>
-
-                  <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                    <Boton variante="primario" tamano="sm" onClick={() => cancelar(aviso.sus)}>
-                      La voy a cancelar
-                    </Boton>
-                    {aviso.tipo === 'promo' ? (
-                      <Boton variante="secundario" tamano="sm" onClick={() => quedarse(aviso.sus)}>
-                        Me la quedo
-                      </Boton>
-                    ) : (
-                      <Boton variante="secundario" tamano="sm" onClick={() => setCobrando(aviso.sus)}>
-                        Registrar el cobro
-                      </Boton>
-                    )}
-                  </div>
-
-                  <span className="text-[11px] text-[color:var(--texto-3)]">
-                    Bolsillo no cancela por ti: te avisa a tiempo para que lo hagas donde la contrataste.
-                  </span>
-                </div>
-              )}
-
-
-              {/* ===== Cifras de apoyo ===== */}
-              {suscripciones.length > 0 && (
-                <Tarjeta padding="lg">
-                  <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-5 @2xl:gap-6">
-                    <div className="space-y-1">
-                      <span className="text-[10.5px] font-bold text-[color:var(--texto-2)] uppercase tracking-wider">
-                        Te sangran al mes
-                      </span>
-                      <div className="font-display font-black text-2xl tabular-nums text-[color:var(--texto)] tracking-tight">
-                        {formatearCOP(vigente)}
-                      </div>
-                      <p className="text-[11px] text-[color:var(--texto-3)]">
-                        {hayPromos ? (
-                          <>
-                            sube a{' '}
-                            <strong className="text-[color:var(--accion)] font-bold">{formatearCOP(normal)}</strong>{' '}
-                            cuando terminen las promos
-                          </>
-                        ) : (
-                          `${activas.length} ${activas.length === 1 ? 'activa' : 'activas'}`
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[10.5px] font-bold text-[color:var(--texto-2)] uppercase tracking-wider">
-                        Al año
-                      </span>
-                      <div className="font-display font-black text-2xl tabular-nums text-[color:var(--texto)] tracking-tight">
-                        {formatearCOP(normal * 12)}
-                      </div>
-                      <p className="text-[11px] text-[color:var(--texto-3)]">contando las promos ya terminadas</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[10.5px] font-bold text-[color:var(--texto-2)] uppercase tracking-wider">
-                        Peso sobre lo que te entra
-                      </span>
-                      {ingresoMensual > 0 ? (
-                        <>
-                          <div className="font-display font-black text-2xl tabular-nums tracking-tight text-[color:var(--texto)]">
-                            {pctIngreso.toFixed(1).replace('.', ',')}%
-                          </div>
-                          <div className="relative pt-1 pb-4">
-                            <div className="h-2 rounded-full bg-[var(--superficie-2)] overflow-hidden">
-                              <div
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{
-                                  width: `${Math.max(2, anchoPeso)}%`,
-                                  background: pctIngreso > 10 ? 'var(--accion)' : 'var(--acento)',
-                                }}
-                              />
-                            </div>
-                            <span className="absolute left-1/2 top-0 w-0.5 h-4 rounded-sm bg-[var(--texto-2)]" />
-                            <span className="absolute left-1/2 top-4 -translate-x-1/2 text-[9.5px] text-[color:var(--texto-3)] whitespace-nowrap">
-                              límite sano 10%
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-[11px] text-[color:var(--texto-3)] pt-1">
-                          Registra un ingreso y te digo qué tajada se llevan.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Tarjeta>
-              )}
-
-
-              <div className="mt-4">
-                <NotaModulo texto="Los cobros automáticos son la plata que se va sin que la decidas. Aquí ves cuándo se renueva cada uno, para cancelar a tiempo lo que ya no usas." />
+        <section className={`panel solo-escritorio ${!fuga ? "ancho-2" : ""}`}>
+          <div className="panel-cab">
+            <h2 className="titulo">Total al mes</h2>
+            <span className="nota num">{activas.length} servicios</span>
+          </div>
+          <div className="fila">
+            <span><span className="cifra-xl">{formatearCOP(vigente)}</span> <span className="de">al mes</span></span>
+            <span className="nota num">{formatearCOP(vigente * 12)} al año</span>
+          </div>
+          <div className="barra" style={{ display: "flex", gap: 2, height: 12 }}>
+            {activas.map(s => {
+              const esF = esFuga(s, hoy);
+              const pct = vigente > 0 ? (montoVigente(s, hoy) / vigente) * 100 : 0;
+              return <i key={s.id} style={{ width: `${pct}%`, "--c": esF ? "var(--alerta)" : "var(--acento)" } as React.CSSProperties} />;
+            })}
+          </div>
+          <div className="lista lineas" style={{ marginTop: "auto" }}>
+            {fugas.length > 0 && (
+              <div className="fila">
+                <span><span className="bola" style={{ "--c": "var(--alerta)" } as React.CSSProperties} /> Sin uso · {nombresFugas} · {pctFugas}%</span>
+                <span>{formatearCOP(sumarFugas)}</span>
               </div>
-            </Scroll>
-          </Zona>
-        </Columna>
+            )}
+            <div className="fila">
+              <span><span className="bola" /> En uso · {nombresResto} · {pctResto}%</span>
+              <span>{formatearCOP(sumarResto)}</span>
+            </div>
+          </div>
+        </section>
 
-        <Columna ordenMovil={2}>
-          <Zona crece sinPadding>
-            <Scroll className="px-4 xl:px-[17px] py-3">
-              {/* ===== Lista ===== */}
-              {suscripciones.length === 0 ? (
-                <Tarjeta padding="lg" className="text-center py-12">
-                  <div className="w-14 h-14 rounded-2xl grid place-items-center mx-auto mb-4" style={{ background: 'color-mix(in srgb, var(--acento) 12%, transparent)' }}>
-                    <Repeat className="w-7 h-7 text-[color:var(--acento)]" />
-                  </div>
-                  <h3 className="font-display font-bold text-lg text-[color:var(--texto)]">Sin suscripciones registradas</h3>
-                  <p className="text-sm text-[color:var(--texto-2)] mt-1 max-w-sm mx-auto">
-                    Anota tus cobros automáticos —y las pruebas gratis, sobre todo— para que ninguno te agarre por sorpresa.
-                  </p>
-                  <div className="mt-5">
-                    <Boton variante="primario" tamano="md" icono={<Plus className="w-4 h-4" />} onClick={() => setModal({ editando: null })}>
-                      Agregar la primera
-                    </Boton>
-                  </div>
-                </Tarjeta>
-              ) : (
-                <div className="grid gap-3 @xl:grid-cols-2">
-                  {ordenadas.map((s) => {
-                    const color = s.color || 'var(--acento)';
-                    const estado = estadoDe(s, hoy);
-                    const ciclo = cicloDe(s, hoy);
-                    const urgente = s.activa && ciclo.faltan <= DIAS_DE_AVISO;
+        {fuga && (
+          <section className="panel destacado solo-escritorio">
+            <div className="panel-cab">
+              <h2 className="titulo">Si cancelas {fuga.nombre}</h2>
+            </div>
+            <div>
+              <div className="nota">Te quedan libres cada mes</div>
+              <div className="cifra-l acento-tx">{formatearCOP(montoVigente(fuga, hoy))}</div>
+            </div>
+            <div className="lista lineas" style={{ marginTop: "auto" }}>
+              <div className="fila">
+                <span>En un año</span>
+                <span className="ok">+{formatearCOP(montoVigente(fuga, hoy) * 12)}</span>
+              </div>
+              <div className="fila">
+                <span>En cinco años</span>
+                <span className="ok">+{formatearCOP(montoVigente(fuga, hoy) * 60)}</span>
+              </div>
+            </div>
+          </section>
+        )}
 
-                    return (
-                      <Tarjeta
-                        key={s.id}
-                        padding="md"
-                        className={`flex flex-col gap-3 ${!s.activa ? 'opacity-60' : ''} ${
-                          estado === 'promo'
-                            ? 'border-[var(--accion)]/55'
-                            : urgente
-                            ? 'border-[var(--accion)]/45'
-                            : ''
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="w-9 h-9 rounded-xl grid place-items-center flex-shrink-0" style={{ background: `color-mix(in srgb, ${color} 16%, transparent)` }}>
-                              {estado === 'promo' ? (
-                                <Zap className="w-4 h-4" style={{ color: 'var(--accion)' }} />
-                              ) : (
-                                <Repeat className="w-4 h-4" style={{ color }} />
-                              )}
-                            </span>
-                            <div className="min-w-0">
-                              <h3 className="font-semibold text-[color:var(--texto)] truncate">{s.nombre}</h3>
-                              <p className="text-xs text-[color:var(--texto-2)] truncate">
-                                {s.categoria || 'Suscripción'}
-                                {s.activa && estado !== 'promo' && ` · cobra el ${s.diaCobro}`}
-                              </p>
-                            </div>
-                          </div>
-
-                          {estado === 'promo' ? (
-                            <span className="text-[9.5px] font-bold uppercase tracking-wider text-[color:var(--accion)] bg-[var(--accion)]/15 border border-[var(--accion)]/35 rounded-full px-2 py-0.5 whitespace-nowrap flex-shrink-0">
-                              {(s.promo?.monto ?? 0) === 0 ? 'prueba gratis' : 'promoción'}
-                            </span>
-                          ) : (
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <button onClick={() => setModal({ editando: s })} className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors" aria-label={`Editar ${s.nombre}`}>
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => onEliminarSuscripcion(s.id)} className="p-1.5 rounded-lg text-[color:var(--texto-3)] hover:text-[color:var(--alerta)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors" aria-label={`Eliminar ${s.nombre}`}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {s.activa && <BarraCiclo sus={s} hoy={hoy} />}
-
-                        {estado === 'promo' ? (
-                          <>
-                            <div className="text-xs text-[color:var(--texto-2)] rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] px-3 py-2.5">
-                              Ahora pagas{' '}
-                              <strong className="text-[color:var(--positivo)] font-bold">
-                                {formatearCOP(s.promo?.monto ?? 0)}
-                              </strong>{' '}
-                              · el {ciclo.fin.getDate()} pasa a{' '}
-                              <strong className="text-[color:var(--accion)] font-bold">
-                                {formatearCOP(s.monto)}/mes
-                              </strong>{' '}
-                              — <strong className="text-[color:var(--texto)]">{formatearCOP(s.monto * 12)} al año</strong>
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => cancelar(s)}
-                                className="flex-1 py-2 rounded-xl bg-accion-gradient text-[color:var(--on-accion)] font-display font-bold text-xs cursor-pointer hover:opacity-95 transition-opacity"
-                              >
-                                La voy a cancelar
-                              </button>
-                              <button
-                                onClick={() => quedarse(s)}
-                                className="px-4 py-2 rounded-xl text-xs font-semibold border border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
-                              >
-                                Me la quedo
-                              </button>
-                            </div>
-                          </>
+        <section className="panel ancho-2">
+          <div className="panel-cab">
+            <h2 className="titulo">Todas tus suscripciones</h2>
+            <span className="nota num">{formatearCOP(vigente)} al mes</span>
+          </div>
+          {suscripciones.length > 0 ? (
+            <table className="tabla">
+              <thead>
+                <tr>
+                  <th>Servicio</th>
+                  <th style={{ width: 92 }}>Valor</th>
+                  <th className="opc2" style={{ width: 80 }}>Cobra el</th>
+                  <th className="opc" style={{ width: 170 }}>Paga con</th>
+                  <th style={{ width: 118 }}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ordenadas.map(s => {
+                  const est = estadoDe(s, hoy);
+                  const isFuga = esFuga(s, hoy);
+                  return (
+                    <tr key={s.id} onClick={() => setModal({ editando: s })} style={{ cursor: "pointer", opacity: s.activa ? 1 : 0.6 }}>
+                      <td>{s.nombre}</td>
+                      <td>{formatearCOP(montoVigente(s, hoy))}</td>
+                      <td className="opc2">día {s.diaCobro}</td>
+                      <td className="opc">{nombrePago(s.pagaCon)}</td>
+                      <td>
+                        {!s.activa ? (
+                          <span className="pill neutra">Pausada</span>
+                        ) : isFuga ? (
+                          <span className="pill gasto">Sin uso</span>
+                        ) : est === "promo" ? (
+                          <span className="pill aviso">Promo hasta {s.promo!.hasta.split("-")[2]} {MESES_ABREV[parseInt(s.promo!.hasta.split("-")[1], 10) - 1].toLowerCase()}</span>
+                        ) : est === "cobrada" ? (
+                          <span className="pill neutra">Cobrada</span>
                         ) : (
-                          <>
-                            <div className="flex items-baseline justify-between gap-2">
-                              <span className="font-display font-bold text-lg tabular-nums text-[color:var(--texto)]">
-                                {formatearCOP(s.monto)}
-                                <span className="text-xs font-medium text-[color:var(--texto-2)]">/mes</span>
-                              </span>
-                              {estado === 'cobrada' ? (
-                                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-[color:var(--positivo)] bg-[var(--positivo)]/13">
-                                  ✓ cobrada
-                                </span>
-                              ) : estado === 'pausada' ? (
-                                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-[color:var(--texto-3)] bg-[var(--superficie-2)]">
-                                  pausada
-                                </span>
-                              ) : (
-                                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full text-[color:var(--texto-3)] bg-[var(--superficie-2)]">
-                                  sin cobrar
-                                </span>
-                              )}
-                            </div>
-
-                            {estado === 'cobrada' ? (
-                              <p className="text-[11.5px] text-[color:var(--texto-3)]">
-                                Registrada el {fechaISOLocal(s.ultimoCobro || '')?.getDate()} de{' '}
-                                {MESES_NOMBRE[
-                                  (fechaISOLocal(s.ultimoCobro || '') ?? hoy).getMonth()
-                                ].toLowerCase()}
-                              </p>
-                            ) : estado === 'pausada' ? (
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-[11.5px] text-[color:var(--positivo)] font-semibold">
-                                  Te ahorras {formatearCOP(s.monto * 12)} al año
-                                </span>
-                                <button
-                                  onClick={() => toggleActiva(s)}
-                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] cursor-pointer transition-colors"
-                                >
-                                  Reactivar
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => setCobrando(s)}
-                                  className="flex-1 py-2 rounded-xl bg-accion-gradient text-[color:var(--on-accion)] font-display font-bold text-xs cursor-pointer hover:opacity-95 transition-opacity"
-                                >
-                                  Registrar cobro
-                                </button>
-                                <button
-                                  onClick={() => toggleActiva(s)}
-                                  className="px-4 py-2 rounded-xl text-xs font-semibold border border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie-2)] cursor-pointer transition-colors"
-                                >
-                                  Pausar
-                                </button>
-                              </div>
-                            )}
-                          </>
+                          <span className="pill neutra">Por cobrar</span>
                         )}
-                      </Tarjeta>
-                    );
-                  })}
-                </div>
-              )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <>
+              <div className="nota">Anota lo que te cobran solo cada mes: streaming, gimnasio, apps.</div>
+              <div><button className="btn2" onClick={() => setModal({ editando: null })}>+ Nueva</button></div>
+            </>
+          )}
 
-            </Scroll>
-          </Zona>
-        </Columna>
-      </Marco>
+          {activas.some(s => s.pagaCon?.tipo === "tarjeta") && (
+            <div className="caja solo-escritorio" style={{ marginTop: "auto" }}>
+              <b>{activas.find(s => s.pagaCon?.tipo === "tarjeta")?.nombre} va a tu tarjeta {tarjetas.find(t => t.id === activas.find(s => s.pagaCon?.tipo === "tarjeta")?.pagaCon?.id)?.nombre}, y en Pro está bien.</b> Se paga a 1 cuota y se aparta para el corte: $0 de intereses. Si algún día lo difieres a cuotas, vuelve la deuda.
+            </div>
+          )}
+        </section>
+
+        <section className="panel">
+          <div className="panel-cab">
+            <h2 className="titulo">Cobros de {MESES_NOMBRE[hoy.getMonth()].toLowerCase()}</h2>
+            <span className="nota num">hoy {hoy.getDate()} {MESES_ABREV[hoy.getMonth()].toLowerCase()}</span>
+          </div>
+          
+          <div className="lista lineas">
+            {cobros.porCobrar.map(c => (
+              <div key={c.sus.id}>
+                <div className="fila">
+                  <span>{c.sus.nombre} · {c.fecha.getDate()} {MESES_ABREV[c.fecha.getMonth()].toLowerCase()}</span>
+                  <span>{formatearCOP(c.monto)}</span>
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  <span className={`pill ${c.faltan <= 3 ? "aviso" : "neutra"}`}>{etiquetaFaltan(c.faltan)}</span>
+                  <span className="nota suave" style={{ marginLeft: 6 }}>{nombrePago(c.sus.pagaCon)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="fila nota">
+            <span>Falta por cobrar</span>
+            <span>{formatearCOP(cobros.porCobrar.reduce((a, b) => a + b.monto, 0))}</span>
+          </div>
+
+          <div className="solo-escritorio" style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid var(--hairline)", display: "flex", flexDirection: "column", gap: 8 }}>
+            <h3 className="titulo">Ya cobrados este mes</h3>
+            {cobros.cobrados.map(c => (
+              <div key={c.sus.id} className="fila">
+                <span className="suave">{c.sus.nombre} · {c.fecha.getDate()} {MESES_ABREV[c.fecha.getMonth()].toLowerCase()}</span>
+                <span className="suave">{formatearCOP(c.monto)}</span>
+              </div>
+            ))}
+            <div className="fila nota">
+              <span>Cobrado</span>
+              <span>{formatearCOP(cobros.cobrados.reduce((a, b) => a + b.monto, 0))}</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
 
       {modal && (
         <ModalSuscripcion
@@ -601,24 +439,24 @@ const ModalCobro: React.FC<ModalCobroProps> = ({ sus, hoy, billeteras, onCerrar,
   const guardado = montoVigente(sus, hoy);
 
   const [billeteraId, setBilleteraId] = useState(
-    () => (billeteras.find((b) => b.saldo > 0) || billeteras[0])?.id ?? ''
+    () => (billeteras.find((b) => b.saldo > 0) || billeteras[0])?.id ?? ""
   );
   const [montoStr, setMontoStr] = useState(formatearCOP(guardado));
   const [fechaStr, setFechaStr] = useState(isoDia(ciclo.inicio > hoy ? hoy : ciclo.inicio));
   const [actualizar, setActualizar] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const monto = parseInt(montoStr.replace(/[^\d]/g, ''), 10) || 0;
+  const monto = parseInt(montoStr.replace(/[^\d]/g, ""), 10) || 0;
   const billetera = billeteras.find((b) => b.id === billeteraId);
   const cambioDePrecio = monto > 0 && monto !== guardado;
   const diferencia = monto - guardado;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!billeteraId) return setError('Elige de dónde sale la plata');
-    if (monto <= 0) return setError('Escribe cuánto te cobraron');
+    if (!billeteraId) return setError("Elige de dónde sale la plata");
+    if (monto <= 0) return setError("Escribe cuánto te cobraron");
     const fecha = fechaISOLocal(fechaStr);
-    if (!fecha) return setError('Revisa la fecha');
+    if (!fecha) return setError("Revisa la fecha");
     onRegistrar(sus, billeteraId, monto, fecha, cambioDePrecio && actualizar);
   };
 
@@ -635,7 +473,7 @@ const ModalCobro: React.FC<ModalCobroProps> = ({ sus, hoy, billeteras, onCerrar,
                 Cobro de {sus.nombre}
               </h2>
               <p className="text-[11px] text-[color:var(--texto-2)]">
-                {sus.categoria || 'Suscripción'} · cobra el {sus.diaCobro} de cada mes
+                {sus.categoria || "Suscripción"} · cobra el {sus.diaCobro} de cada mes
               </p>
             </div>
           </div>
@@ -657,7 +495,7 @@ const ModalCobro: React.FC<ModalCobroProps> = ({ sus, hoy, billeteras, onCerrar,
             </label>
             <select
               value={billeteraId}
-              onChange={(e) => { setBilleteraId(e.target.value); if (error) setError(''); }}
+              onChange={(e) => { setBilleteraId(e.target.value); if (error) setError(""); }}
               className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm text-[color:var(--texto)] focus:outline-none focus:border-[var(--acento)] transition-colors appearance-none cursor-pointer"
             >
               {billeteras.map((b) => (
@@ -678,9 +516,9 @@ const ModalCobro: React.FC<ModalCobroProps> = ({ sus, hoy, billeteras, onCerrar,
                 inputMode="numeric"
                 value={montoStr}
                 onChange={(e) => {
-                  const n = parseInt(e.target.value.replace(/[^\d]/g, ''), 10);
-                  setMontoStr(isNaN(n) ? '' : formatearCOP(n));
-                  if (error) setError('');
+                  const n = parseInt(e.target.value.replace(/[^\d]/g, ""), 10);
+                  setMontoStr(isNaN(n) ? "" : formatearCOP(n));
+                  if (error) setError("");
                 }}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm font-semibold tabular-nums text-[color:var(--texto)] focus:outline-none focus:border-[var(--acento)] transition-colors"
               />
@@ -692,7 +530,7 @@ const ModalCobro: React.FC<ModalCobroProps> = ({ sus, hoy, billeteras, onCerrar,
               <input
                 type="date"
                 value={fechaStr}
-                onChange={(e) => { setFechaStr(e.target.value); if (error) setError(''); }}
+                onChange={(e) => { setFechaStr(e.target.value); if (error) setError(""); }}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm text-[color:var(--texto)] focus:outline-none focus:border-[var(--acento)] transition-colors"
               />
             </div>
@@ -702,16 +540,16 @@ const ModalCobro: React.FC<ModalCobroProps> = ({ sus, hoy, billeteras, onCerrar,
             <div
               className="p-3 rounded-xl border text-[11.5px] leading-relaxed text-[color:var(--texto-2)]"
               style={{
-                borderColor: 'color-mix(in srgb, var(--accion) 24%, transparent)',
-                background: 'color-mix(in srgb, var(--accion) 8%, transparent)',
+                borderColor: "color-mix(in srgb, var(--accion) 24%, transparent)",
+                background: "color-mix(in srgb, var(--accion) 8%, transparent)",
               }}
             >
               <strong className="text-[color:var(--texto)] font-bold">
-                {diferencia > 0 ? 'Subió.' : 'Bajó.'}
-              </strong>{' '}
-              Tenías guardado {formatearCOP(guardado)} y ahora son {formatearCOP(monto)} —{' '}
+                {diferencia > 0 ? "Subió." : "Bajó."}
+              </strong>{" "}
+              Tenías guardado {formatearCOP(guardado)} y ahora son {formatearCOP(monto)} —{" "}
               <strong className="text-[color:var(--texto)]">
-                {formatearCOP(Math.abs(diferencia))} {diferencia > 0 ? 'más' : 'menos'}
+                {formatearCOP(Math.abs(diferencia))} {diferencia > 0 ? "más" : "menos"}
               </strong>
               , {formatearCOP(Math.abs(diferencia) * 12)} al año.
               <label className="flex items-center gap-2 mt-2 cursor-pointer">
@@ -731,26 +569,26 @@ const ModalCobro: React.FC<ModalCobroProps> = ({ sus, hoy, billeteras, onCerrar,
           <div
             className="p-3 rounded-xl border text-[11.5px] leading-relaxed text-[color:var(--texto-2)]"
             style={{
-              borderColor: 'color-mix(in srgb, var(--acento) 26%, transparent)',
-              background: 'color-mix(in srgb, var(--acento) 8%, transparent)',
+              borderColor: "color-mix(in srgb, var(--acento) 26%, transparent)",
+              background: "color-mix(in srgb, var(--acento) 8%, transparent)",
             }}
           >
-            Queda como <strong className="text-[color:var(--texto)]">gasto en {sus.categoria || 'Suscripciones'}</strong>
+            Queda como <strong className="text-[color:var(--texto)]">gasto en {sus.categoria || "Suscripciones"}</strong>
             {fechaISOLocal(fechaStr) && (
               <>
-                {' '}con fecha del{' '}
+                {" "}con fecha del{" "}
                 <strong className="text-[color:var(--texto)]">
-                  {fechaISOLocal(fechaStr)!.getDate()} de{' '}
+                  {fechaISOLocal(fechaStr)!.getDate()} de{" "}
                   {MESES_NOMBRE[fechaISOLocal(fechaStr)!.getMonth()].toLowerCase()}
                 </strong>
               </>
             )}
             {billetera && (
               <>
-                , baja tu saldo de {billetera.nombre} a{' '}
+                , baja tu saldo de {billetera.nombre} a{" "}
                 <strong className="text-[color:var(--texto)]">{formatearCOP(billetera.saldo - monto)}</strong>
               </>
-            )}{' '}
+            )}{" "}
             y {sus.nombre} se marca como cobrada este ciclo.
           </div>
 
@@ -769,7 +607,7 @@ const ModalCobro: React.FC<ModalCobroProps> = ({ sus, hoy, billeteras, onCerrar,
 // ============================================================
 // Modal crear / editar suscripción
 // ============================================================
-const CATEGORIAS_SUS = ['Streaming', 'Música', 'Salud', 'Software', 'Otro'];
+const CATEGORIAS_SUS = ["Streaming", "Música", "Salud", "Software", "Otro"];
 
 interface ModalSuscripcionProps {
   editando: Suscripcion | null;
@@ -787,48 +625,48 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
   }, []);
 
-  const [nombre, setNombre] = useState(editando?.nombre || '');
-  const [montoStr, setMontoStr] = useState(editando ? formatearCOP(editando.monto) : '');
+  const [nombre, setNombre] = useState(editando?.nombre || "");
+  const [montoStr, setMontoStr] = useState(editando ? formatearCOP(editando.monto) : "");
   const [dia, setDia] = useState<number>(editando?.diaCobro || 1);
-  const [categoria, setCategoria] = useState(editando?.categoria || 'Streaming');
+  const [categoria, setCategoria] = useState(editando?.categoria || "Streaming");
   const [color, setColor] = useState(editando?.color || COLORES[0]);
-  const [pagaCon, setPagaCon] = useState(editando?.pagaCon ? `${editando.pagaCon.tipo}_${editando.pagaCon.id}` : '');
-  const [ultimoUso, setUltimoUso] = useState(editando?.ultimoUso ? editando.ultimoUso.split('T')[0] : '');
-  const [error, setError] = useState('');
+  const [pagaCon, setPagaCon] = useState(editando?.pagaCon ? `${editando.pagaCon.tipo}_${editando.pagaCon.id}` : "");
+  const [ultimoUso, setUltimoUso] = useState(editando?.ultimoUso ? editando.ultimoUso.split("T")[0] : "");
+  const [error, setError] = useState("");
 
   // --- Promoción ---
   const [tienePromo, setTienePromo] = useState(!!editando?.promo);
   const [promoMontoStr, setPromoMontoStr] = useState(
     formatearCOP(editando?.promo?.monto ?? 0)
   );
-  const [duracionId, setDuracionId] = useState<string>('7d');
+  const [duracionId, setDuracionId] = useState<string>("7d");
   const [desdeStr, setDesdeStr] = useState(
     editando?.promo?.desde ?? isoDia(hoy)
   );
-  const [hastaManual, setHastaManual] = useState(editando?.promo?.hasta ?? '');
+  const [hastaManual, setHastaManual] = useState(editando?.promo?.hasta ?? "");
 
-  const monto = parseInt(montoStr.replace(/[^\d]/g, ''), 10) || 0;
-  const promoMonto = parseInt(promoMontoStr.replace(/[^\d]/g, ''), 10) || 0;
+  const monto = parseInt(montoStr.replace(/[^\d]/g, ""), 10) || 0;
+  const promoMonto = parseInt(promoMontoStr.replace(/[^\d]/g, ""), 10) || 0;
   const desde = fechaISOLocal(desdeStr) ?? hoy;
   const duracion: DuracionPromo | undefined = DURACIONES_PROMO.find((d) => d.id === duracionId);
   const hasta =
-    duracionId === 'fecha'
+    duracionId === "fecha"
       ? fechaISOLocal(hastaManual)
       : duracion
       ? finSegunDuracion(desde, duracion)
       : null;
 
   const onMonto = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const n = parseInt(e.target.value.replace(/[^\d]/g, ''), 10);
-    setter(isNaN(n) ? '' : formatearCOP(n));
-    if (error) setError('');
+    const n = parseInt(e.target.value.replace(/[^\d]/g, ""), 10);
+    setter(isNaN(n) ? "" : formatearCOP(n));
+    if (error) setError("");
   };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombre.trim()) return setError('Ponle un nombre');
-    if (monto <= 0) return setError('Escribe el precio normal, el de después de la promoción');
-    if (tienePromo && !hasta) return setError('Dinos cuándo termina la promoción');
+    if (!nombre.trim()) return setError("Ponle un nombre");
+    if (monto <= 0) return setError("Escribe el precio normal, el de después de la promoción");
+    if (tienePromo && !hasta) return setError("Dinos cuándo termina la promoción");
 
     const promo: PromoSuscripcion | undefined =
       tienePromo && hasta
@@ -837,8 +675,8 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
 
     let pagaConObj = undefined;
     if (pagaCon) {
-      const [tipo, id] = pagaCon.split('_');
-      pagaConObj = { tipo: tipo as 'billetera' | 'tarjeta', id };
+      const [tipo, id] = pagaCon.split("_");
+      pagaConObj = { tipo: tipo as "billetera" | "tarjeta", id };
     }
 
     onGuardar({
@@ -852,14 +690,14 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
       creadoEn: editando?.creadoEn || new Date().toISOString(),
       promo,
       ultimoCobro: editando?.ultimoCobro,
-      ultimoUso: ultimoUso ? new Date(ultimoUso + 'T12:00:00').toISOString() : editando?.ultimoUso,
+      ultimoUso: ultimoUso ? new Date(ultimoUso + "T12:00:00").toISOString() : editando?.ultimoUso,
       pagaCon: pagaConObj,
     });
   };
 
-  const etq = 'text-[10.5px] font-bold uppercase tracking-wider text-[color:var(--texto-2)] block';
+  const etq = "text-[10.5px] font-bold uppercase tracking-wider text-[color:var(--texto-2)] block";
   const input =
-    'w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm text-[color:var(--texto)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors';
+    "w-full px-3.5 py-2.5 rounded-xl bg-[var(--superficie-2)] border border-[var(--linea)] text-sm text-[color:var(--texto)] placeholder-[var(--texto-3)] focus:outline-none focus:border-[var(--acento)] transition-colors";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--base)]/80 backdrop-blur-md animate-fade-in">
@@ -870,7 +708,7 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
               <Repeat className="w-4 h-4" />
             </div>
             <h2 className="text-base font-bold text-[color:var(--texto)]">
-              {editando ? 'Editar suscripción' : 'Nueva suscripción'}
+              {editando ? "Editar suscripción" : "Nueva suscripción"}
             </h2>
           </div>
           <button onClick={onCerrar} className="p-1.5 rounded-lg text-[color:var(--texto-2)] hover:text-[color:var(--texto)] hover:bg-[var(--superficie)] transition-colors cursor-pointer" aria-label="Cerrar">
@@ -887,7 +725,7 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
 
           <div className="space-y-1.5">
             <label className={etq}>Nombre</label>
-            <input type="text" value={nombre} onChange={(e) => { setNombre(e.target.value); if (error) setError(''); }} placeholder="Ej: Netflix" autoFocus className={input} />
+            <input type="text" value={nombre} onChange={(e) => { setNombre(e.target.value); if (error) setError(""); }} placeholder="Ej: Netflix" autoFocus className={input} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -919,25 +757,25 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
           {/* ===== Promoción ===== */}
           <button
             type="button"
-            onClick={() => { setTienePromo(!tienePromo); if (error) setError(''); }}
+            onClick={() => { setTienePromo(!tienePromo); if (error) setError(""); }}
             className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border cursor-pointer transition-colors ${
               tienePromo
-                ? 'border-[var(--accion)]/45 bg-[var(--accion)]/8'
-                : 'border-[var(--linea)] bg-[var(--superficie-2)]'
+                ? "border-[var(--accion)]/45 bg-[var(--accion)]/8"
+                : "border-[var(--linea)] bg-[var(--superficie-2)]"
             }`}
           >
             <span className="text-[13px] font-semibold text-[color:var(--texto)] flex items-center gap-2">
-              <Zap className={`w-3.5 h-3.5 ${tienePromo ? 'text-[color:var(--accion)]' : 'text-[color:var(--texto-3)]'}`} />
+              <Zap className={`w-3.5 h-3.5 ${tienePromo ? "text-[color:var(--accion)]" : "text-[color:var(--texto-3)]"}`} />
               Tiene promoción o prueba gratis
             </span>
             <span
               className={`w-9 h-5 rounded-full relative flex-none transition-colors ${
-                tienePromo ? 'bg-[var(--accion)]' : 'bg-[var(--linea)]'
+                tienePromo ? "bg-[var(--accion)]" : "bg-[var(--linea)]"
               }`}
             >
               <span
                 className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${
-                  tienePromo ? 'right-0.5 bg-[var(--on-accion)]' : 'left-0.5 bg-[var(--texto-3)]'
+                  tienePromo ? "right-0.5 bg-[var(--on-accion)]" : "left-0.5 bg-[var(--texto-3)]"
                 }`}
               />
             </span>
@@ -960,8 +798,8 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
                       onClick={() => setDuracionId(d.id)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-colors ${
                         duracionId === d.id
-                          ? 'bg-[var(--accion)]/12 border-[var(--accion)] text-[color:var(--accion)]'
-                          : 'bg-[var(--superficie-2)] border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)]'
+                          ? "bg-[var(--accion)]/12 border-[var(--accion)] text-[color:var(--accion)]"
+                          : "bg-[var(--superficie-2)] border-[var(--linea)] text-[color:var(--texto-2)] hover:text-[color:var(--texto)]"
                       }`}
                     >
                       {d.etiqueta}
@@ -969,11 +807,11 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
                   ))}
                   <button
                     type="button"
-                    onClick={() => setDuracionId('fecha')}
+                    onClick={() => setDuracionId("fecha")}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed cursor-pointer transition-colors ${
-                      duracionId === 'fecha'
-                        ? 'bg-[var(--accion)]/12 border-[var(--accion)] text-[color:var(--accion)]'
-                        : 'bg-[var(--superficie-2)] border-[var(--linea)] text-[color:var(--texto-3)] hover:text-[color:var(--texto)]'
+                      duracionId === "fecha"
+                        ? "bg-[var(--accion)]/12 border-[var(--accion)] text-[color:var(--accion)]"
+                        : "bg-[var(--superficie-2)] border-[var(--linea)] text-[color:var(--texto-3)] hover:text-[color:var(--texto)]"
                     }`}
                   >
                     una fecha
@@ -986,10 +824,10 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
                   <label className={etq}>Empezó el</label>
                   <input type="date" value={desdeStr} onChange={(e) => setDesdeStr(e.target.value)} className={input} />
                 </div>
-                {duracionId === 'fecha' && (
+                {duracionId === "fecha" && (
                   <div className="space-y-1.5">
                     <label className={etq}>Termina el</label>
-                    <input type="date" value={hastaManual} onChange={(e) => { setHastaManual(e.target.value); if (error) setError(''); }} className={input} />
+                    <input type="date" value={hastaManual} onChange={(e) => { setHastaManual(e.target.value); if (error) setError(""); }} className={input} />
                   </div>
                 )}
               </div>
@@ -998,11 +836,11 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
                 <div
                   className="p-3 rounded-xl border text-[11.5px] leading-relaxed text-[color:var(--texto-2)]"
                   style={{
-                    borderColor: 'color-mix(in srgb, var(--acento) 26%, transparent)',
-                    background: 'color-mix(in srgb, var(--acento) 8%, transparent)',
+                    borderColor: "color-mix(in srgb, var(--acento) 26%, transparent)",
+                    background: "color-mix(in srgb, var(--acento) 8%, transparent)",
                   }}
                 >
-                  Hasta {fechaConDiaSemana(hasta)} te cuenta{' '}
+                  Hasta {fechaConDiaSemana(hasta)} te cuenta{" "}
                   <strong className="text-[color:var(--texto)]">{formatearCOP(promoMonto)}</strong>. Desde ahí
                   pasa a <strong className="text-[color:var(--texto)]">{formatearCOP(monto)} al mes</strong>,
                   cobrando el <strong className="text-[color:var(--texto)]">{hasta.getDate()} de cada mes</strong>.
@@ -1017,7 +855,7 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
             <div className="flex items-center gap-2 flex-wrap">
               {COLORES.map((c) => (
                 <button key={c} type="button" onClick={() => setColor(c)} className="w-8 h-8 rounded-full cursor-pointer"
-                  style={{ background: c, outline: color === c ? '2px solid var(--texto)' : '2px solid transparent', outlineOffset: '2px' }} aria-label={`Color ${c}`} />
+                  style={{ background: c, outline: color === c ? "2px solid var(--texto)" : "2px solid transparent", outlineOffset: "2px" }} aria-label={`Color ${c}`} />
               ))}
             </div>
           </div>
@@ -1044,7 +882,7 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
             <div className="pt-2 flex flex-wrap gap-2">
               <button type="button" onClick={() => onCobro(editando)} className="btn2">Registrar cobro</button>
               <button type="button" onClick={() => onGuardar({ ...editando, activa: !editando.activa })} className="btn2">
-                {editando.activa ? 'Pausar' : 'Reactivar'}
+                {editando.activa ? "Pausar" : "Reactivar"}
               </button>
               <button type="button" onClick={() => onEliminar(editando.id)} className="link mal ml-auto">Eliminar</button>
             </div>
@@ -1054,7 +892,7 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billetera
             {!editando && <Boton variante="fantasma" tamano="md" onClick={onCerrar} type="button">Cancelar</Boton>}
             {editando && <Boton variante="fantasma" tamano="md" onClick={onCerrar} type="button">Cerrar</Boton>}
             <Boton variante="primario" tamano="md" type="submit" iconoDerecha={<Check className="w-4 h-4" />}>
-              {editando ? 'Guardar' : 'Agregar'}
+              {editando ? "Guardar" : "Agregar"}
             </Boton>
           </div>
         </form>
