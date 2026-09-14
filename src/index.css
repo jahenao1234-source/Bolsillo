@@ -21,6 +21,7 @@
   --color-advertencia: var(--advertencia);
   --color-alerta: var(--alerta);
   --color-azul: var(--azul);
+  --color-ambar: var(--ambar);
   --color-on-acento: var(--on-acento);
   --color-on-accion: var(--on-accion);
 
@@ -60,6 +61,7 @@
   --advertencia: var(--texto-2); /* sin ámbar: neutral atenuado */
   --alerta: #E89385;             /* coral suave: resalta sin gritar (negativos / grave) */
   --azul: #8AA9FF;        /* azul de categorias (mismo COLOR_TARJETA de la logica) */
+  --ambar: #F2C879;   /* avisos de vencimiento (no son error) */
   --on-acento: #04211F;   /* texto sobre teal */
   --on-accion: #2A1206;   /* texto sobre naranja */
   --nav-activo: #25C9BE;
@@ -79,11 +81,11 @@
   --superficie: #FFFFFF;
   --superficie-2: #F6F6F4;
   --elevada: #F0F0ED;
-  --linea: #E6E6E2;
+  --linea: #E3E3DF;
   --hairline: #EFEFEC;
 
   --texto: #141414;
-  --texto-2: #6B6B66;
+  --texto-2: #62625D;
   --texto-3: #85857F;
 
   --acento: #0C8C7E;      /* teal profundo (contraste sobre claro) */
@@ -94,6 +96,7 @@
   --advertencia: var(--texto-2);
   --alerta: #C0574A;
   --azul: #5B79D6;        /* azul de categorias, mas profundo para el tema claro */
+  --ambar: #B07D12;
   --on-acento: #FFFFFF;
   --on-accion: #2A1206;
   --nav-activo: #141414;
