@@ -1,22 +1,19 @@
-/**
- * Billetera: dónde está la plata y qué se fue.
- *
- * El techo de la semana conecta los gastos con el plan: lo básico del mes
- * repartido por semanas. Pasarse no es un regaño, es un dato: el gasto rápido
- * dice cuántos días se corre la fecha de libertad.
- */
-
 import React, { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
 import type { Billetera, Deuda, Movimiento, PerfilFlujo, Sobre } from '../types';
-import { Marco, Columna, Zona } from '../components/layout/Marco';
-import { BarraAcciones, BarraTitulo } from '../components/layout/shell';
-import { Rotulo } from '../components/sistema/RailPasos';
-import { HojaGastoRapido } from '../components/sistema/HojaGastoRapido';
 import { ModalAgregarBilletera } from '../components/billeteras/ModalAgregarBilletera';
 import { ModalRegistrarMovimiento } from '../components/billeteras/ModalRegistrarMovimiento';
-import { deudasActivas, enSobres, gastoDeLaSemana, techoSemanal } from '../logic/sistema';
+import {
+  deudasActivas,
+  enSobres,
+  gastoDeLaSemana,
+  techoSemanal,
+  gastosDelMes,
+  gastoPorCategoriaDelMes,
+  inicioDeSemana,
+  diasDeRetraso,
+} from '../logic/sistema';
 import { formatearCOP } from '../utils/format';
+import { MESES_NOMBRE, MESES_ABREV } from '../utils/fechas';
 
 interface PantallaBilleteraProps {
   billeteras: Billetera[];
@@ -45,191 +42,217 @@ export const PantallaBilletera: React.FC<PantallaBilleteraProps> = ({
   onEliminarBilletera,
   onRegistrarMovimiento,
 }) => {
-  const [gastoAbierto, setGastoAbierto] = useState(false);
   const [ingresoAbierto, setIngresoAbierto] = useState(false);
   const [billeteraEditando, setBilleteraEditando] = useState<Billetera | null>(null);
   const [creandoBilletera, setCreandoBilletera] = useState(false);
   const [visibles, setVisibles] = useState(POR_PAGINA);
 
+  const hoy = new Date();
   const activas = useMemo(() => deudasActivas(deudas), [deudas]);
-  // Solo cuenta la plata de sobres que dicen en qué cuenta está: esa sí está dentro del saldo.
-  const totalApartado = billeteras.reduce((a, b) => a + enSobres(b.id, sobres), 0);
   const techo = perfil ? techoSemanal(perfil.gastosBasicos) : null;
   const gastoSemana = gastoDeLaSemana(movimientos);
+  
+  const lunesDate = inicioDeSemana(hoy);
+  const lunes = lunesDate.getDate();
+  const domingoDate = new Date(lunesDate);
+  domingoDate.setDate(lunesDate.getDate() + 6);
+  const domingo = domingoDate.getDate();
+  const mesDomAbrev = MESES_ABREV[domingoDate.getMonth()].toLowerCase();
+
+  const delMes = useMemo(() => gastosDelMes(movimientos, hoy), [movimientos, hoy]);
+  const gastadoMes = delMes.reduce((a, m) => a + m.monto, 0);
+  const categorias = useMemo(() => gastoPorCategoriaDelMes(movimientos, hoy, 5), [movimientos, hoy]);
+
+  const mesStr = hoy.toISOString().substring(0, 7);
+  const movMes = useMemo(() => {
+    return movimientos
+      .filter(m => m.creadoEn?.startsWith(mesStr))
+      .sort((a, b) => (b.creadoEn ?? '').localeCompare(a.creadoEn ?? ''));
+  }, [movimientos, mesStr]);
+
+  const entroMes = movMes.filter(m => m.tipo === 'ingreso').reduce((a, m) => a + m.monto, 0);
+  const salioMes = movMes.filter(m => m.tipo === 'gasto').reduce((a, m) => a + m.monto, 0);
+
+  const mesNombre = MESES_NOMBRE[hoy.getMonth()].toLowerCase();
+  const pctMes = perfil && perfil.gastosBasicos > 0 ? (gastadoMes / perfil.gastosBasicos) * 100 : 0;
   const pasado = techo !== null && gastoSemana > techo;
 
-  const ordenados = useMemo(
-    () => [...movimientos].sort((a, b) => (b.creadoEn ?? '').localeCompare(a.creadoEn ?? '')),
-    [movimientos]
-  );
-
-  const botonGasto = (
-    <button
-      type="button"
-      onClick={() => setGastoAbierto(true)}
-      className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-accion-gradient text-on-accion font-extrabold text-[13px] cursor-pointer"
-    >
-      <Plus className="w-4 h-4" /> Gasto
-    </button>
-  );
-
   return (
-    <div className="w-full pb-24 xl:pb-0 xl:flex-1 xl:flex xl:flex-col">
-      <BarraTitulo>
-        <span className="font-display font-extrabold text-[15px]">Tu plata</span>
-        <div className="flex flex-col text-right">
-          <span className="text-sm text-texto-2 tabular-nums">{formatearCOP(saldoTotal)}</span>
-          {totalApartado > 0 && <span className="text-[10px] text-texto-3">{formatearCOP(totalApartado)} en sobres</span>}
-        </div>
-      </BarraTitulo>
-      <BarraAcciones>
-        <button
-          type="button"
-          onClick={() => setIngresoAbierto(true)}
-          className="px-3 py-2 rounded-xl border border-linea bg-superficie-2 text-xs font-bold hover:border-texto-3 cursor-pointer"
-        >
-          + Ingreso
-        </button>
-        {botonGasto}
-      </BarraAcciones>
+    <div className="pant">
+      <div className="rejilla llena" style={{ '--cols': 'minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)' } as React.CSSProperties}>
 
-      <div className="xl:hidden flex items-center justify-between mb-3">
-        <div>
-          <h2 className="font-display font-extrabold text-xl">Tu plata</h2>
-          <p className="text-sm text-texto-2 tabular-nums">{formatearCOP(saldoTotal)}</p>
-          {totalApartado > 0 && <p className="text-[11px] text-texto-3 mt-0.5">{formatearCOP(totalApartado)} en sobres</p>}
-        </div>
-        {botonGasto}
-      </div>
+        {/* PANEL "Techo de esta semana" */}
+        <section className="panel destacado">
+          <div className="panel-cab">
+            <h2 className="titulo">Techo de esta semana</h2>
+            <span className="nota">del {lunes} al {domingo} {mesDomAbrev}</span>
+          </div>
+          
+          {techo === null ? (
+            <div className="nota">Configura tu mes en Mi plan para saber cuánto puedes gastar por semana.</div>
+          ) : (
+            <>
+              <div>
+                <div className="nota">{pasado ? 'Te pasaste esta semana' : 'Te quedan esta semana'}</div>
+                <div className={`cifra-xl ${pasado ? 'mal' : 'acento-tx'}`}>{formatearCOP(Math.abs(techo - gastoSemana))}</div>
+              </div>
+              <div>
+                <div className="fila">
+                  <span className="nota">Gastado <b className="num">{formatearCOP(gastoSemana)}</b></span>
+                  <span className="nota num">de {formatearCOP(techo)}</span>
+                </div>
+                <div className="barra" style={{ marginTop: 5, '--c': pasado ? 'var(--alerta)' : 'var(--acento)' } as React.CSSProperties}>
+                  <i style={{ width: `${Math.min(100, (gastoSemana / techo) * 100)}%` }} />
+                </div>
+              </div>
+              <div className="nota suave solo-escritorio">Sale de lo básico: {formatearCOP(perfil!.gastosBasicos)} × 12 ÷ 52.</div>
+              {activas.length > 0 && (
+                <div className="caja" style={{ marginTop: 'auto' }}>
+                  Pasarte atrasa tu fecha de libertad: <b className="num">$50.000</b> por encima del techo la corren <b>{diasDeRetraso(activas, disponibleMensual, 50000)} días</b>.
+                </div>
+              )}
+            </>
+          )}
+        </section>
 
-      <Marco columnas="360px minmax(0,1fr)">
-        <Columna ordenMovil={1} borde>
-          <Zona>
-            <div className="flex items-center justify-between mb-1.5">
-              <Rotulo>Tus billeteras</Rotulo>
-              <button type="button" onClick={() => setCreandoBilletera(true)} className="text-[11px] text-acento cursor-pointer">
-                + Agregar
-              </button>
-            </div>
+        {/* PANEL "Tus cuentas" */}
+        <section className="panel">
+          <div className="panel-cab">
+            <h2 className="titulo">Tus cuentas</h2>
+            <button className="link acento" onClick={() => setCreandoBilletera(true)}>+ Agregar cuenta</button>
+          </div>
+          <div>
+            <span className="cifra-l">{formatearCOP(saldoTotal)}</span> <span className="de">en {billeteras.length} cuentas</span>
+          </div>
+          <div className="lista">
             {billeteras.length === 0 ? (
-              <p className="text-xs text-texto-3 py-2">Agrega dónde tienes tu plata: Nequi, banco, efectivo.</p>
+              <div className="nota">Agrega dónde tienes tu plata: Nequi, banco, efectivo.</div>
             ) : (
-              billeteras.map((b, i) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setBilleteraEditando(b)}
-                  className={`w-full flex items-center justify-between py-2.5 text-left text-[13px] cursor-pointer hover:text-acento ${i ? 'border-t border-hairline' : ''}`}
-                >
-                  <span className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full flex-none" style={{ background: b.color ?? 'var(--texto-3)' }} />
-                    <span className="truncate">{b.nombre}</span>
-                  </span>
-                  <span className="text-right">
-                    <span className={`block font-bold tabular-nums ${b.saldo < 0 ? 'text-alerta' : 'text-texto'}`}>{formatearCOP(b.saldo)}</span>
-                    {enSobres(b.id, sobres) > 0 && (
-                      b.saldo - enSobres(b.id, sobres) < 0 ? (
-                        <span className="block text-[11px] text-alerta">Tus sobres suman más de lo que hay aquí</span>
+              billeteras.map(b => {
+                const enS = enSobres(b.id, sobres);
+                return (
+                  <div key={b.id} role="button" onClick={() => setBilleteraEditando(b)} style={{ textAlign: 'left', cursor: 'pointer' }}>
+                    <div className="fila">
+                      <div>{b.nombre}</div>
+                      <div className={b.saldo < 0 ? 'mal' : ''}>{formatearCOP(b.saldo)}</div>
+                    </div>
+                    <div className="barra solo-escritorio" style={{ marginTop: 5 }}>
+                      <i style={{ width: `${Math.max(0, saldoTotal > 0 ? (b.saldo / saldoTotal) * 100 : 0)}%` }} />
+                    </div>
+                    {enS > 0 && (
+                      b.saldo - enS < 0 ? (
+                        <div className="nota mal">Tus sobres suman más de lo que hay aquí</div>
                       ) : (
-                        <span className="block text-[11px] text-texto-3 tabular-nums">
-                          {formatearCOP(enSobres(b.id, sobres))} en sobres · {formatearCOP(b.saldo - enSobres(b.id, sobres))} sin sobre
-                        </span>
+                        <div className="nota suave">{formatearCOP(enS)} en sobres · {formatearCOP(b.saldo - enS)} sin sobre</div>
                       )
                     )}
-                  </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <button className="btn ancho" style={{ marginTop: 'auto' }} onClick={() => setIngresoAbierto(true)}>Registrar ingreso</button>
+        </section>
+
+        {/* PANEL "Gastado en {mes}" */}
+        <section className="panel">
+          <div className="panel-cab">
+            <h2 className="titulo">Gastado en {mesNombre}</h2>
+            {perfil && <span className="nota num">{pctMes.toFixed(1).replace('.', ',')}% de lo básico</span>}
+          </div>
+          <div>
+            <span className="cifra-l">{formatearCOP(gastadoMes)}</span>
+            {perfil && <span className="de"> de {formatearCOP(perfil.gastosBasicos)}</span>}
+            {perfil && (
+              <div className="barra" style={{ marginTop: 8 }}>
+                <i style={{ width: `${Math.min(100, pctMes)}%` }} />
+              </div>
+            )}
+          </div>
+          {categorias.length === 0 ? (
+            <div className="nota suave">Todavía no hay gastos este mes.</div>
+          ) : (
+            <div className="lista solo-escritorio" style={{ gap: 8 }}>
+              {categorias.map((c, i) => {
+                const colores = ['var(--azul)', 'var(--positivo)', 'var(--alerta)', 'var(--acento)', 'var(--texto-3)'];
+                const color = colores[i % colores.length];
+                return (
+                  <div key={c.categoria}>
+                    <div className="fila">
+                      <div>{c.categoria}</div>
+                      <div>{formatearCOP(c.monto)}</div>
+                    </div>
+                    <div className="barra" style={{ marginTop: 5, '--c': color } as React.CSSProperties}>
+                      <i style={{ width: `${c.porcentaje}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* PANEL "Movimientos de {mes}" */}
+        <section className="panel ancho-todo">
+          <div className="panel-cab">
+            <h2 className="titulo">Movimientos de {mesNombre}</h2>
+            <span className="nota num solo-escritorio">Entró {formatearCOP(entroMes)} · salió {formatearCOP(salioMes)}</span>
+          </div>
+          {movMes.length === 0 ? (
+            <div className="nota suave">Todavía no hay movimientos este mes.</div>
+          ) : (
+            <>
+              <table className="tabla">
+                <thead>
+                  <tr>
+                    <th>Concepto</th>
+                    <th className="opc" style={{ width: '22%' }}>Cuenta</th>
+                    <th className="opc2" style={{ width: '20%' }}>Categoría</th>
+                    <th style={{ width: 52 }}>Fecha</th>
+                    <th style={{ width: 118 }}>Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {movMes.slice(0, visibles).map(m => {
+                    const esIngreso = m.tipo === 'ingreso';
+                    const esTransferencia = m.tipo === 'transferencia';
+                    const bNombre = billeteras.find(b => b.id === m.billeteraId)?.nombre ?? 'Cuenta';
+                    const destino = billeteras.find(b => b.id === m.billeteraDestinoId)?.nombre ?? 'Otra cuenta';
+                    const concepto = esTransferencia ? `${bNombre} → ${destino} · ${m.nota || ''}` : (m.descripcion || m.nota || m.categoria);
+                    const d = new Date(m.creadoEn || new Date().toISOString());
+                    const fechaStr = `${d.getDate()} ${MESES_ABREV[d.getMonth()].toLowerCase()}`;
+                    
+                    return (
+                      <tr key={m.id}>
+                        <td>{concepto}</td>
+                        <td className="opc">{bNombre}</td>
+                        <td className="opc2">{esTransferencia ? 'Sobres' : m.categoria}</td>
+                        <td>{fechaStr}</td>
+                        <td>
+                          <span className={`pill num ${esTransferencia ? 'traslado' : esIngreso ? 'ingreso' : 'gasto'}`}>
+                            {esTransferencia ? formatearCOP(m.monto) : esIngreso ? `+${formatearCOP(m.monto)}` : `−${formatearCOP(m.monto)}`}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {movMes.length > visibles && (
+                <button
+                  type="button"
+                  onClick={() => setVisibles(v => v + POR_PAGINA)}
+                  className="link acento"
+                  style={{ alignSelf: 'center', marginTop: 12 }}
+                >
+                  Ver {Math.min(POR_PAGINA, movMes.length - visibles)} más
                 </button>
-              ))
-            )}
-          </Zona>
+              )}
+            </>
+          )}
+        </section>
+      </div>
 
-          <Zona crece>
-            <Rotulo>Techo de esta semana</Rotulo>
-            {techo === null ? (
-              <p className="text-xs text-texto-3 mt-2">Configura tu mes en Mi plan para saber cuánto puedes gastar por semana.</p>
-            ) : (
-              <>
-                <p className={`font-display font-extrabold text-2xl tabular-nums mt-1.5 ${pasado ? 'text-alerta' : 'text-texto'}`}>
-                  {formatearCOP(gastoSemana)} <span className="text-sm font-semibold text-texto-3">de {formatearCOP(techo)}</span>
-                </p>
-                <div className="h-1.5 rounded-full bg-superficie-2 overflow-hidden mt-2">
-                  <div
-                    className={`h-full rounded-full ${pasado ? 'bg-alerta' : 'bg-acento'}`}
-                    style={{ width: `${Math.min(100, techo > 0 ? (gastoSemana / techo) * 100 : 0)}%` }}
-                  />
-                </div>
-                <p className="text-[11.5px] text-texto-2 mt-2 leading-relaxed">
-                  {pasado
-                    ? <>Vas <b className="text-texto tabular-nums">{formatearCOP(gastoSemana - techo)}</b> por encima: eso sale de tu plan.</>
-                    : <>Te quedan <b className="text-texto tabular-nums">{formatearCOP(techo - gastoSemana)}</b> para esta semana.</>}
-                </p>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => setIngresoAbierto(true)}
-              className="xl:hidden mt-4 w-full py-2.5 rounded-xl border border-linea bg-superficie-2 text-xs font-bold cursor-pointer"
-            >
-              + Registrar un ingreso
-            </button>
-          </Zona>
-        </Columna>
-
-        <Columna ordenMovil={2}>
-          <Zona crece>
-            <Rotulo className="mb-1.5">Movimientos</Rotulo>
-            {ordenados.length === 0 && <p className="text-xs text-texto-3 py-2">Todavía no hay movimientos.</p>}
-            {ordenados.slice(0, visibles).map((m, i) => {
-              const esIngreso = m.tipo === 'ingreso';
-              const esTransferencia = m.tipo === 'transferencia';
-              const destino = billeteras.find((b) => b.id === m.billeteraDestinoId)?.nombre || 'Otra cuenta';
-              
-              return (
-                <div key={m.id} className={`flex items-center justify-between gap-3 py-2.5 ${i ? 'border-t border-hairline' : ''}`}>
-                  <span className="min-w-0">
-                    <span className="block text-[13px] font-semibold truncate flex items-center gap-1.5">
-                      {esTransferencia && (
-                        <svg className="w-3.5 h-3.5 flex-none text-texto-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                      )}
-                      {esTransferencia ? `${m.billeteraNombre ?? 'Billetera'} → ${destino} · ${m.descripcion || m.nota}` : m.descripcion || m.nota || m.categoria}
-                    </span>
-                    <span className="block text-[10.5px] text-texto-3 truncate">
-                      {esTransferencia ? 'Sobres' : m.categoria} · {!esTransferencia && (m.billeteraNombre ?? 'Billetera') + ' · '} {m.fecha}
-                    </span>
-                  </span>
-                  <span className={`flex-none font-bold text-[13px] tabular-nums ${esTransferencia ? 'text-texto-2' : esIngreso ? 'text-positivo' : 'text-texto'}`}>
-                    {!esTransferencia && (esIngreso ? '+' : '−')}
-                    {formatearCOP(m.monto)}
-                  </span>
-                </div>
-              );
-            })}
-            {ordenados.length > visibles && (
-              <button
-                type="button"
-                onClick={() => setVisibles((v) => v + POR_PAGINA)}
-                className="w-full mt-2 py-2 text-xs text-acento cursor-pointer"
-              >
-                Ver {Math.min(POR_PAGINA, ordenados.length - visibles)} más
-              </button>
-            )}
-          </Zona>
-        </Columna>
-      </Marco>
-
-      <HojaGastoRapido
-        abierto={gastoAbierto}
-        billeteras={billeteras}
-        sobres={sobres}
-        techoSemanal={techo}
-        gastoSemana={gastoSemana}
-        deudas={activas}
-        caja={disponibleMensual}
-        enFaseDeudas={activas.length > 0}
-        onGuardar={onRegistrarMovimiento}
-        onCerrar={() => setGastoAbierto(false)}
-      />
       <ModalRegistrarMovimiento
         abierto={ingresoAbierto}
         billeteras={billeteras}
