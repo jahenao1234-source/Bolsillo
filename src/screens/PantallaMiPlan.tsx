@@ -136,7 +136,10 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
         <section className="panel alto-2">
           <div className="panel-cab">
             <h2 className="titulo">Tu fecha de libertad</h2>
-            <div className="nota num solo-escritorio">Debes {formatearCOP(deudaTotal)} · pagado {formatearCOP(pagado)}</div>
+            <span className="solo-escritorio" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <span className="nota num">Debes {formatearCOP(deudaTotal)} · pagado {formatearCOP(pagado)}</span>
+              <button className="link acento" onClick={() => onIrA('plan_listo')}>Ajustar mi mes →</button>
+            </span>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '12px 36px' }}>
             <div>
@@ -232,7 +235,7 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
             <div className="num font-bold">{formatearCOP(caja)}</div>
           </div>
           <button className="btn ancho" onClick={abrirSiguientePago}>Registrar pago</button>
-          <button className="link" style={{ alignSelf: 'center' }} onClick={() => onIrA('plan_listo')}>Ajustar mi mes o mis deudas</button>
+          <button className="link solo-movil" style={{ alignSelf: 'center' }} onClick={() => onIrA('plan_listo')}>Ajustar mi mes o mis deudas</button>
         </section>
 
         {/* PANEL C */}
