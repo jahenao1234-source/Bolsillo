@@ -71,6 +71,27 @@ export function eaDesdeMensual(mensual: number): number {
   return (Math.pow(1 + mensual / 100, 12) - 1) * 100;
 }
 
+export function proximoVencimiento(diaPago: number, hoy: Date = new Date()): Date {
+  let mes = hoy.getMonth();
+  let anio = hoy.getFullYear();
+  if (diaPago < hoy.getDate()) {
+    mes++;
+    if (mes > 11) {
+      mes = 0;
+      anio++;
+    }
+  }
+  const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+  const diaReal = Math.min(diaPago, ultimoDia);
+  return new Date(anio, mes, diaReal);
+}
+
+export function diasHasta(fecha: Date, hoy: Date = new Date()): number {
+  const f1 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+  const f2 = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()).getTime();
+  return Math.round((f2 - f1) / (1000 * 60 * 60 * 24));
+}
+
 // ==========================================
 // FASE
 // ==========================================
@@ -145,6 +166,7 @@ export interface Escalon {
   desde: string;
   /** Mes en que queda en $0. */
   hasta: string;
+  mesHasta: number;
   /** La cuota que libera al terminar y que pasa a la siguiente. */
   libera: number;
 }
@@ -170,6 +192,7 @@ export function escaleraAtaque(deudas: Deuda[], caja: number): Escalon[] {
       monto: d.pagoMinimo + extra + liberado,
       desde: mesInicio <= 1 ? 'Hoy' : calcularFechaMesRelativo(mesInicio),
       hasta: saldado?.fechaEstimada ?? 'Sin fecha',
+      mesHasta: saldado?.mesSaldado ?? 0,
       libera: d.pagoMinimo,
     };
     liberado += d.pagoMinimo;
