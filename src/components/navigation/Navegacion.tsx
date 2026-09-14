@@ -44,7 +44,7 @@ export const ITEMS_POR_MODO: Record<ModoApp, ItemNav[]> = {
     { id: 'pro_inicio', etiqueta: 'Inicio', icono: Home },
     { id: 'sobres', etiqueta: 'Sobres', icono: FolderLock },
     { id: 'billetera', etiqueta: 'Mi plata', icono: Wallet },
-    { id: 'herramientas', etiqueta: 'Más', icono: LayoutGrid },
+    { id: 'herramientas', etiqueta: 'Herramientas', icono: LayoutGrid },
   ],
 };
 
