@@ -269,7 +269,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
           id: 'retos' as Modulo,
           nombre: 'Retos',
           cifra: String(resumenRetos.activos),
-          unidad: 'activos',
+          unidad: resumenRetos.activos === 1 ? 'activo' : 'activos',
           detalle: retoActivo
             ? `${retoActivo.nombre} · semana ${retoActivo.semanaActual} de ${retoActivo.semanasTotales} · llevas ${formatearCOP(retoActivo.acumulado)}`
             : 'Empieza un reto de ahorro',
@@ -289,7 +289,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
           cifra: ultimoCierre ? formatearCOP(ultimoCierre.queda) : '—',
           unidad: ultimoCierre ? `sobró en ${ultimoCierre.etiqueta.toLowerCase()}` : '',
           detalle: ultimoCierre
-            ? `Cierre de ${ultimoCierre.etiquetaLarga || ultimoCierre.etiqueta} listo`
+            ? `Cierre de ${ultimoCierre.etiquetaLarga ? ultimoCierre.etiquetaLarga.charAt(0).toLowerCase() + ultimoCierre.etiquetaLarga.slice(1) : ultimoCierre.etiqueta.toLowerCase()} listo`
             : 'Con un mes cerrado aparece tu primer reporte',
         },
       ],
