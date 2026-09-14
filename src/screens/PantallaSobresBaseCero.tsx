@@ -109,11 +109,13 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
 
     return (
       <div className="cab">
-        <h1>Tus sobres</h1>
-        <p>
-          {desk}
-          {mov}
-        </p>
+        <div>
+          <h1>Tus sobres</h1>
+          <p>
+            {desk}
+            {mov}
+          </p>
+        </div>
         <div className="acciones">
           <button className="btn2" onClick={() => setModal({ modo: 'crear', sobre: null })}>+ Nuevo sobre</button>
         </div>
