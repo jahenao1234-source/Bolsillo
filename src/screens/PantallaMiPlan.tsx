@@ -135,10 +135,10 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
         {/* PANEL A */}
         <section className="panel alto-2">
           <div className="panel-cab">
-            <h2>Tu fecha de libertad</h2>
+            <h2 className="titulo">Tu fecha de libertad</h2>
             <div className="nota num solo-escritorio">Debes {formatearCOP(deudaTotal)} · pagado {formatearCOP(pagado)}</div>
           </div>
-          <div className="flex-wrap gap" style={{ gap: '12px 36px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '12px 36px' }}>
             <div>
               <div className="nota">Con tu plan sales de deudas en</div>
               <div className="cifra-xl acento-tx">{comparacion.plan.viable ? comparacion.plan.fecha.replace(/^(\w{3})/, (m) => MESES_NOMBRE.find((n) => n.startsWith(m)) ?? m) : 'Sin fecha'}</div>
@@ -154,19 +154,25 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
           </div>
           
           {comparacion.mesesGanados > 0 && (
-            <div className="caja ok">
-              <div className="cifra-l ok">{comparacion.mesesGanados} meses antes</div>
-              <div className="nota">y</div>
-              <div className="cifra-l ok">{formatearCOP(comparacion.interesesAhorrados)} menos</div>
-              <div className="nota">de intereses</div>
+            <div className="caja ok" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '2px 10px' }}>
+              <span className="cifra-l ok">{comparacion.mesesGanados} meses antes</span>
+              <span className="nota">y</span>
+              <span className="cifra-l ok">{formatearCOP(comparacion.interesesAhorrados)} menos</span>
+              <span className="nota">de intereses</span>
             </div>
           )}
 
           <div className="panel-cab solo-escritorio">
-            <h2>Lo que debes, mes a mes</h2>
-            <div className="leyenda">
-              <div className="item acento">Tu plan</div>
-              <div className="item">Solo mínimos</div>
+            <span className="nota">Lo que debes, mes a mes</span>
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+              <span className="nota" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="18" height="6" viewBox="0 0 18 6"><line x1="0" y1="3" x2="18" y2="3" className="g-acento" strokeWidth="3" /></svg>
+                Tu plan
+              </span>
+              <span className="nota" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="18" height="6" viewBox="0 0 18 6"><line x1="0" y1="3" x2="18" y2="3" className="g-texto-s" strokeWidth="2" strokeDasharray="4 3" /></svg>
+                Solo mínimos
+              </span>
             </div>
           </div>
 
@@ -180,8 +186,8 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
           />
 
           {perfil && (
-            <div className="caja solo-escritorio" style={{ marginTop: 'auto' }}>
-              <div>Si te pasas <b>$50.000</b> de tu techo semanal de {formatearCOP(techo || 0)}, tu fecha se corre <b>{diasDeRetraso(activas, caja, 50000)} días</b>.</div>
+            <div className="caja solo-escritorio" style={{ marginTop: 'auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '6px 16px' }}>
+              <span>Si te pasas <b>$50.000</b> de tu techo semanal de {formatearCOP(techo || 0)}, tu fecha se corre <b>{diasDeRetraso(activas, caja, 50000)} días</b>.</span>
               <button className="link acento" onClick={() => onIrA('billetera')}>Ver Billetera →</button>
             </div>
           )}
@@ -190,7 +196,7 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
         {/* PANEL B */}
         <section className="panel">
           <div className="panel-cab">
-            <h2>Pagos de {mesNombre.toLowerCase()}</h2>
+            <h2 className="titulo">Pagos de {mesNombre.toLowerCase()}</h2>
             <div className="nota num">{pagos.filter(p => p.cumplido).length} de {pagos.length} pagados</div>
           </div>
           <div className="lista lineas">
@@ -220,10 +226,10 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
                 </div>
               );
             })}
-            <div className="fila" style={{ marginTop: 'auto', paddingTop: 11, borderTop: '1px solid var(--linea)' }}>
-              <div>Este mes a tus deudas</div>
-              <div className="num font-bold">{formatearCOP(caja)}</div>
-            </div>
+          </div>
+          <div className="fila" style={{ marginTop: 'auto', paddingTop: 11, borderTop: '1px solid var(--linea)' }}>
+            <div>Este mes a tus deudas</div>
+            <div className="num font-bold">{formatearCOP(caja)}</div>
           </div>
           <button className="btn ancho" onClick={abrirSiguientePago}>Registrar pago</button>
           <button className="link" style={{ alignSelf: 'center' }} onClick={() => onIrA('plan_listo')}>Ajustar mi mes o mis deudas</button>
@@ -232,31 +238,33 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
         {/* PANEL C */}
         <section className="panel">
           <div className="panel-cab">
-            <h2>Cómo crece tu ataque</h2>
+            <h2 className="titulo">Cómo crece tu ataque</h2>
             <div className="nota num">{formatearCOP(escalera[0]?.monto || 0)} → {formatearCOP(caja)}</div>
           </div>
           <div className="pasos">
             {escalera.map((e, i) => (
               <div key={e.deudaId} className={`paso ${i === 0 ? 'actual' : ''}`}>
-                <div className="fila">
-                  <div>{e.nombre} {i === 0 && <span className="chip ataque">Ataque</span>}</div>
-                  <div className="num">{formatearCOP(e.monto)}</div>
-                </div>
-                <div className="barra solo-escritorio">
-                  <div className="lleno" style={{ width: `${(e.monto / caja) * 100}%` }} />
-                </div>
-                <div className="nota suave">Desde {e.desde.toLowerCase()} · en $0 en {e.hasta.toLowerCase()}</div>
-                <div className="nota suave solo-escritorio">
-                  {i === 0 
-                    ? `${formatearCOP(e.libera)} de mínimo + ${formatearCOP(e.monto - e.libera)} de ataque`
-                    : (() => {
-                        const anterior = escalera[i-1];
-                        const p = anterior.nombre.split(' ');
-                        const antCorto = anterior.nombre.toLowerCase().startsWith('tarjeta') && p.length > 1 ? p[1] : p[0];
-                        const esFijo = activas.find(d => d.id === e.deudaId)?.tipo === 'prestamo' || activas.find(d => d.id === e.deudaId)?.tipo === 'libranza';
-                        return `${formatearCOP(e.libera)} de ${esFijo ? 'cuota' : 'mínimo'} + ${formatearCOP(e.monto - e.libera)} de ${antCorto}`;
-                      })()
-                  }
+                <div>
+                  <div className="fila">
+                    <div>{e.nombre} {i === 0 && <span className="chip ataque">Ataque</span>}</div>
+                    <div className="num">{formatearCOP(e.monto)}</div>
+                  </div>
+                  <div className="barra solo-escritorio" style={{ marginTop: 6 }}>
+                    <i style={{ width: `${(e.monto / caja) * 100}%` }} />
+                  </div>
+                  <div className="nota suave">Desde {e.desde.toLowerCase()} · en $0 en {e.hasta.toLowerCase()}</div>
+                  <div className="nota suave solo-escritorio">
+                    {i === 0 
+                      ? `${formatearCOP(e.libera)} de mínimo + ${formatearCOP(e.monto - e.libera)} de ataque`
+                      : (() => {
+                          const anterior = escalera[i-1];
+                          const p = anterior.nombre.split(' ');
+                          const antCorto = anterior.nombre.toLowerCase().startsWith('tarjeta') && p.length > 1 ? p[1] : p[0];
+                          const esFijo = activas.find(d => d.id === e.deudaId)?.tipo === 'prestamo' || activas.find(d => d.id === e.deudaId)?.tipo === 'libranza';
+                          return `${formatearCOP(e.libera)} de ${esFijo ? 'cuota' : 'mínimo'} + ${formatearCOP(e.monto - e.libera)} de ${antCorto}`;
+                        })()
+                    }
+                  </div>
                 </div>
               </div>
             ))}

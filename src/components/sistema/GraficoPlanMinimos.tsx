@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
 import { formatearCOP } from '../../utils/format';
+import { MESES_ABREV } from '../../utils/fechas';
 
 interface GraficoPlanMinimosProps {
   seriePlan: number[];
@@ -36,7 +37,7 @@ export const GraficoPlanMinimos: React.FC<GraficoPlanMinimosProps> = ({
   const areaPlan = `${pathPlan} L${x(seriePlan.length - 1)},${y(0)} L${x(0)},${y(0)} Z`;
 
   const hoy = new Date();
-  const mesAbrev = hoy.toLocaleString('es-CO', { month: 'short' }).toLowerCase();
+  const mesAbrev = MESES_ABREV[hoy.getMonth()].toLowerCase();
   const anio = hoy.getFullYear();
 
   const centroGanados = (x(seriePlan.length - 1) + 686) / 2;
@@ -59,19 +60,19 @@ export const GraficoPlanMinimos: React.FC<GraficoPlanMinimosProps> = ({
         </g>
       ))}
       <line x1="84" x2="686" y1={y(0)} y2={y(0)} className="g-texto-s" />
-      <text x="74" y={y(0) + 4} textAnchor="end" fontSize="11" className="g-texto-s">$0</text>
+      <text x="74" y={y(0) + 4} textAnchor="end" fontSize="11" className="g-texto">$0</text>
 
       {/* Solo mínimos */}
       <path d={pathMinimos} className="g-texto-s" fill="none" strokeWidth="2" strokeDasharray="5 4" />
-      <circle cx={x(serieMinimos.length - 1)} cy={y(serieMinimos[serieMinimos.length - 1])} r="4" className="g-texto" fill="currentColor" />
+      <circle cx={x(serieMinimos.length - 1)} cy={y(serieMinimos[serieMinimos.length - 1])} r="4" className="g-texto" />
 
       {/* Tu plan */}
       <path d={areaPlan} fill={`url(#${gradId})`} />
       <path d={pathPlan} className="g-acento" fill="none" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       
-      <circle cx={x(0)} cy={y(seriePlan[0])} r="4" className="g-acento-f" fill="currentColor" />
+      <circle cx={x(0)} cy={y(seriePlan[0])} r="4" className="g-acento-f" />
       <text x={x(0) + 12} y="20" fontSize="12" className="g-texto2">hoy debes {formatearCOP(max)}</text>
-      <circle cx={xPlanFinal} cy={y(seriePlan[seriePlan.length - 1])} r="5.5" className="g-acento-f" fill="currentColor" />
+      <circle cx={xPlanFinal} cy={y(seriePlan[seriePlan.length - 1])} r="5.5" className="g-acento-f" />
 
       {/* Marcas de deudas */}
       {marcas.map((m, i) => {
@@ -79,7 +80,7 @@ export const GraficoPlanMinimos: React.FC<GraficoPlanMinimosProps> = ({
         if (m.mes >= seriePlan.length - 1) return null;
         return (
           <g key={i}>
-            <circle cx={x(m.mes)} cy={y(seriePlan[m.mes])} r="4" className="g-acento-f" fill="currentColor" />
+            <circle cx={x(m.mes)} cy={y(seriePlan[m.mes])} r="4" className="g-acento-f" />
             <text x={x(m.mes) - 8} y={y(seriePlan[m.mes]) + 4} textAnchor="end" fontSize="11" className="g-texto2">{m.etiqueta} en $0</text>
           </g>
         );
@@ -93,9 +94,9 @@ export const GraficoPlanMinimos: React.FC<GraficoPlanMinimosProps> = ({
 
       {mesesGanados > 0 && xPlanFinal < 686 && (
         <g>
-          <text x={centroGanados} y="368" textAnchor="middle" fontSize="12" className="g-texto-s">{mesesGanados} meses antes</text>
-          <line x1={xPlanFinal + 40} x2={centroGanados - 60} y1="364" y2="364" className="g-texto-s" stroke="currentColor" />
-          <line x1={centroGanados + 60} x2={686 - 40} y1="364" y2="364" className="g-texto-s" stroke="currentColor" />
+          <text x={centroGanados} y="368" textAnchor="middle" fontSize="12" fontWeight={700} className="g-texto2">{mesesGanados} meses antes</text>
+          <line x1={xPlanFinal + 40} x2={centroGanados - 60} y1="364" y2="364" className="g-texto-s" />
+          <line x1={centroGanados + 60} x2={686 - 40} y1="364" y2="364" className="g-texto-s" />
         </g>
       )}
     </svg>
