@@ -243,7 +243,7 @@ export default function App() {
 
             <div
               ref={contenidoRef}
-              className="app-contenido flex-1 xl:flex xl:flex-col px-4 sm:px-6 md:px-5 py-5 md:pt-3 pb-24 md:pb-5 w-full"
+              className="contenido-kit app-contenido flex-1 xl:flex xl:flex-col px-4 sm:px-6 md:px-5 py-5 md:pt-3 pb-24 md:pb-5 w-full"
             >
               <div key={seccion} className="animate-screen-enter xl:flex-1 xl:flex xl:flex-col">
                 {seccion === 'plan' && (
