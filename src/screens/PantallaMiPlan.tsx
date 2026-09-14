@@ -8,16 +8,11 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
 import type { Billetera, Deuda, Movimiento, PerfilFlujo } from '../types';
-import { Marco, Columna, Zona } from '../components/layout/Marco';
-import { BarraTitulo } from '../components/layout/shell';
-import { RailPasos, PASOS_SISTEMA, Rotulo } from '../components/sistema/RailPasos';
-import { PagosDelMes } from '../components/sistema/PagosDelMes';
-import { EscaleraAtaque } from '../components/sistema/EscaleraAtaque';
-import { GraficoExtincion } from '../components/sistema/GraficoExtincion';
+import { RailPasos, PASOS_SISTEMA } from '../components/sistema/RailPasos';
 import { GraduacionEnLinea } from '../components/sistema/Momentos';
 import { ModalAbonarDeuda } from '../components/deudas/ModalAbonarDeuda';
+import { GraficoPlanMinimos } from '../components/sistema/GraficoPlanMinimos';
 import {
   compararConMinimos,
   deudasActivas,
@@ -27,6 +22,9 @@ import {
   PagoDelMes,
   saldoDe,
   techoSemanal,
+  diasHasta,
+  proximoVencimiento,
+  diasDeRetraso,
 } from '../logic/sistema';
 import { formatearCOP } from '../utils/format';
 import { MESES_NOMBRE } from '../utils/fechas';
@@ -110,147 +108,162 @@ export const PantallaMiPlan: React.FC<PantallaMiPlanProps> = ({
   const techo = perfil ? techoSemanal(perfil.gastosBasicos) : null;
   const gastoSemana = gastoDeLaSemana(movimientos);
 
-  const heroe = (
-    <div>
-      <Rotulo>Tu fecha de libertad</Rotulo>
-      <p className="font-display font-extrabold text-[34px] xl:text-[40px] leading-none tracking-tight mt-1.5">
-        {comparacion.plan.viable ? comparacion.plan.fecha.replace(/^(\w{3})/, (m) => MESES_NOMBRE.find((n) => n.startsWith(m)) ?? m) : 'Sin fecha'}
-      </p>
-      <p className="text-xs text-texto-2 mt-1.5 tabular-nums">
-        {comparacion.plan.viable ? `${comparacion.plan.meses} ${comparacion.plan.meses === 1 ? 'mes' : 'meses'}` : 'El plan no cierra'}
-        {' · '}
-        {formatearCOP(deudaTotal)} por pagar · {saldadas} de {deudas.length} {deudas.length === 1 ? 'deuda' : 'deudas'}
-      </p>
-    </div>
-  );
+  const pagado = activas.reduce((a, d) => a + Math.max(0, (d.montoOriginal || 0) - saldoDe(d)), 0);
+
+  const pagosOrdenados = [...pagos].sort((a, b) => {
+    if (!a.deuda.diaPago && !b.deuda.diaPago) return 0;
+    if (!a.deuda.diaPago) return 1;
+    if (!b.deuda.diaPago) return -1;
+    return proximoVencimiento(a.deuda.diaPago, hoy).getTime() - proximoVencimiento(b.deuda.diaPago, hoy).getTime();
+  });
+
+  const marcas = escalera.slice(0, -1).map(e => {
+    const palabras = e.nombre.split(' ');
+    const esTarjeta = e.nombre.toLowerCase().startsWith('tarjeta');
+    const etiqueta = esTarjeta && palabras.length > 1 ? palabras[1] : palabras[0];
+    return { mes: e.mesHasta, etiqueta };
+  });
 
   return (
-    <div className="w-full pb-24 xl:pb-0 xl:flex-1 xl:flex xl:flex-col">
-      <BarraTitulo>
-        <span className="font-display font-extrabold text-[15px]">Mi plan</span>
-        <RailPasos pasos={PASOS_SISTEMA} actual="salir" className="w-[330px] ml-3" />
-      </BarraTitulo>
-
-      <Marco columnas="340px minmax(0,1fr) 320px">
-        {/* ---------- Qué hago este mes ---------- */}
-        <Columna ordenMovil={1} borde>
-          <Zona crece plana className="flex flex-col gap-3.5 xl:gap-4">
-            <RailPasos pasos={PASOS_SISTEMA} actual="deudas" compact className="xl:hidden border-b border-[var(--linea)] pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 mb-5" />
-            {noAlcanza && (
-              <p className="text-xs leading-relaxed text-texto-2 p-3 rounded-xl border border-alerta/40 bg-alerta/5">
-                Lo que tienes para deudas (<b className="text-texto">{formatearCOP(caja)}</b>) no alcanza los mínimos (
-                <b className="text-texto">{formatearCOP(minimos)}</b>). Así la deuda no baja: ajusta tu mes.
-              </p>
-            )}
-
-            <PagosDelMes pagos={pagos} mesNombre={mesNombre} onPagar={setPagoAbierto} />
-
-            <button type="button" onClick={abrirSiguientePago} className="w-full py-3 rounded-[13px] bg-accion-gradient text-on-accion font-extrabold text-sm cursor-pointer">
-              Registrar un pago
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onIrA('plan_listo')}
-              className="self-center inline-flex items-center gap-1.5 text-xs text-texto-3 hover:text-texto-2 cursor-pointer"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" /> Ajustar mi mes o mis deudas
-            </button>
-          </Zona>
-        </Columna>
-
-        {/* ---------- El porqué ---------- */}
-        <Columna ordenMovil={2} borde>
-          <Zona className="max-xl:hidden">
-            <div className="flex items-baseline justify-between gap-3 mb-2">
-              <div>
-                <Rotulo>Tu deuda, mes a mes</Rotulo>
-                <p className="font-bold text-sm mt-1 tabular-nums">{formatearCOP(deudaTotal)} hoy</p>
-              </div>
-              <div className="flex gap-3.5 text-[11px]">
-                <span className="inline-flex items-center gap-1.5 text-texto-3"><i className="w-3.5 h-0.5 bg-texto-3" />Solo mínimos</span>
-                <span className="inline-flex items-center gap-1.5 text-acento font-bold"><i className="w-3.5 h-[3px] rounded bg-acento" />Tu plan</span>
+    <div className="pant">
+      {noAlcanza && (
+        <div className="caja mal">
+          Lo que tienes para deudas (<b>{formatearCOP(caja)}</b>) no alcanza los mínimos (<b>{formatearCOP(minimos)}</b>). Así la deuda no baja: ajusta tu mes.
+        </div>
+      )}
+      <div className="rejilla llena" style={{ '--cols': 'minmax(0,1.75fr) minmax(0,1fr)' } as React.CSSProperties}>
+        {/* PANEL A */}
+        <section className="panel alto-2">
+          <div className="panel-cab">
+            <h2>Tu fecha de libertad</h2>
+            <div className="nota num solo-escritorio">Debes {formatearCOP(deudaTotal)} · pagado {formatearCOP(pagado)}</div>
+          </div>
+          <div className="flex-wrap gap" style={{ gap: '12px 36px' }}>
+            <div>
+              <div className="nota">Con tu plan sales de deudas en</div>
+              <div className="cifra-xl acento-tx">{comparacion.plan.viable ? comparacion.plan.fecha.replace(/^(\w{3})/, (m) => MESES_NOMBRE.find((n) => n.startsWith(m)) ?? m) : 'Sin fecha'}</div>
+              <div className="nota">
+                {comparacion.plan.viable ? <>en {comparacion.plan.meses} meses · <b>{formatearCOP(comparacion.plan.intereses)}</b> de intereses</> : 'El plan no cierra con lo que tienes'}
               </div>
             </div>
-            <GraficoExtincion
-              seriePlan={comparacion.seriePlan}
-              serieMinimos={comparacion.serieMinimos}
-              fechaPlan={comparacion.plan.fecha}
-              fechaMinimos={comparacion.minimos.fecha}
-              mesesGanados={comparacion.mesesGanados}
-              ancho={920}
-            />
-            {comparacion.mesesGanados > 0 && (
-              <p className="text-xs text-texto-2 mt-2">
-                Pagando solo mínimos saldrías en <b className="text-texto">{comparacion.minimos.fecha.toLowerCase()}</b>. Con tu plan,{' '}
-                <b className="text-texto">{comparacion.mesesGanados} meses antes</b> y <b className="text-texto tabular-nums">{formatearCOP(comparacion.interesesAhorrados)}</b> menos de intereses.
-              </p>
-            )}
-          </Zona>
-          <Zona crece plana className="flex flex-col gap-2 max-xl:mt-3">
-            <Rotulo>Cómo crece tu ataque</Rotulo>
-            <div className="xl:hidden"><EscaleraAtaque escalones={escalera} /></div>
-            <div className="hidden xl:block"><EscaleraAtaque escalones={escalera} detallada /></div>
-            <p className="text-[11.5px] text-texto-3 leading-relaxed">
-              Cada deuda que cae le pasa su cuota a la siguiente. Por eso el ataque crece sin que pongas un peso más.
-            </p>
-          </Zona>
-        </Columna>
-
-        {/* ---------- Cómo va ---------- */}
-        <Columna ordenMovil={3} className="max-xl:hidden">
-          <Zona>
-            <div className="flex items-center justify-between mb-2">
-              <Rotulo>Tus deudas</Rotulo>
-              <button type="button" onClick={() => onIrA('deudas')} className="text-[11px] text-acento cursor-pointer">Ver todas</button>
+            <div>
+              <div className="nota">Pagando solo mínimos</div>
+              <div className="cifra-l suave">{comparacion.minimos.viable ? comparacion.minimos.fecha.replace(/^(\w{3})/, (m) => MESES_NOMBRE.find((n) => n.startsWith(m)) ?? m) : 'Nunca'}</div>
+              <div className="nota">en {comparacion.minimos.meses} meses · {formatearCOP(comparacion.minimos.intereses)} de intereses</div>
             </div>
-            {pagos.map((p, i) => (
-              <div key={p.deuda.id} className={`flex items-center justify-between gap-2 py-2 text-[12.5px] ${i ? 'border-t border-hairline' : ''}`}>
-                <span className="min-w-0">
-                  <span className="block truncate font-semibold">{p.deuda.nombre}</span>
-                  <span className="block text-[10.5px] text-texto-3">
-                    {p.esFoco ? 'En ataque' : `Le toca en ${escalera.find((e) => e.deudaId === p.deuda.id)?.desde.toLowerCase() ?? '—'}`}
-                  </span>
-                </span>
-                <span className="font-bold tabular-nums">{formatearCOP(saldoDe(p.deuda))}</span>
+          </div>
+          
+          {comparacion.mesesGanados > 0 && (
+            <div className="caja ok">
+              <div className="cifra-l ok">{comparacion.mesesGanados} meses antes</div>
+              <div className="nota">y</div>
+              <div className="cifra-l ok">{formatearCOP(comparacion.interesesAhorrados)} menos</div>
+              <div className="nota">de intereses</div>
+            </div>
+          )}
+
+          <div className="panel-cab solo-escritorio">
+            <h2>Lo que debes, mes a mes</h2>
+            <div className="leyenda">
+              <div className="item acento">Tu plan</div>
+              <div className="item">Solo mínimos</div>
+            </div>
+          </div>
+
+          <GraficoPlanMinimos
+            seriePlan={comparacion.seriePlan}
+            serieMinimos={comparacion.serieMinimos}
+            fechaPlan={comparacion.plan.viable ? comparacion.plan.fecha : 'Sin fecha'}
+            fechaMinimos={comparacion.minimos.viable ? comparacion.minimos.fecha : 'Nunca'}
+            mesesGanados={comparacion.mesesGanados}
+            marcas={marcas}
+          />
+
+          {perfil && (
+            <div className="caja solo-escritorio" style={{ marginTop: 'auto' }}>
+              <div>Si te pasas <b>$50.000</b> de tu techo semanal de {formatearCOP(techo || 0)}, tu fecha se corre <b>{diasDeRetraso(activas, caja, 50000)} días</b>.</div>
+              <button className="link acento" onClick={() => onIrA('billetera')}>Ver Billetera →</button>
+            </div>
+          )}
+        </section>
+
+        {/* PANEL B */}
+        <section className="panel">
+          <div className="panel-cab">
+            <h2>Pagos de {mesNombre.toLowerCase()}</h2>
+            <div className="nota num">{pagos.filter(p => p.cumplido).length} de {pagos.length} pagados</div>
+          </div>
+          <div className="lista lineas">
+            {pagosOrdenados.map(p => {
+              const dias = p.deuda.diaPago ? diasHasta(proximoVencimiento(p.deuda.diaPago, hoy), hoy) : null;
+              const fechaTexto = p.deuda.diaPago ? `vence el ${proximoVencimiento(p.deuda.diaPago, hoy).getDate()} ${MESES_NOMBRE[proximoVencimiento(p.deuda.diaPago, hoy).getMonth()].substring(0,3).toLowerCase()}` : 'sin fecha';
+              let notaIzquierda = p.esFoco ? '' : p.deuda.tipo === 'prestamo' || p.deuda.tipo === 'libranza' ? 'Cuota fija' : 'Solo el mínimo';
+              if (notaIzquierda) notaIzquierda += ' · ';
+
+              return (
+                <div key={p.deuda.id}>
+                  <div className="fila">
+                    <div>{p.deuda.nombre} {p.esFoco && <span className="chip ataque">Ataque</span>}</div>
+                    <div className="num">{formatearCOP(p.monto)}</div>
+                  </div>
+                  <div className="fila" style={{ marginTop: 5 }}>
+                    <div className="nota">{notaIzquierda}{fechaTexto}</div>
+                    <div>
+                      {p.cumplido ? <span className="chip ok">Pagado</span> : 
+                       dias !== null && dias <= 3 ? <span className="chip aviso">{dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana' : `En ${dias} días`}</span> : 
+                       dias !== null ? <span className="nota num">en {dias} días</span> : null}
+                    </div>
+                  </div>
+                  {p.esFoco && (
+                    <div className="nota suave">{formatearCOP(p.minimo)} de mínimo + {formatearCOP(p.extra)} de ataque</div>
+                  )}
+                </div>
+              );
+            })}
+            <div className="fila" style={{ marginTop: 'auto', paddingTop: 11, borderTop: '1px solid var(--linea)' }}>
+              <div>Este mes a tus deudas</div>
+              <div className="num font-bold">{formatearCOP(caja)}</div>
+            </div>
+          </div>
+          <button className="btn ancho" onClick={abrirSiguientePago}>Registrar pago</button>
+          <button className="link" style={{ alignSelf: 'center' }} onClick={() => onIrA('plan_listo')}>Ajustar mi mes o mis deudas</button>
+        </section>
+
+        {/* PANEL C */}
+        <section className="panel">
+          <div className="panel-cab">
+            <h2>Cómo crece tu ataque</h2>
+            <div className="nota num">{formatearCOP(escalera[0]?.monto || 0)} → {formatearCOP(caja)}</div>
+          </div>
+          <div className="pasos">
+            {escalera.map((e, i) => (
+              <div key={e.deudaId} className={`paso ${i === 0 ? 'actual' : ''}`}>
+                <div className="fila">
+                  <div>{e.nombre} {i === 0 && <span className="chip ataque">Ataque</span>}</div>
+                  <div className="num">{formatearCOP(e.monto)}</div>
+                </div>
+                <div className="barra solo-escritorio">
+                  <div className="lleno" style={{ width: `${(e.monto / caja) * 100}%` }} />
+                </div>
+                <div className="nota suave">Desde {e.desde.toLowerCase()} · en $0 en {e.hasta.toLowerCase()}</div>
+                <div className="nota suave solo-escritorio">
+                  {i === 0 
+                    ? `${formatearCOP(e.libera)} de mínimo + ${formatearCOP(e.monto - e.libera)} de ataque`
+                    : (() => {
+                        const anterior = escalera[i-1];
+                        const p = anterior.nombre.split(' ');
+                        const antCorto = anterior.nombre.toLowerCase().startsWith('tarjeta') && p.length > 1 ? p[1] : p[0];
+                        const esFijo = activas.find(d => d.id === e.deudaId)?.tipo === 'prestamo' || activas.find(d => d.id === e.deudaId)?.tipo === 'libranza';
+                        return `${formatearCOP(e.libera)} de ${esFijo ? 'cuota' : 'mínimo'} + ${formatearCOP(e.monto - e.libera)} de ${antCorto}`;
+                      })()
+                  }
+                </div>
               </div>
             ))}
-          </Zona>
-          <Zona crece>
-            <div className="flex items-center justify-between mb-2">
-              <Rotulo>Tu plata</Rotulo>
-              <button type="button" onClick={() => onIrA('billetera')} className="text-[11px] text-acento cursor-pointer">Billetera</button>
-            </div>
-            {billeteras.slice(0, 4).map((b, i) => (
-              <div key={b.id} className={`flex justify-between py-1.5 text-[12.5px] ${i ? 'border-t border-hairline' : ''}`}>
-                <span className="truncate">{b.nombre}</span>
-                <span className="font-bold tabular-nums">{formatearCOP(b.saldo)}</span>
-              </div>
-            ))}
-            <div className="flex justify-between pt-2 mt-1 border-t border-hairline text-[12.5px] font-bold">
-              <span>Total</span>
-              <span className="tabular-nums">{formatearCOP(saldoTotal)}</span>
-            </div>
-            {techo !== null && (
-              <div className="mt-4">
-                <div className="flex justify-between text-[11px]">
-                  <Rotulo>Techo de la semana</Rotulo>
-                  <span className={`font-bold tabular-nums ${gastoSemana > techo ? 'text-alerta' : 'text-texto-2'}`}>
-                    {formatearCOP(gastoSemana)} de {formatearCOP(techo)}
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full bg-superficie-2 overflow-hidden mt-1.5">
-                  <div
-                    className={`h-full rounded-full ${gastoSemana > techo ? 'bg-alerta' : 'bg-acento'}`}
-                    style={{ width: `${Math.min(100, techo > 0 ? (gastoSemana / techo) * 100 : 0)}%` }}
-                  />
-                </div>
-              </div>
-            )}
-          </Zona>
-        </Columna>
-      </Marco>
-
+          </div>
+        </section>
+      </div>
+      
       <ModalAbonarDeuda
         abierto={pagoAbierto !== null}
         deuda={pagoAbierto?.deuda ?? null}
