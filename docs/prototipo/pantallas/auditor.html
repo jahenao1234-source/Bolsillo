@@ -1,0 +1,96 @@
+<template data-id="auditor" data-titulo="Auditor bancario">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>¿Qué me está cobrando el banco que no debería?</h1>
+        <p>Encontramos <b>2 cobros</b> que puedes quitar. Lo que rescates va a tu sobre de Inversión.</p>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- Total por rescatar -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Por rescatar</h2><span class="nota">rescatado hasta hoy $0</span></div>
+        <div><span class="cifra-xl">$334.000</span> <span class="de">al año</span></div>
+        <div class="barra solo-escritorio" style="display:flex;gap:2px" role="img" aria-label="Seguro de vida deudor $222.000 y cuota de manejo $112.000 al año">
+          <i style="width:66%;--c:var(--alerta)"></i><i style="width:34%;--c:var(--texto-3)"></i>
+        </div>
+        <div class="lista solo-escritorio">
+          <div class="fila"><span><span class="bola" style="--c:var(--alerta)"></span> Seguro de vida deudor</span><span>$222.000</span></div>
+          <div class="fila"><span><span class="bola" style="--c:var(--texto-3)"></span> Cuota de manejo</span><span>$112.000</span></div>
+        </div>
+        <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:6px">
+          <div class="fila"><span>Va al sobre Inversión</span><span class="acento-tx">+$334.000 al año</span></div>
+          <div class="nota">Hoy tiene $400.000 sin invertir en Bancolombia. Lo que te devuelvan se suma ahí.</div>
+        </div>
+      </section>
+
+      <!-- Cobros detectados + ciclo -->
+      <section class="panel ancho-2">
+        <div class="panel-cab"><h2 class="titulo">Cobros detectados</h2><span class="nota">2 cobros · 2 entidades</span></div>
+        <div class="lista lineas">
+          <div>
+            <div class="fila"><span><b>Seguro de vida deudor</b> <span class="suave">· Bancolombia</span></span><span>$222.000 <span class="de">al año</span></span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+              <span class="pill aviso">Carta generada</span><span class="nota num">$18.500 al mes</span><span class="chip acento" style="margin-left:auto">Reclamo abierto</span>
+            </div>
+            <div class="nota" style="margin-top:6px">Sigue cobrándose aunque la libre inversión quedó en $0 en agosto 2027. Cubre una deuda que ya no existe.</div>
+          </div>
+          <div>
+            <div class="fila"><span><b>Cuota de manejo</b> <span class="suave">· Mastercard</span></span><span>$112.000 <span class="de">al año</span></span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+              <span class="pill neutra">Detectado</span><span class="nota num">$28.000 cada trimestre</span><button class="link acento" style="margin-left:auto">Generar carta →</button>
+            </div>
+            <div class="nota solo-escritorio" style="margin-top:6px">Usas la tarjeta solo a 1 cuota y al día: pide que te la exoneren.</div>
+          </div>
+        </div>
+        <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="nota">Así avanza cada cobro:</span>
+          <span class="pill neutra">Detectado</span><span class="suave">→</span>
+          <span class="pill aviso">Carta generada</span><span class="suave">→</span>
+          <span class="pill traslado">Radicado</span><span class="suave">→</span>
+          <span class="pill ingreso">Exonerado</span>
+        </div>
+      </section>
+
+      <!-- Reclamo seleccionado -->
+      <section class="panel destacado ancho-2">
+        <div class="panel-cab"><h2 class="titulo">Reclamo · Seguro de vida deudor</h2><span class="pill aviso">Carta generada</span></div>
+        <div class="rejilla" style="--cols: minmax(0,1.3fr) minmax(0,1fr);flex:1">
+          <div class="pasos">
+            <div class="paso hecho"><div><div style="font-weight:700">Descargar el derecho de petición</div><div class="nota solo-escritorio">Ya está listo con tus datos.</div></div></div>
+            <div class="paso actual"><div><div style="font-weight:700">Radicarlo en la app o sucursal de Bancolombia</div><div class="nota solo-escritorio">Guarda el número de radicado que te den.</div></div></div>
+            <div class="paso"><div><div style="font-weight:700">El banco responde en 15 días hábiles</div><div class="nota solo-escritorio">Te avisamos si pasa el plazo sin respuesta.</div></div></div>
+            <div class="paso"><div><div style="font-weight:700">Registrar respuesta y reintegro</div><div class="nota solo-escritorio">Lo que te devuelvan va al sobre de Inversión.</div></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="lista solo-escritorio">
+              <div class="fila"><span class="nota">Banco</span><span>Bancolombia</span></div>
+              <div class="fila"><span class="nota">Cobro</span><span>$18.500 al mes</span></div>
+              <div class="fila"><span class="nota">Al año</span><span>$222.000</span></div>
+              <div class="fila"><span class="nota">Pides</span><span>Cancelarlo y reintegro</span></div>
+            </div>
+            <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+              <button class="btn ancho">Marcar como radicado</button>
+              <button class="btn2 ancho">Descargar derecho de petición</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Guion para llamar (solo escritorio) -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Si prefieres llamar</h2><span class="nota">Bancolombia</span></div>
+        <div class="caja">
+          <div>“Hola, llamo por mi crédito de libre inversión, que quedó en $0 en agosto de 2027.</div>
+          <div style="margin-top:6px">Me siguen cobrando el seguro de vida deudor: <b>$18.500 cada mes</b>.</div>
+          <div style="margin-top:6px">Ese seguro cubre una deuda que ya no existe. Pido cancelarlo hoy y que me devuelvan lo cobrado después del pago.</div>
+          <div style="margin-top:6px">Por favor deme el número de radicado de esta solicitud.”</div>
+        </div>
+        <div class="nota" style="margin-top:auto">Anota la fecha y el número de radicado: lo necesitas para el paso 2.</div>
+      </section>
+
+    </div>
+  </div>
+</template>

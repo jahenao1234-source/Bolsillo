@@ -1,0 +1,125 @@
+<template data-id="deudas" data-titulo="Deudas">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- Lo que debes -->
+      <section class="panel ancho-todo">
+        <div class="panel-cab"><h2 class="titulo">Lo que debes</h2><button class="btn2">+ Agregar deuda</button></div>
+        <div class="rejilla" style="--cols: minmax(0,1.25fr) minmax(0,1fr);align-items:center">
+          <div class="par">
+            <div>
+              <div class="nota">Debes en total</div>
+              <div class="cifra-l">$9.800.000</div>
+              <div class="nota suave">3 deudas · de menor a mayor saldo</div>
+            </div>
+            <div>
+              <div class="nota">Has pagado</div>
+              <div class="cifra-l">$0 <span class="de">0%</span></div>
+              <div class="barra" style="margin-top:8px"><i style="width:0%"></i></div>
+            </div>
+          </div>
+          <div class="caja"><b>Mientras pagas, no uses tus tarjetas.</b> Cada compra nueva vuelve a subir la deuda y corre tu fecha de libertad.</div>
+        </div>
+      </section>
+
+      <!-- 1 · Mastercard -->
+      <section class="panel destacado">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="inicial">1</span><b>Mastercard Bancolombia</b></span>
+          <span class="chip ataque">Ataque</span>
+        </div>
+        <div class="fila" style="align-items:flex-end">
+          <div><div class="nota">Debes</div><div class="cifra-l">$1.200.000</div></div>
+          <div style="text-align:right"><div class="nota">Sale en</div><div class="cifra-m acento-tx">ene 2027</div></div>
+        </div>
+        <div class="lista solo-escritorio" style="gap:8px">
+          <div class="fila"><span class="suave">Tasa</span><span>28% E.A.</span></div>
+          <div class="fila"><span class="suave">Pago mínimo</span><span>$180.000</span></div>
+          <div class="fila"><span class="suave">Corte y pago</span><span>corte 16 · paga el 3</span></div>
+          <div class="fila"><span class="suave">Este mes le pagas</span><span>$400.000</span></div>
+        </div>
+        <div class="nota solo-movil">28% E.A. · mínimo $180.000 · corte 16, paga el 3 · este mes le pagas <b>$400.000</b></div>
+        <div>
+          <div class="fila"><span class="suave">Uso del cupo</span><span>24% de $5.000.000</span></div>
+          <div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:24%"></i></div>
+        </div>
+        <button class="btn ancho" style="margin-top:auto">Abonar a Mastercard</button>
+      </section>
+
+      <!-- 2 · Nu -->
+      <section class="panel">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="inicial">2</span><b>Tarjeta Nu</b></span>
+          <span class="chip">Le toca en feb 2027</span>
+        </div>
+        <div class="fila" style="align-items:flex-end">
+          <div><div class="nota">Debes</div><div class="cifra-l">$2.500.000</div></div>
+          <div style="text-align:right"><div class="nota">Sale en</div><div class="cifra-m">may 2027</div></div>
+        </div>
+        <div class="lista solo-escritorio" style="gap:8px">
+          <div class="fila"><span class="suave">Tasa</span><span>29% E.A.</span></div>
+          <div class="fila"><span class="suave">Pago mínimo</span><span>$120.000</span></div>
+          <div class="fila"><span class="suave">Corte y pago</span><span>corte 25 · paga el 10</span></div>
+          <div class="fila"><span class="suave">Este mes le pagas</span><span>$120.000</span></div>
+        </div>
+        <div class="nota solo-movil">29% E.A. · mínimo $120.000 · corte 25, paga el 10 · desde feb recibe <b>$520.000</b></div>
+        <div>
+          <div class="fila"><span class="suave">Uso del cupo</span><span class="mal">83% de $3.000.000</span></div>
+          <div class="barra" style="--c:var(--alerta);margin-top:5px"><i style="width:83%"></i></div>
+          <div class="nota mal" style="margin-top:5px">Riesgo: solo te quedan $500.000 de cupo.</div>
+        </div>
+        <button class="btn2 ancho solo-escritorio" style="margin-top:auto">Abonar</button>
+      </section>
+
+      <!-- 3 · Libre inversión -->
+      <section class="panel">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="inicial">3</span><b>Libre inversión Bancolombia</b></span>
+        </div>
+        <div class="fila" style="align-items:flex-end">
+          <div><div class="nota">Debes</div><div class="cifra-l">$6.100.000</div></div>
+          <div style="text-align:right"><div class="nota">Sale en</div><div class="cifra-m">ago 2027</div></div>
+        </div>
+        <div class="lista solo-escritorio" style="gap:8px">
+          <div class="fila"><span class="suave">Tasa</span><span>19,5% E.A.</span></div>
+          <div class="fila"><span class="suave">Cuota fija</span><span>$450.000</span></div>
+          <div class="fila"><span class="suave">Pago</span><span>el 15 de cada mes</span></div>
+          <div class="fila"><span class="suave">Le toca en jun 2027 · recibe</span><span>$970.000</span></div>
+        </div>
+        <div class="nota solo-movil">19,5% E.A. · cuota $450.000 · paga el 15 · desde jun recibe <b>$970.000</b></div>
+        <div>
+          <div class="fila"><span class="suave">Próximo pago · 15 sep</span><span class="chip aviso">En 2 días</span></div>
+          <div class="nota suave" style="margin-top:5px">Con esta quedas libre de deudas.</div>
+        </div>
+        <button class="btn2 ancho solo-escritorio" style="margin-top:auto">Pagar cuota</button>
+      </section>
+
+      <!-- Simulador -->
+      <section class="panel ancho-todo">
+        <div class="panel-cab"><h2 class="titulo">¿Y si abonas más al mes?</h2><span class="nota num solo-escritorio">Hoy: $970.000 al mes · sales en agosto 2027</span></div>
+        <div class="rejilla" style="--cols: minmax(0,1.25fr) minmax(0,1fr);align-items:center">
+          <div class="par">
+            <button class="btn-borde" aria-pressed="true" style="flex-direction:column;align-items:flex-start;gap:2px;padding:11px 14px">
+              <span>+$100.000 al mes</span>
+              <span class="cifra-m">Julio 2027</span>
+              <span class="nota">1 mes antes</span>
+              <span class="nota num">$100.672 menos</span>
+            </button>
+            <button class="btn2" aria-pressed="false" style="flex-direction:column;align-items:flex-start;gap:2px;padding:11px 14px">
+              <span>+$200.000 al mes</span>
+              <span class="cifra-m">Junio 2027</span>
+              <span class="nota">2 meses antes</span>
+              <span class="nota num">$181.293 menos</span>
+            </button>
+          </div>
+          <div class="lista solo-escritorio" style="gap:8px">
+            <div class="fila"><span class="nota">Hoy · $970.000 al mes</span><span>11 meses · $822.229 de intereses</span></div>
+            <div class="fila"><span class="nota">Con $1.070.000 al mes</span><span class="acento-tx">10 meses · $721.557 de intereses</span></div>
+            <div class="caja ok">Sales en <b>julio 2027</b> y pagas <b class="num">$100.672 menos</b> de intereses.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>

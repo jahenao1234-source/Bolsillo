@@ -1,0 +1,274 @@
+/* ==========================================================================
+   KIT BOLSILLO — tokens y piezas compartidas del prototipo.
+   Oscuro es el principal; .claro (en #escenario) es el secundario.
+   Todo color sale de estos tokens. Nada de colores sueltos en las pantallas.
+   ========================================================================== */
+
+:root {
+  --pagina: #081315;
+  --fondo: #0E1B1E;
+  --superficie: #152A2D;
+  --superficie-2: #102124;
+  --elevada: #1B3438;
+  --linea: #20393C;
+  --hairline: rgba(205, 255, 248, 0.07);
+  --texto: #EAF6F4;
+  --texto-2: #93B6B4;
+  --texto-3: #5F8180;
+  --acento: #25C9BE;          /* teal: identidad, lo activo, lo libre */
+  --accion: #FF7A3D;          /* naranja: acciones (solo en botones principales y chip de ataque) */
+  --positivo: #5FE0A8;        /* menta: logros, ingresos, progreso bueno */
+  --alerta: #E89385;          /* coral: gasto, exceso, riesgo */
+  --azul: #8AA9FF;            /* categorías, traslados */
+  --ambar: #F2C879;           /* avisos que no son error (vence pronto) */
+  --neutro: #93B6B4;          /* lo básico */
+  --nav-activo: #25C9BE;
+  --on-nav-activo: #04211F;
+  --boton-principal: #FF7A3D;
+  --on-boton-principal: #2A1206;
+  --sombra-marco: 0 30px 80px -24px rgba(0, 0, 0, 0.75);
+  --display: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
+  --f: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.claro {
+  --pagina: #D9D9D5;
+  --fondo: #ECECEA;
+  --superficie: #FFFFFF;
+  --superficie-2: #F6F6F4;
+  --elevada: #F0F0ED;
+  --linea: #E3E3DF;
+  --hairline: #EFEFEC;
+  --texto: #141414;
+  --texto-2: #62625D;
+  --texto-3: #85857F;
+  --acento: #0C8C7E;
+  --accion: #E0621F;
+  --positivo: #13905F;
+  --alerta: #C0574A;
+  --azul: #4F6FD0;
+  --ambar: #B07D12;
+  --neutro: #141414;
+  --nav-activo: #141414;
+  --on-nav-activo: #FFFFFF;
+  --boton-principal: #141414;
+  --on-boton-principal: #FFFFFF;
+  --sombra-marco: 0 30px 80px -24px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   APP (dentro de cada marco). El marco de escritorio mide 1366×768 y el de
+   celular 375×812. Las pantallas se adaptan con container queries sobre
+   .contenido (container "pant"), nunca con el ancho de la ventana.
+   -------------------------------------------------------------------------- */
+
+.app { height: 100%; display: grid; grid-template-columns: 232px minmax(0, 1fr); background: var(--fondo); color: var(--texto); font-family: var(--f); font-size: 14px; -webkit-font-smoothing: antialiased; }
+.app * { box-sizing: border-box; }
+.num, .app .tabular { font-variant-numeric: tabular-nums; }
+
+.lado { background: var(--superficie-2); border-right: 1px solid var(--linea); padding: 22px 12px; display: flex; flex-direction: column; gap: 3px; min-height: 0; }
+.lado .marca { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; padding: 0 10px 20px; }
+.lado .marca i { font-style: normal; color: var(--acento); }
+.lado .grupo { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--texto-3); padding: 14px 12px 6px; }
+.nav-it { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; font-size: 14.5px; font-weight: 500; color: var(--texto-2); cursor: pointer; }
+.nav-it:hover { background: var(--superficie); color: var(--texto); }
+.nav-it:focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
+.nav-it[aria-current="page"] { background: var(--nav-activo); color: var(--on-nav-activo); font-weight: 700; }
+.nav-it .ico { width: 17px; height: 17px; border-radius: 5px; border: 2px solid currentColor; opacity: 0.8; flex: none; }
+.nav-it .cnt { margin-left: auto; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: color-mix(in srgb, var(--acento) 16%, transparent); color: var(--acento); }
+.nav-it[aria-current="page"] .cnt { background: rgba(0,0,0,.15); color: inherit; }
+.lado .perfil { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+.av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--elevada); border: 1px solid var(--linea); color: var(--acento); font-size: 11px; font-weight: 700; flex: none; }
+
+.cuerpo { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.barra-sup { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 22px 0; }
+.barra-sup .marca-movil { display: none; font-family: var(--display); font-weight: 800; font-size: 17px; margin-right: auto; }
+.barra-sup .marca-movil i { font-style: normal; color: var(--acento); }
+.conmutador { display: inline-flex; padding: 3px; border-radius: 999px; border: 1px solid var(--linea); background: var(--superficie-2); font-size: 11.5px; font-weight: 700; }
+.conmutador span { padding: 4px 11px; border-radius: 999px; color: var(--texto-3); }
+.conmutador span.on { background: var(--elevada); color: var(--texto); }
+.conmutador .punto { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--alerta); margin-left: 5px; vertical-align: middle; }
+.btn-gasto { padding: 6px 13px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--acento) 45%, transparent); color: var(--acento); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+.contenido { container: pant / inline-size; flex: 1; min-height: 0; overflow: auto; padding: 14px 22px 22px; scrollbar-width: thin; scrollbar-color: var(--elevada) transparent; }
+
+.nav-abajo { display: none; }
+
+/* Celular: sin menú lateral, barra de abajo. El container "app" es el marco que envuelve a .app (una regla @container no puede cambiar al propio container). */
+.marco-app { container: app / inline-size; }
+@container app (max-width: 720px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .lado { display: none; }
+  .barra-sup { padding: 12px 16px 10px; border-bottom: 1px solid var(--hairline); }
+  .barra-sup .marca-movil { display: block; }
+  .contenido { padding: 12px 14px 14px; }
+  .nav-abajo { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 7px 8px 16px; background: var(--superficie-2); border-top: 1px solid var(--linea); }
+  .nav-abajo .nav-it { flex-direction: column; gap: 3px; padding: 6px 2px; font-size: 10.5px; font-weight: 600; justify-content: center; text-align: center; }
+  .nav-abajo .nav-it .ico { width: 16px; height: 16px; }
+}
+
+/* --------------------------------------------------------------------------
+   PIEZAS PARA LAS PANTALLAS
+   -------------------------------------------------------------------------- */
+
+.pant { display: flex; flex-direction: column; gap: 14px; min-height: 100%; }
+
+/* Cabecera de pantalla */
+.cab { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+.cab h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(20px, 2.4cqw, 26px); letter-spacing: -0.02em; line-height: 1.1; text-wrap: balance; }
+.cab p { margin: 4px 0 0; font-size: 13.5px; color: var(--texto-2); max-width: 70ch; }
+.cab p b { color: var(--texto); font-weight: 700; }
+.cab .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Rejilla: en escritorio usa --cols; por debajo de 720 px de contenido, una columna.
+   Los hijos pueden usar .ancho-2 / .ancho-3 / .ancho-todo y .alto-2 */
+.rejilla { display: grid; gap: 14px; grid-template-columns: var(--cols, repeat(3, minmax(0, 1fr))); align-items: stretch; }
+.ancho-2 { grid-column: span 2; }
+.ancho-3 { grid-column: span 3; }
+.ancho-todo { grid-column: 1 / -1; }
+.alto-2 { grid-row: span 2; }
+@container pant (max-width: 720px) {
+  .rejilla { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .ancho-2, .ancho-3, .ancho-todo { grid-column: auto; }
+  .alto-2 { grid-row: auto; }
+  .pant { gap: 10px; }
+}
+/* Dos columnas que se mantienen incluso en celular (p. ej. dos cifras pequeñas) */
+.par { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+/* Panel: cada uno es container para que sus tamaños sigan su propio ancho */
+.panel { container-type: inline-size; background: var(--superficie); border: 1px solid var(--linea); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel.plano { background: transparent; border-style: dashed; }
+.panel.destacado { border-color: color-mix(in srgb, var(--acento) 45%, var(--linea)); }
+.panel.riesgo { border-color: color-mix(in srgb, var(--alerta) 50%, var(--linea)); }
+@container pant (max-width: 720px) { .panel { padding: 13px 14px; gap: 10px; } }
+.panel-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.titulo { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--texto-2); margin: 0; }
+.link { all: unset; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--texto-2); white-space: nowrap; }
+.link:hover { color: var(--texto); }
+.link.acento { color: var(--acento); font-weight: 700; }
+
+/* Cifras: se achican con el panel */
+.cifra-xl { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 8cqw, 40px); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.cifra-l { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 6.5cqw, 30px); line-height: 1.05; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+.cifra-m { font-family: var(--display); font-weight: 800; font-size: clamp(16px, 5cqw, 20px); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.de { font-size: 13px; color: var(--texto-3); font-weight: 500; white-space: nowrap; }
+.nota { font-size: 12.5px; color: var(--texto-2); line-height: 1.45; }
+.nota b { color: var(--texto); }
+.suave { color: var(--texto-3); }
+.ok { color: var(--positivo); } .mal { color: var(--alerta); } .aviso-tx { color: var(--ambar); } .acento-tx { color: var(--acento); } .accion-tx { color: var(--accion); }
+
+/* Fila etiqueta / valor */
+.fila { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-width: 0; font-size: 13.5px; }
+.fila > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fila > :last-child { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lista { display: flex; flex-direction: column; gap: 11px; }
+.lista.lineas > * + * { border-top: 1px solid var(--hairline); padding-top: 11px; }
+
+/* Barras de progreso. Color con --c */
+.barra { height: 7px; border-radius: 6px; background: var(--superficie-2); overflow: hidden; position: relative; }
+.barra i { display: block; height: 100%; border-radius: 6px; background: var(--c, var(--acento)); }
+.barra .marca { position: absolute; top: -2px; width: 2px; height: 11px; background: var(--texto-2); border-radius: 2px; }
+@container pant (max-width: 720px) { .barra { height: 6px; } }
+
+/* Chips y pastillas */
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--linea); font-size: 11px; font-weight: 700; color: var(--texto); white-space: nowrap; }
+.chip.ataque { color: var(--accion); border-color: color-mix(in srgb, var(--accion) 40%, transparent); }
+.chip.acento { color: var(--acento); border-color: color-mix(in srgb, var(--acento) 40%, transparent); }
+.chip.ok { color: var(--positivo); border-color: color-mix(in srgb, var(--positivo) 40%, transparent); }
+.chip.mal { color: var(--alerta); border-color: color-mix(in srgb, var(--alerta) 45%, transparent); }
+.chip.aviso { color: var(--ambar); border-color: color-mix(in srgb, var(--ambar) 45%, transparent); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.gasto { color: var(--alerta); background: color-mix(in srgb, var(--alerta) 13%, transparent); }
+.pill.ingreso { color: var(--positivo); background: color-mix(in srgb, var(--positivo) 13%, transparent); }
+.pill.traslado { color: var(--azul); background: color-mix(in srgb, var(--azul) 13%, transparent); }
+.pill.neutra { color: var(--texto-2); background: var(--superficie-2); }
+.pill.aviso { color: var(--ambar); background: color-mix(in srgb, var(--ambar) 14%, transparent); }
+
+/* Botones */
+.btn, .btn2, .btn-borde { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; padding: 9px 14px; font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap; text-align: center; }
+.btn { background: var(--boton-principal); color: var(--on-boton-principal); }
+.btn2 { background: var(--superficie-2); color: var(--texto); border: 1px solid var(--linea); }
+.btn-borde { color: var(--acento); border: 1px solid color-mix(in srgb, var(--acento) 40%, transparent); }
+.btn:hover, .btn2:hover, .btn-borde:hover { filter: brightness(1.08); }
+.btn:focus-visible, .btn2:focus-visible, .btn-borde:focus-visible, .link:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.ancho { width: 100%; }
+
+/* Caja de aviso dentro de un panel (semántica, no decorativa) */
+.caja { border-radius: 11px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; background: var(--superficie-2); border: 1px solid var(--linea); color: var(--texto-2); }
+.caja b { color: var(--texto); }
+.caja.mal { background: color-mix(in srgb, var(--alerta) 10%, transparent); border-color: color-mix(in srgb, var(--alerta) 35%, transparent); }
+.caja.ok { background: color-mix(in srgb, var(--positivo) 9%, transparent); border-color: color-mix(in srgb, var(--positivo) 30%, transparent); }
+.caja.aviso { background: color-mix(in srgb, var(--ambar) 10%, transparent); border-color: color-mix(in srgb, var(--ambar) 35%, transparent); }
+
+/* Punto de color de una categoría o sobre (usa --c) */
+.bola { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--acento)); flex: none; display: inline-block; }
+.inicial { width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--superficie-2); border: 1px solid var(--linea); color: var(--texto-2); font-size: 10.5px; font-weight: 700; flex: none; }
+
+/* Tabla: nunca scroll horizontal. Las columnas .opc se esconden cuando el panel es angosto */
+.tabla { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13.5px; }
+.tabla th { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--texto-2); padding: 0 8px 8px; border-bottom: 1px solid var(--linea); }
+.tabla td { padding: 9px 8px; border-bottom: 1px solid var(--hairline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabla tr > :first-child { padding-left: 0; }
+.tabla tr > :last-child { padding-right: 0; text-align: right; }
+.tabla .der { text-align: right; }
+@container (max-width: 34rem) { .tabla .opc { display: none; } }
+@container (max-width: 26rem) { .tabla .opc2 { display: none; } }
+
+/* Casilla de lista (lista de compras, pasos) */
+.check { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--hairline); font-size: 13.5px; min-width: 0; }
+.check .caja-check { width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--texto-3); flex: none; display: grid; place-items: center; }
+.check.hecho .caja-check { background: var(--acento); border-color: var(--acento); }
+.check.hecho .caja-check::after { content: ""; width: 5px; height: 9px; border: solid var(--on-nav-activo); border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-1px); }
+.check.hecho .txt { color: var(--texto-3); text-decoration: line-through; }
+.check .txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.check .val { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Pasos numerados (solo cuando el orden es real: plan de pago, reclamo al banco) */
+.pasos { display: flex; flex-direction: column; gap: 0; counter-reset: paso; }
+.paso { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--hairline); }
+.paso::before { counter-increment: paso; content: counter(paso); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; background: var(--superficie-2); border: 1px solid var(--linea); color: var(--texto-2); }
+.paso.hecho::before { content: "✓"; background: color-mix(in srgb, var(--positivo) 18%, transparent); border-color: transparent; color: var(--positivo); }
+.paso.actual::before { background: var(--nav-activo); color: var(--on-nav-activo); border-color: transparent; }
+
+/* Solo escritorio / solo celular, según el ancho del contenido */
+@container pant (max-width: 720px) { .solo-escritorio { display: none !important; } }
+@container pant (min-width: 721px) { .solo-movil { display: none !important; } }
+
+/* Gráficas SVG: usar clases de trazo/relleno para heredar el tema */
+.g-linea { stroke: var(--linea); } .g-acento { stroke: var(--acento); } .g-acento-f { fill: var(--acento); }
+.g-alerta { stroke: var(--alerta); } .g-alerta-f { fill: var(--alerta); } .g-azul { stroke: var(--azul); } .g-neutro { stroke: var(--neutro); }
+.g-texto { fill: var(--texto-3); } .g-texto2 { fill: var(--texto-2); } .g-fondo { stroke: var(--superficie-2); } .g-positivo { stroke: var(--positivo); } .g-positivo-f { fill: var(--positivo); }
+.g-texto-s { stroke: var(--texto-3); } .g-stop { stop-color: var(--acento); } .g-stop-alerta { stop-color: var(--alerta); } .g-tinta-f { fill: var(--texto); }
+
+/* .llena: en escritorio la rejilla ocupa todo el alto del marco y reparte el sobrante entre filas */
+@container pant (min-width: 721px) { .rejilla.llena { flex: 1; grid-auto-rows: auto; align-content: stretch; } }
+.g-azul-f { fill: var(--azul); } .g-neutro-f { fill: var(--neutro); } .g-ambar-f { fill: var(--ambar); } .g-ambar { stroke: var(--ambar); } .g-superficie2-f { fill: var(--superficie-2); } .g-linea-f { fill: var(--linea); }
+
+/* Ajustes pedidos por los diseñadores de pantallas */
+.panel[data-ir], [data-ir].panel { cursor: pointer; transition: border-color .15s; }
+.panel[data-ir]:hover { border-color: var(--texto-3); }
+.panel[data-ir]:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.barra { overflow: visible; }
+.barra i { max-width: 100%; }
+.fila.suelta > :last-child { font-weight: inherit; }
+.pill.acento { color: var(--acento); background: color-mix(in srgb, var(--acento) 13%, transparent); }
+.g-fondo-f { fill: var(--superficie-2); } .g-texto-f { fill: var(--texto-3); }
+.fuerte { font-weight: 700; color: var(--texto); }
+
+/* ---- Correcciones de la revisión en celular ---- */
+/* Cifras: se miden contra su propia celda y bajan más en espacios angostos */
+.par > *, .rejilla > * { min-width: 0; }
+.par > * { container-type: inline-size; }
+.cifra-xl { font-size: clamp(20px, 10cqw, 40px); }
+.cifra-l { font-size: clamp(17px, 8cqw, 30px); }
+.cifra-m { font-size: clamp(14px, 6.5cqw, 20px); }
+/* Botones y chips largos bajan de línea en vez de salirse */
+.btn, .btn2, .btn-borde { white-space: normal; line-height: 1.25; text-wrap: balance; max-width: 100%; }
+.chip { white-space: normal; max-width: 100%; line-height: 1.25; }
+/* Tablas angostas: los anchos fijos de columna se sueltan */
+@container (max-width: 30rem) {
+  .tabla th { width: auto !important; }
+  .tabla th, .tabla td { padding-left: 4px; padding-right: 4px; }
+}

@@ -1,0 +1,125 @@
+<template data-id="inicio-pro" data-titulo="Inicio">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1.5fr) minmax(0,1fr) minmax(0,0.95fr)">
+
+      <!-- Tus tres cifras: patrimonio manda; meta y salud acompañan -->
+      <section class="panel ancho-2">
+        <div class="rejilla" style="--cols: minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr); gap:28px; flex:1">
+
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <h2 class="titulo">Tu patrimonio neto</h2>
+            <div class="cifra-xl">$3.945.600</div>
+            <div class="nota">Todo lo que tienes, con <b>$0 en deudas</b>.</div>
+            <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:9px;margin-top:auto">
+              <div class="barra" style="display:flex;gap:2px" role="img" aria-label="$3.140.000 en tus cuentas y $805.600 invertidos">
+                <i style="width:79.6%;--c:var(--neutro)"></i><i style="width:20.4%;--c:var(--positivo)"></i>
+              </div>
+              <div class="lista" style="gap:7px">
+                <div class="fila"><span><span class="bola" style="--c:var(--neutro)"></span> En tus cuentas</span><span>$3.140.000</span></div>
+                <div class="fila"><span><span class="bola" style="--c:var(--positivo)"></span> Invertido en tu CDT</span><span>$805.600</span></div>
+                <div class="fila"><span class="suave">Deudas</span><span class="ok">$0</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <h2 class="titulo">Meta del año</h2>
+            <div><span class="cifra-m">$2.400.000</span> <span class="de">de $9.600.000</span></div>
+            <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px" role="img" aria-label="Mes 3 de 12: septiembre, octubre y noviembre cumplidos">
+              <div class="barra"><i style="width:100%"></i></div><div class="barra"><i style="width:100%"></i></div><div class="barra"><i style="width:100%"></i></div>
+              <div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px"><span class="nota suave">sep 2027</span><span class="nota suave">ago 2028</span></div>
+            <div class="nota"><b>25%</b> · mes 3 de 12. Vas al día<span class="solo-escritorio">: $800.000 al mes entre tu fondo y tu inversión</span>.</div>
+          </div>
+
+          <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <h2 class="titulo">Salud financiera</h2>
+            <div><span class="cifra-m">70</span> <span class="de">de 100</span></div>
+            <div class="lista" style="gap:9px">
+              <div><div class="fila"><span class="nota">Solvencia</span><span class="nota num">40/40</span></div><div class="barra" style="--c:var(--positivo);margin-top:4px"><i style="width:100%"></i></div></div>
+              <div><div class="fila"><span class="nota">Liquidez</span><span class="nota num">5/30</span></div><div class="barra" style="--c:var(--alerta);margin-top:4px"><i style="width:16.7%"></i></div></div>
+              <div><div class="fila"><span class="nota">Ahorro e inversión</span><span class="nota num">25/30</span></div><div class="barra" style="margin-top:4px"><i style="width:83.3%"></i></div></div>
+            </div>
+            <button class="link acento" data-ir="salud" style="margin-top:auto">Llena el fondo y subes a 95 →</button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Tu siguiente paso -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Tu siguiente paso</h2><span class="chip">Crecer</span></div>
+        <div><span class="cifra-l">$400.000</span> <span class="de">sin invertir</span></div>
+        <div class="nota">Son del sobre Inversión y siguen quietos en Bancolombia.<span class="solo-escritorio"> Tus otros <b>$800.000</b> ya rinden en un CDT al 11,2% E.A.</span></div>
+        <button class="btn ancho" data-ir="activos">Registrar en un CDT o fondo</button>
+        <div style="margin-top:auto;padding-top:11px;border-top:1px solid var(--hairline);display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span class="nota">Fondo blindado de noviembre: <b>$400.000</b> ya en Nu</span>
+          <span class="chip ok">Movido</span>
+        </div>
+      </section>
+
+      <!-- Avisos de tus herramientas -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Avisos de tus herramientas</h2><button class="link" data-ir="herramientas">Ver todas →</button></div>
+        <div class="lista lineas">
+          <div data-ir="suscripciones" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>Smart Fit lleva 47 días sin uso</b><div class="nota">$89.900 al mes · <span class="acento-tx">Suscripciones →</span></div></div>
+            <span class="chip mal">Fuga</span>
+          </div>
+          <div data-ir="anti-recaida" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>Netflix cobra en 5 días en tu Mastercard</b><div class="nota">$26.900 para el corte · <span class="acento-tx">Anti-recaída →</span></div></div>
+            <span class="chip ok">Apartado</span>
+          </div>
+          <div data-ir="auditor" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>El seguro deudor se sigue cobrando</b><div class="nota">$18.500 al mes · tu carta está lista · <span class="acento-tx">Auditor →</span></div></div>
+            <span class="chip aviso">Falta radicar</span>
+          </div>
+          <div class="solo-escritorio" data-ir="retos" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>Reto de las 52 semanas: aporta $24.000</b><div class="nota">Semana 12 de 52 · llevas $156.000 · <span class="acento-tx">Retos →</span></div></div>
+            <span class="chip acento">Esta semana</span>
+          </div>
+          <div class="solo-escritorio" data-ir="activos" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>Tu CDT vence el 17 abr 2028</b><div class="nota">$805.600 hoy · 11,2% E.A. · <span class="acento-tx">Activos →</span></div></div>
+            <span class="chip">En 5 meses</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gastado en noviembre -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Gastado en noviembre</h2><span class="nota num">18,5%</span></div>
+        <svg viewBox="0 0 300 160" width="100%" role="img" aria-label="Gasto acumulado de noviembre: $412.800 de un techo de $2.230.000">
+          <defs><linearGradient id="gp-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g-stop" stop-opacity=".22"/><stop offset="1" class="g-stop" stop-opacity="0"/></linearGradient></defs>
+          <line x1="8" y1="26" x2="292" y2="26" class="g-texto-s" stroke-dasharray="4 5"/>
+          <text x="292" y="16" text-anchor="end" font-size="12" class="g-texto">techo del mes $2.230.000</text>
+          <line x1="8" y1="130" x2="292" y2="130" class="g-linea"/>
+          <path d="M8 125.8 L17.8 120.2 L27.6 112.6 L47.2 111.8 L57 110.8 L125.5 110.8 L125.5 130 L8 130 Z" fill="url(#gp-area)"/>
+          <path d="M8 125.8 L17.8 120.2 L27.6 112.6 L47.2 111.8 L57 110.8 L125.5 110.8" fill="none" class="g-acento" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="125.5" cy="110.8" r="4.5" fill="none" class="g-acento" stroke-width="2.5"/>
+          <text x="8" y="151" font-size="12" class="g-texto">1 nov</text>
+          <text x="125.5" y="151" font-size="12" text-anchor="middle" class="g-texto">hoy · 13</text>
+          <text x="292" y="151" font-size="12" text-anchor="end" class="g-texto">30 nov</text>
+        </svg>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="cifra-xl">$412.800</span> <span class="de">de $2.230.000</span></span>
+          <span class="nota">vas bien</span>
+        </div>
+        <div class="nota" style="margin-top:auto">Día 13 de 30. Te quedan <b>$1.817.200</b> para el resto del mes.</div>
+      </section>
+
+      <!-- Tus sobres resumidos -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Tus sobres</h2><button class="link" data-ir="sobres">Ver todos →</button></div>
+        <div class="lista">
+          <div><div class="fila"><span><span class="bola" style="--c:var(--neutro)"></span> Mercado</span><span>$580.000 <span class="de">disp.</span></span></div><div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:17%"></i></div></div>
+          <div><div class="fila"><span><span class="bola" style="--c:var(--neutro)"></span> Servicios</span><span>$186.000 <span class="de">disp.</span></span></div><div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:47%"></i></div></div>
+          <div><div class="fila"><span><span class="bola" style="--c:var(--neutro)"></span> Transporte</span><span>$258.000 <span class="de">disp.</span></span></div><div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:8%"></i></div></div>
+          <div><div class="fila"><span><span class="bola" style="--c:var(--azul)"></span> Gustos</span><span>$153.100 <span class="de">disp.</span></span></div><div class="barra" style="--c:var(--azul);margin-top:5px"><i style="width:10%"></i></div></div>
+        </div>
+        <div class="nota suave" style="margin-top:auto">La barra muestra lo que ya gastaste de cada sobre.</div>
+      </section>
+
+    </div>
+  </div>
+</template>

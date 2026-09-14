@@ -1,0 +1,100 @@
+<template data-id="salud" data-titulo="Salud financiera">
+  <div class="pant">
+    <div class="cab">
+      <div>
+        <h1>Salud financiera</h1>
+        <p>Tu plata aguanta bien porque no debes nada. Lo que más la frena es un <b>fondo blindado corto</b>.</p>
+      </div>
+    </div>
+
+    <div class="rejilla llena" style="--cols: minmax(0,0.9fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- Puntaje -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Tu puntaje</h2><span class="nota">13 nov 2027</span></div>
+        <svg viewBox="0 0 280 166" style="width:min(100%,264px);align-self:center" role="img" aria-label="Puntaje de salud financiera: 70 de 100. Con el fondo lleno llegaría a 95">
+          <path d="M36 136 A104 104 0 0 1 244 136" fill="none" class="g-fondo" stroke-width="20"/>
+          <path d="M36 136 A104 104 0 0 1 244 136" fill="none" class="g-positivo" stroke-opacity=".3" stroke-width="20" stroke-dasharray="0 228.7 81.7 400"/>
+          <path d="M36 136 A104 104 0 0 1 244 136" fill="none" class="g-acento" stroke-width="20" stroke-dasharray="228.7 400"/>
+          <text x="140" y="112" text-anchor="middle" font-size="54" font-weight="800" class="g-tinta-f">70</text>
+          <text x="140" y="134" text-anchor="middle" font-size="13" class="g-texto2">de 100</text>
+          <text x="36" y="158" text-anchor="middle" font-size="11" class="g-texto">0</text>
+          <text x="244" y="158" text-anchor="middle" font-size="11" class="g-texto">100</text>
+        </svg>
+        <div class="solo-escritorio" style="display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:center">
+          <span class="nota"><span class="bola" style="--c:var(--acento)"></span> Hoy 70</span>
+          <span class="nota"><span class="bola" style="--c:var(--positivo)"></span> Con el fondo lleno 95</span>
+        </div>
+        <div>
+          <div class="cifra-m">Resistente, pero con poco colchón</div>
+          <div class="nota solo-escritorio" style="margin-top:6px">No debes nada y guardas el 25% de lo que ganas. Pero si mañana te falta el ingreso, tu fondo cubre medio mes de lo básico.</div>
+        </div>
+        <div class="solo-escritorio" style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:10px">
+          <h2 class="titulo">Los 30 puntos que te faltan</h2>
+          <svg viewBox="0 0 300 12" width="100%" role="img" aria-label="Solvencia 40, liquidez 5, ahorro e inversión 25 y 30 puntos por ganar">
+            <rect x="0" y="0" width="119" height="12" rx="3" class="g-positivo-f"/>
+            <rect x="120" y="0" width="14" height="12" rx="3" class="g-alerta-f"/>
+            <rect x="135" y="0" width="74" height="12" rx="3" class="g-acento-f"/>
+            <rect x="210.75" y="0.75" width="88.5" height="10.5" rx="2.5" fill="none" class="g-texto-s" stroke-dasharray="3 3" stroke-width="1.5"/>
+          </svg>
+          <div class="lista">
+            <div class="fila"><span><span class="bola" style="--c:var(--alerta)"></span> En liquidez</span><span>25</span></div>
+            <div class="fila"><span><span class="bola" style="--c:var(--acento)"></span> En ahorro e inversión</span><span>5</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Componentes -->
+      <section class="panel ancho-2">
+        <div class="panel-cab"><h2 class="titulo">De dónde salen tus 70 puntos</h2><span class="nota solo-escritorio">Solvencia vale 40 · Liquidez 30 · Ahorro 30</span></div>
+        <div class="rejilla" style="--cols: repeat(3, minmax(0,1fr));gap:18px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="fila"><span style="font-weight:700">Solvencia</span><span><span class="cifra-m">40</span> <span class="de">de 40</span></span></div>
+            <div class="barra" style="--c:var(--positivo)"><i style="width:100%"></i></div>
+            <div class="nota">Cero deudas.</div>
+            <div class="nota suave solo-escritorio">Compara lo que debes con lo que tienes: $0 frente a $3.945.600. Sin deudas te llevas los 40 puntos.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="fila"><span style="font-weight:700">Liquidez</span><span><span class="cifra-m mal">5</span> <span class="de">de 30</span></span></div>
+            <div class="barra" style="--c:var(--alerta)"><i style="width:17%"></i></div>
+            <div class="nota">Tu fondo cubre 0,5 meses; lo ideal, 3 a 6.</div>
+            <div class="nota suave solo-escritorio">Fondo $1.200.000 ÷ lo básico $2.230.000. Cada mes cubierto vale 10 puntos, hasta 30.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="fila"><span style="font-weight:700">Ahorro e inversión</span><span><span class="cifra-m">25</span> <span class="de">de 30</span></span></div>
+            <div class="barra"><i style="width:83%"></i></div>
+            <div class="nota">Guardas el 25%; lo ideal es 30% o más.</div>
+            <div class="nota suave solo-escritorio">$800.000 de tu ingreso de $3.200.000 van a fondo e inversión. Cada 1% vale 1 punto, hasta 30.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Lo que más te sube -->
+      <section class="panel destacado ancho-2">
+        <div class="rejilla" style="--cols: minmax(0,1.1fr) minmax(0,1fr);gap:28px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <h2 class="titulo">Lo que más te sube</h2>
+            <div class="solo-escritorio" style="font-weight:700;font-size:15px">Llenar tu Fondo blindado a 3 meses de lo básico</div>
+            <div><span class="cifra-xl ok">+25</span> <span class="de">puntos: de 70 a 95</span></div>
+            <div>
+              <div class="fila nota"><span>$1.200.000 de $6.690.000</span><span>17,9%</span></div>
+              <div class="barra" style="--c:var(--positivo);margin-top:6px"><i style="width:17.9%"></i></div>
+            </div>
+            <div class="nota">Te faltan <b class="num">$5.490.000</b>. Al ritmo de $400.000 al mes son <b>14 meses</b>: llegas en <b>enero 2029</b>.</div>
+            <button class="btn ancho" data-ir="sobres" style="margin-top:auto">Abonar al Fondo blindado</button>
+          </div>
+          <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:10px">
+            <h2 class="titulo">Tu fondo, aporte a aporte</h2>
+            <div class="lista lineas">
+              <div class="fila"><span>Feb 2028 · cubre 1 mes</span><span>$2.400.000</span></div>
+              <div class="fila"><span>Ago 2028 · cubre 2 meses</span><span>$4.800.000</span></div>
+              <div class="fila"><span>Ene 2029 · cubre 3 meses</span><span class="ok">$6.800.000</span></div>
+            </div>
+            <div class="caja" style="margin-top:auto">La otra palanca: mandar <b class="num">$160.000</b> más al mes a fondo o inversión lleva tu ahorro al 30% y suma 5 puntos. Con las dos llegas a 100.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>

@@ -1,0 +1,151 @@
+<template data-id="lista-compras" data-titulo="Lista de compras">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>Mercado de quincena</h1>
+        <p>Para el 15 nov · ligada a tu sobre Mercado, que tiene <b class="num">$580.000</b> disponibles.</p>
+      </div>
+      <div class="acciones solo-escritorio"><button class="link" data-ir="sobres">Ver sobre Mercado →</button></div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1.45fr)">
+
+      <!-- Contador en vivo contra el sobre -->
+      <section class="panel destacado">
+        <div class="panel-cab"><h2 class="titulo">Cuánto llevas</h2><span class="chip acento">Disponible en Mercado $580.000</span></div>
+        <div>
+          <div class="nota">Te quedan después de comprar todo</div>
+          <div class="cifra-xl acento-tx">$274.400</div>
+        </div>
+        <div>
+          <div class="barra"><i style="width:30.4%"></i><span class="marca" style="left:52.7%"></span></div>
+          <div class="fila nota" style="margin-top:6px"><span>$0</span><span class="suave">techo $580.000</span></div>
+        </div>
+        <div class="lista lineas">
+          <div class="fila"><span><span class="bola"></span> En el carrito · 7 productos</span><span>$176.400</span></div>
+          <div class="fila"><span><span class="bola" style="--c:var(--texto-2)"></span> Total de la lista · 12 productos</span><span>$305.600</span></div>
+          <div class="fila solo-escritorio"><span class="suave">Te falta por echar al carrito</span><span class="suave">$129.200</span></div>
+        </div>
+      </section>
+
+      <!-- La lista -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Te falta · 5</h2><span class="nota num">$129.200</span></div>
+        <div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Frutas y verduras</span><span class="val">$48.000</span></div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Detergente 3 kg</span><span class="val">$32.900</span></div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Papel higiénico x12</span><span class="val">$23.900</span></div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Queso 500 g</span><span class="val">$16.900</span></div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Pan tajado</span><span class="val">$7.500</span></div>
+        </div>
+        <button class="btn2 ancho">+ Agregar producto</button>
+
+        <div class="panel-cab" style="margin-top:6px"><h2 class="titulo">Ya en el carrito · 7</h2><span class="nota num">$176.400</span></div>
+        <div>
+          <div class="check hecho"><span class="caja-check"></span><span class="txt">Pechuga 2 kg</span><span class="val suave">$36.000</span></div>
+          <div class="check hecho"><span class="caja-check"></span><span class="txt">Aceite 3 L</span><span class="val suave">$29.500</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Leche x6</span><span class="val suave">$26.400</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Carne molida 1 kg</span><span class="val suave">$24.900</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Arroz 5 kg</span><span class="val suave">$21.900</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Café 500 g</span><span class="val suave">$19.800</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Huevos x30</span><span class="val suave">$17.900</span></div>
+          <div class="nota suave solo-movil" style="padding-top:8px">+5 productos más en el carrito · $110.900</div>
+        </div>
+        <div class="fila" style="margin-top:auto;padding-top:10px;border-top:1px solid var(--linea)"><span>Total de la lista</span><span class="cifra-m">$305.600</span></div>
+      </section>
+
+      <!-- Escudo anti-impulso + cierre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Escudo anti-impulso</h2><span class="chip ok">Hoy no te pasas</span></div>
+        <div class="caja">Si la lista pasa de <b class="num">$580.000</b>, el exceso se descuenta de <b>Gustos</b> (<b class="num">$153.100</b> disp.) y te avisamos antes de pagar. Tu fondo y tu inversión no se tocan.</div>
+        <div class="fila solo-escritorio"><span class="nota">Puedes agregar sin tocar Gustos</span><span>$274.400</span></div>
+        <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+          <button class="btn ancho" data-ir="lista-compras-cierre">Finalizar compra</button>
+          <div class="nota suave solo-escritorio">En caja eliges con qué cuenta pagaste y ves qué se mueve antes de confirmar.</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<template data-id="lista-compras-cierre" data-titulo="Finalizar compra" data-padre="lista-compras">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>Pagar $305.600 en caja</h1>
+        <p>Mercado de quincena · 12 productos. Elige con qué pagaste y revisa qué cambia antes de confirmar.</p>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1.25fr)">
+
+      <!-- Con qué cuenta -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">¿Con qué pagaste?</h2><span class="nota">sale de lo que está sin sobre</span></div>
+        <div>
+          <div class="check hecho">
+            <span class="caja-check"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><b>Bancolombia</b><span class="nota">$1.050.000 sin sobre · alcanza</span></span>
+            <span class="val">$1.450.000</span>
+          </div>
+          <div class="check">
+            <span class="caja-check"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><span>Nequi</span><span class="nota">$310.000 sin sobre · te quedarían $4.400</span></span>
+            <span class="val">$310.000</span>
+          </div>
+          <div class="check" style="border-bottom:0">
+            <span class="caja-check"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><span>Efectivo</span><span class="nota mal">$180.000 sin sobre · te faltan $125.600</span></span>
+            <span class="val">$180.000</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Imputación triple + confirmar -->
+      <section class="panel destacado alto-2">
+        <div class="panel-cab"><h2 class="titulo">Esto cambia al confirmar</h2><span class="chip">3 registros en uno</span></div>
+        <div class="lista lineas">
+          <div>
+            <div class="fila"><span class="nota">Tu cuenta Bancolombia</span><span class="mal num">−$305.600</span></div>
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:3px"><span class="suave num">$1.450.000</span><span class="suave">→</span><span class="cifra-l">$1.144.400</span></div>
+            <div class="nota suave solo-escritorio" style="margin-top:3px">Sale de los $1.050.000 sin sobre; los $400.000 de Inversión se quedan.</div>
+          </div>
+          <div>
+            <div class="fila"><span class="nota">Tu sobre Mercado</span><span class="mal num">−$305.600</span></div>
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:3px"><span class="suave num">$580.000</span><span class="suave">→</span><span class="cifra-l acento-tx">$274.400</span><span class="de">de $700.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:6px"><i style="width:39.2%"></i></div>
+          </div>
+          <div>
+            <div class="fila"><span class="nota">Comida en tus reportes</span><span class="num">+$305.600</span></div>
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:3px"><span class="suave num">$120.000</span><span class="suave">→</span><span class="cifra-l">$425.600</span></div>
+            <div class="nota suave solo-escritorio" style="margin-top:3px">Gasto de noviembre en Comida.</div>
+          </div>
+        </div>
+        <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+          <button class="btn ancho">Confirmar pago de $305.600</button>
+          <div style="text-align:center"><button class="link" data-ir="lista-compras">Volver a la lista</button></div>
+          <div class="nota suave solo-escritorio">Al confirmar verás:</div>
+          <div class="caja ok lista" style="gap:6px">
+            <div><span class="bola" style="--c:var(--positivo)"></span> Se descontaron <b>$305.600</b> de Bancolombia</div>
+            <div><span class="bola" style="--c:var(--positivo)"></span> Tu sobre Mercado ahora tiene <b>$274.400</b></div>
+            <div><span class="bola" style="--c:var(--positivo)"></span> Tu fondo y tu inversión siguen intactos</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- La compra contra el techo -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Tu compra contra el techo</h2><span class="nota num">53% del sobre</span></div>
+        <div class="fila" style="align-items:flex-end"><span><span class="cifra-xl">$305.600</span> <span class="de">de $580.000</span></span></div>
+        <div class="barra"><i style="width:52.7%"></i></div>
+        <div class="lista lineas">
+          <div class="fila"><span class="nota">En el carrito cuando llegaste a caja</span><span>$176.400</span></div>
+          <div class="fila"><span class="nota">Lo que faltaba de la lista</span><span>$129.200</span></div>
+          <div class="fila"><span class="nota">Gustos</span><span class="ok">$153.100 · no se toca</span></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>

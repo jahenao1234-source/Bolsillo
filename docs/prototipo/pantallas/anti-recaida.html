@@ -1,0 +1,125 @@
+<template data-id="anti-recaida" data-titulo="Anti-recaída">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>¿Puedo usar la tarjeta sin volver a endeudarme?</h1>
+        <p>Sí, si compras <b>a 1 cuota</b> y la pagas completa en el corte. Diferir a cuotas es volver a la deuda.</p>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.9fr)">
+
+      <!-- Simulador: tres caminos para la misma compra -->
+      <section class="panel ancho-3">
+        <div class="panel-cab">
+          <h2 class="cifra-m" style="margin:0">Quieres un celular de $900.000</h2>
+          <span class="nota solo-escritorio">Simulador · con la Mastercard: corte 16 nov, pagas el 3 dic</span>
+        </div>
+
+        <!-- Escritorio: tres columnas con las mismas métricas -->
+        <div class="rejilla solo-escritorio" style="--cols: minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);flex:1">
+          <div class="panel destacado">
+            <div class="panel-cab"><span style="font-weight:700">Pagar hoy con el Fondo blindado</span><span class="chip acento">Recomendada</span></div>
+            <div><div class="cifra-xl ok">$0</div><div class="nota">de intereses</div></div>
+            <div class="lista">
+              <div class="fila"><span class="nota">Tu fondo queda en</span><span>$300.000</span></div>
+              <div class="fila"><span class="nota">Modo</span><span class="chip acento">Pro</span></div>
+              <div class="fila"><span class="nota">Pagas</span><span>$900.000 hoy</span></div>
+            </div>
+            <div class="nota">Baja de $1.200.000 a $300.000 y se repone en 3 meses con tus aportes de $400.000.</div>
+            <button class="btn ancho" style="margin-top:auto">Pagar con el Fondo blindado</button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-cab"><span style="font-weight:700">A 1 cuota</span><span class="chip">No es deuda</span></div>
+            <div><div class="cifra-xl">$0</div><div class="nota">de intereses si pagas completo</div></div>
+            <div class="lista">
+              <div class="fila"><span class="nota">Tu fondo queda en</span><span>$300.000</span></div>
+              <div class="fila"><span class="nota">Modo</span><span class="chip acento">Pro</span></div>
+              <div class="fila"><span class="nota">Pagas</span><span>$900.000 el 3 dic</span></div>
+            </div>
+            <div class="caja aviso"><b>Ojo:</b> tienes que apartar $900.000 antes del 3 dic y Gustos solo tiene $153.100. Saldría del fondo igual.</div>
+            <button class="btn2 ancho" style="margin-top:auto">Apartar para el 3 dic</button>
+          </div>
+
+          <div class="panel riesgo">
+            <div class="panel-cab"><span style="font-weight:700">Diferido a 6 cuotas</span><span class="chip mal">Es deuda</span></div>
+            <div><div class="cifra-xl mal">$66.594</div><div class="nota">de intereses al 28% E.A.</div></div>
+            <div class="lista">
+              <div class="fila"><span class="nota">Tu fondo queda en</span><span>$1.200.000</span></div>
+              <div class="fila"><span class="nota">Modo</span><span class="chip mal">Deuda hasta may 2028</span></div>
+              <div class="fila"><span class="nota">Pagas</span><span>6 × $161.099</span></div>
+            </div>
+            <div class="nota">Al final pagas <b>$966.594</b> por un celular de $900.000.</div>
+            <button class="btn2 ancho" style="margin-top:auto">Diferir a 6 cuotas</button>
+          </div>
+        </div>
+
+        <!-- Celular: la misma comparación en una tabla corta -->
+        <table class="tabla solo-movil">
+          <thead><tr><th>Camino</th><th style="width:68px">Intereses</th><th style="width:60px">Modo</th><th style="width:80px">Fondo queda</th></tr></thead>
+          <tbody>
+            <tr><td class="acento-tx" style="font-weight:700">Fondo, hoy</td><td class="num ok">$0</td><td>Pro</td><td class="num">$300.000</td></tr>
+            <tr><td>A 1 cuota</td><td class="num">$0</td><td>Pro</td><td class="num">$300.000</td></tr>
+            <tr><td>6 cuotas</td><td class="num mal">$66.594</td><td class="mal">Deuda</td><td class="num">$1.200.000</td></tr>
+          </tbody>
+        </table>
+        <div class="caja aviso solo-movil"><b>A 1 cuota:</b> Gustos solo tiene $153.100, así que los $900.000 saldrían del fondo igual.</div>
+        <div class="nota solo-movil">Diferido: 6 cuotas de $161.099 y modo Deuda hasta mayo 2028. Con el fondo, se repone en 3 meses.</div>
+        <div class="solo-movil" style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn ancho">Pagar con el Fondo blindado</button>
+          <div class="par"><button class="btn2">A 1 cuota</button><button class="btn2">A 6 cuotas</button></div>
+        </div>
+      </section>
+
+      <!-- Tus tarjetas en Pro -->
+      <section class="panel solo-escritorio">
+        <h2 class="titulo">Tus tarjetas</h2>
+        <div>
+          <div class="panel-cab"><span style="font-weight:700">Mastercard Bancolombia</span></div>
+          <div class="fila" style="margin-top:6px"><span class="nota">Este ciclo · Netflix</span><span>$26.900 <span class="de">de $5.000.000</span></span></div>
+          <div class="barra" style="margin-top:6px"><i style="width:1%"></i></div>
+          <div class="nota suave" style="margin-top:6px">Corte 16 · pagas el 3 dic · a 1 cuota</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <span class="chip ok">Pro limpio</span><span class="nota">Ya apartado: <b class="ok">$0</b> de intereses</span>
+          </div>
+        </div>
+        <div style="padding-top:12px;border-top:1px solid var(--hairline)">
+          <div class="panel-cab"><span style="font-weight:700">Tarjeta Nu</span></div>
+          <div class="fila" style="margin-top:6px"><span class="nota">Este ciclo</span><span>$0 <span class="de">de $3.000.000</span></span></div>
+          <div class="barra" style="margin-top:6px"><i style="width:0%"></i></div>
+          <div class="nota suave" style="margin-top:6px">Corte 25 · sin compras este ciclo</div>
+        </div>
+        <div class="caja" style="margin-top:auto">El cupo no es plata tuya. Usa la tarjeta solo con lo que <b>ya tienes en un sobre</b>.</div>
+      </section>
+
+      <!-- La regla en dos caminos -->
+      <section class="panel ancho-2">
+        <div class="panel-cab"><h2 class="titulo">La regla</h2><span class="nota solo-escritorio">Hoy: $26.900 a 1 cuota · $0 diferido</span></div>
+        <div class="rejilla" style="--cols: minmax(0,1fr) minmax(0,1fr);flex:1">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="chip ok">A 1 cuota</span><b>No es deuda</b></div>
+            <div class="nota">Se aparta del sobre que elijas y se paga completo en el corte. $0 de intereses y sigues en Pro.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="chip mal">Diferido a cuotas</span><b>Es deuda con intereses</b></div>
+            <div class="nota">Salta la alerta, te ofrece pagarla con el Fondo blindado y, si financias, vuelve el modo Deuda hasta liquidarla.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Vista previa del aviso -->
+      <section class="panel ancho-2 solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Así te avisa la app</h2><span class="nota">al registrar una compra diferida</span></div>
+        <div class="caja mal">
+          <div class="fila"><b>Esta compra es deuda</b><span class="mal">$66.594 de intereses</span></div>
+          <div style="margin-top:4px">Diferiste $900.000 a 6 cuotas de $161.099. Si la dejas así, vuelves al modo Deuda hasta mayo 2028. Tu Fondo blindado tiene $1.200.000: págala hoy y no pagas intereses.</div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn2">Pagarla con el fondo</button><button class="link">Financiar igual</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>

@@ -1,0 +1,99 @@
+<template data-id="mi-plata" data-titulo="Mi plata">
+  <div class="pant">
+
+    <div class="cab">
+      <div>
+        <h1>Mi plata</h1>
+        <p><span class="solo-escritorio">Tienes <b>$3.140.000</b> en tus cuentas: <b>$1.600.000</b> ya tienen dueño en tus sobres y <b>$1.540.000</b> están sin sobre.</span><span class="solo-movil"><b>$1.600.000</b> con dueño · <b>$1.540.000</b> sin sobre</span></p>
+      </div>
+      <div class="acciones"><button class="btn">Registrar ingreso</button></div>
+    </div>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1.3fr)">
+
+      <!-- Tus cuentas -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Tus cuentas</h2><span class="nota">Líquido total</span></div>
+        <div class="cifra-xl">$3.140.000</div>
+        <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:7px">
+          <div class="barra" style="display:flex;gap:2px" role="img" aria-label="$1.600.000 en sobres y $1.540.000 sin sobre">
+            <i style="width:51%;--c:var(--acento)"></i><i style="width:49%;--c:var(--texto-3)"></i>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <span class="nota"><span class="bola" style="--c:var(--acento)"></span> <b>$1.600.000</b> en sobres</span>
+            <span class="nota"><span class="bola" style="--c:var(--texto-3)"></span> <b>$1.540.000</b> sin sobre</span>
+          </div>
+        </div>
+        <div class="lista lineas">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="inicial">BC</span>
+            <div style="flex:1;min-width:0"><div class="fila"><span>Bancolombia</span><span>$1.450.000</span></div><div class="nota suave">$400.000 en sobre Inversión · $1.050.000 sin sobre</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="inicial">NU</span>
+            <div style="flex:1;min-width:0"><div class="fila"><span>Nu</span><span>$1.200.000</span></div><div class="nota suave">$1.200.000 en sobre Fondo blindado · $0 sin sobre</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="inicial">NQ</span>
+            <div style="flex:1;min-width:0"><div class="fila"><span>Nequi</span><span>$310.000</span></div><div class="nota suave">$310.000 sin sobre</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="inicial">EF</span>
+            <div style="flex:1;min-width:0"><div class="fila"><span>Efectivo</span><span>$180.000</span></div><div class="nota suave">$180.000 sin sobre</div></div>
+          </div>
+        </div>
+
+        <div class="solo-escritorio" style="border-top:1px solid var(--hairline);padding-top:12px;display:flex;flex-direction:column;gap:10px">
+          <div class="panel-cab"><h2 class="titulo">Tus tarjetas, a 1 cuota</h2><button class="link" data-ir="anti-recaida">Anti-recaída →</button></div>
+          <div><div class="fila"><span>Mastercard Bancolombia</span><span>$26.900</span></div><div class="nota suave">Netflix · corte 16 · pagas el 3 dic, ya apartado</div></div>
+          <div><div class="fila"><span>Tarjeta Nu</span><span class="suave">$0</span></div><div class="nota suave">Sin compras este ciclo · corte 25</div></div>
+        </div>
+
+        <div class="caja solo-escritorio" style="margin-top:auto">Los <b>$400.000</b> del sobre Inversión siguen en Bancolombia. <button class="link acento" data-ir="activos">Registrar en un CDT o fondo →</button></div>
+      </section>
+
+      <!-- Patrimonio e inversiones -->
+      <section class="panel">
+        <div class="rejilla" style="--cols: minmax(0,1fr) minmax(0,1fr); gap:24px">
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <h2 class="titulo">Tu patrimonio neto</h2>
+            <div class="cifra-xl">$3.945.600</div>
+            <div class="lista solo-escritorio" style="gap:8px">
+              <div class="fila"><span class="nota">En tus cuentas</span><span>$3.140.000</span></div>
+              <div class="fila"><span class="nota">Invertido</span><span>+$805.600</span></div>
+              <div class="fila"><span class="nota">Deudas</span><span class="ok">$0</span></div>
+            </div>
+            <div class="nota solo-movil">Tus cuentas + <b>$805.600</b> en tu CDT · <b>$0</b> en deudas. <button class="link acento" data-ir="activos">Ver en Activos →</button></div>
+          </div>
+          <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <div class="panel-cab"><h2 class="titulo">Tus inversiones</h2><button class="link acento" data-ir="activos">Activos →</button></div>
+            <div><div class="nota">CDT digital Bancolombia</div><span class="cifra-m">$805.600</span> <span class="de">valor hoy</span></div>
+            <div class="lista" style="gap:8px">
+              <div class="fila"><span class="nota">Capital · tasa</span><span>$800.000 · 11,2% E.A.</span></div>
+              <div class="fila"><span class="nota">Vence</span><span>17 abr 2028</span></div>
+              <div class="fila"><span class="nota">Rendimiento proyectado</span><span class="ok">+$42.998</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Movimientos de noviembre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Movimientos de noviembre</h2><span class="nota solo-escritorio">Entraron <b>$1.600.000</b> · salieron <b>$412.800</b></span></div>
+        <table class="tabla">
+          <thead><tr><th>Concepto</th><th class="opc">Cuenta</th><th style="width:92px">Tipo</th><th class="opc2" style="width:56px">Fecha</th><th style="width:100px">Monto</th></tr></thead>
+          <tbody>
+            <tr><td>Transporte de la semana</td><td class="opc">Efectivo</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">6 nov</td><td class="num">−$22.000</td></tr>
+            <tr><td>Spotify</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">5 nov</td><td class="num">−$16.900</td></tr>
+            <tr><td>Luz y agua</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">3 nov</td><td class="num">−$164.000</td></tr>
+            <tr class="solo-escritorio"><td>Mercado</td><td class="opc">Efectivo</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">2 nov</td><td class="num">−$120.000</td></tr>
+            <tr class="solo-escritorio"><td>A Fondo blindado</td><td class="opc">Bancolombia → Nu</td><td><span class="pill traslado">Traslado</span></td><td class="opc2 num">1 nov</td><td class="num">$400.000</td></tr>
+            <tr class="solo-escritorio"><td>Gimnasio Smart Fit</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">1 nov</td><td class="num">−$89.900</td></tr>
+            <tr class="solo-escritorio"><td>Salario quincena</td><td class="opc">Bancolombia</td><td><span class="pill ingreso">Ingreso</span></td><td class="opc2 num">1 nov</td><td class="num ok">+$1.600.000</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+</template>

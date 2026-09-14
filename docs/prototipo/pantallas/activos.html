@@ -1,0 +1,106 @@
+<template data-id="activos" data-titulo="Activos y F.I.R.E.">
+  <div class="pant">
+    <div class="cab">
+      <div>
+        <h1>Activos y F.I.R.E.</h1>
+        <p>Tienes <b>$800.000</b> produciendo en un CDT y <b>$400.000</b> esperando turno. Al ritmo de hoy dejas de depender del sueldo en <b>agosto 2053</b>.</p>
+      </div>
+    </div>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.2fr) minmax(0,1fr) minmax(0,0.95fr)">
+
+      <!-- F.I.R.E.: fecha, meta y proyección -->
+      <section class="panel destacado ancho-2 alto-2">
+        <div class="panel-cab"><h2 class="titulo">Tu libertad financiera</h2><span class="chip acento">Regla del 4%</span></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px 28px;flex-wrap:wrap">
+          <div>
+            <div class="nota">Dejas de depender del sueldo en</div>
+            <div class="cifra-xl" style="margin-top:4px">agosto 2053</div>
+            <div class="nota" style="margin-top:6px">En 25 años y 9 meses, aportando <b class="num">$400.000</b> al mes al 11,2% E.A.</div>
+          </div>
+          <div class="par" style="gap:10px 28px">
+            <div><div class="nota">Invertido hoy</div><div class="cifra-m">$1.200.000</div></div>
+            <div><div class="nota">Meta de libertad</div><div class="cifra-m">$669.000.000</div></div>
+          </div>
+        </div>
+
+        <svg class="solo-escritorio" viewBox="0 0 640 232" width="100%" role="img" aria-label="Proyección de tu inversión: de $1.200.000 hoy a la meta de $669.000.000 en agosto de 2053">
+          <defs><linearGradient id="ga-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g-stop" stop-opacity=".24"/><stop offset="1" class="g-stop" stop-opacity="0"/></linearGradient></defs>
+          <line x1="16" y1="37.4" x2="600" y2="37.4" class="g-texto-s" stroke-dasharray="4 5"/>
+          <text x="16" y="26" font-size="12" class="g-texto">meta $669.000.000</text>
+          <text x="600" y="26" font-size="12" font-weight="700" text-anchor="end" class="g-texto2">llegas en ago 2053</text>
+          <line x1="16" y1="196" x2="600" y2="196" class="g-linea"/>
+          <path d="M16 195.7 L23.6 195.3 L31.1 194.9 L38.7 194.5 L46.2 194 L53.8 193.6 L61.4 193.1 L68.9 192.6 L76.5 192.1 L84 191.6 L91.6 191 L99.2 190.5 L106.7 189.9 L114.3 189.3 L121.8 188.6 L129.4 188 L137 187.3 L144.5 186.6 L152.1 185.9 L159.6 185.1 L167.2 184.3 L174.8 183.5 L182.3 182.7 L189.9 181.8 L197.4 180.9 L205 180 L212.6 179 L220.1 178 L227.7 177 L235.2 175.9 L242.8 174.8 L250.4 173.7 L257.9 172.5 L265.5 171.2 L273 170 L280.6 168.6 L288.2 167.3 L295.7 165.8 L303.3 164.4 L310.8 162.8 L318.4 161.2 L326 159.6 L333.5 157.9 L341.1 156.1 L348.6 154.3 L356.2 152.4 L363.8 150.5 L371.3 148.4 L378.9 146.3 L386.4 144.2 L394 141.9 L401.6 139.6 L409.1 137.2 L416.7 134.7 L424.2 132.1 L431.8 129.4 L439.4 126.6 L446.9 123.7 L454.5 120.7 L462 117.6 L469.6 114.4 L477.2 111.1 L484.7 107.6 L492.3 104 L499.8 100.3 L507.4 96.5 L515 92.5 L522.5 88.4 L530.1 84.1 L537.6 79.7 L545.2 75.2 L552.8 70.4 L560.3 65.5 L567.9 60.4 L575.4 55.1 L583 49.7 L590.6 44 L598.1 38.2 L600 37.4 L600 196 L16 196 Z" fill="url(#ga-area)"/>
+          <path d="M16 195.7 L23.6 195.3 L31.1 194.9 L38.7 194.5 L46.2 194 L53.8 193.6 L61.4 193.1 L68.9 192.6 L76.5 192.1 L84 191.6 L91.6 191 L99.2 190.5 L106.7 189.9 L114.3 189.3 L121.8 188.6 L129.4 188 L137 187.3 L144.5 186.6 L152.1 185.9 L159.6 185.1 L167.2 184.3 L174.8 183.5 L182.3 182.7 L189.9 181.8 L197.4 180.9 L205 180 L212.6 179 L220.1 178 L227.7 177 L235.2 175.9 L242.8 174.8 L250.4 173.7 L257.9 172.5 L265.5 171.2 L273 170 L280.6 168.6 L288.2 167.3 L295.7 165.8 L303.3 164.4 L310.8 162.8 L318.4 161.2 L326 159.6 L333.5 157.9 L341.1 156.1 L348.6 154.3 L356.2 152.4 L363.8 150.5 L371.3 148.4 L378.9 146.3 L386.4 144.2 L394 141.9 L401.6 139.6 L409.1 137.2 L416.7 134.7 L424.2 132.1 L431.8 129.4 L439.4 126.6 L446.9 123.7 L454.5 120.7 L462 117.6 L469.6 114.4 L477.2 111.1 L484.7 107.6 L492.3 104 L499.8 100.3 L507.4 96.5 L515 92.5 L522.5 88.4 L530.1 84.1 L537.6 79.7 L545.2 75.2 L552.8 70.4 L560.3 65.5 L567.9 60.4 L575.4 55.1 L583 49.7 L590.6 44 L598.1 38.2 L600 37.4" fill="none" class="g-acento" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="16" cy="195.7" r="4" class="g-acento-f"/>
+          <text x="16" y="182" font-size="12" class="g-texto2">hoy $1.200.000</text>
+          <circle cx="267.4" cy="170.9" r="3.5" class="g-acento-f"/>
+          <text x="261" y="159" font-size="12" text-anchor="end" class="g-texto2">$106 millones</text>
+          <circle cx="380.8" cy="145.8" r="3.5" class="g-acento-f"/>
+          <text x="374" y="134" font-size="12" text-anchor="end" class="g-texto2">$212 millones</text>
+          <circle cx="494.2" cy="103.1" r="3.5" class="g-acento-f"/>
+          <text x="488" y="91" font-size="12" text-anchor="end" class="g-texto2">$392 millones</text>
+          <circle cx="600" cy="37.4" r="5.5" fill="none" class="g-acento" stroke-width="2.5"/>
+          <text x="16" y="220" font-size="12" class="g-texto">2027</text>
+          <text x="154" y="220" font-size="12" text-anchor="middle" class="g-texto">2033</text>
+          <text x="267.4" y="220" font-size="12" text-anchor="middle" class="g-texto">2038</text>
+          <text x="380.8" y="220" font-size="12" text-anchor="middle" class="g-texto">2043</text>
+          <text x="494.2" y="220" font-size="12" text-anchor="middle" class="g-texto">2048</text>
+          <text x="600" y="220" font-size="12" text-anchor="end" class="g-texto">2053</text>
+        </svg>
+
+        <div class="rejilla solo-escritorio" style="--cols: repeat(3, minmax(0,1fr));margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline)">
+          <div>
+            <div class="titulo">Cómo sale tu meta</div>
+            <div class="nota" style="margin-top:6px">Lo básico <b class="num">$2.230.000</b> × 12 meses × 25 años. Con esa plata invertida puedes sacar el 4% cada año y vivir sin gastarte el capital.</div>
+          </div>
+          <div>
+            <div class="titulo">Quién pone la plata</div>
+            <div class="nota" style="margin-top:6px">Tú pones <b class="num">$124.800.000</b>: lo de hoy más 309 aportes de $400.000. El resto lo pone el interés compuesto. La mitad del camino llega en sep 2047.</div>
+          </div>
+          <div class="caja ok">Un abono extra de <b class="num">$400.000</b> hoy adelanta tu retiro <b>30 días</b>.</div>
+        </div>
+      </section>
+
+      <!-- Plata en producción -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Plata en producción</h2><button class="link" data-ir="mi-plata">Mi plata →</button></div>
+        <div class="fila"><span style="font-weight:700">CDT digital Bancolombia</span><span class="chip acento">11,2% E.A.</span></div>
+        <div>
+          <span class="cifra-l">$805.600</span> <span class="de">valor hoy</span>
+          <div class="nota suave" style="margin-top:3px">Invertiste $800.000 el 20 oct 2027</div>
+        </div>
+        <div>
+          <div class="barra"><i style="width:13%"></i></div>
+          <div class="fila nota" style="margin-top:6px"><span>Día 24 de 180</span><span>vence 17 abr 2028</span></div>
+        </div>
+        <div class="lista lineas" style="margin-top:auto">
+          <div class="fila"><span>Rendimiento proyectado</span><span class="ok">+$42.998</span></div>
+          <div class="fila"><span>Recibes al vencer</span><span>$842.998</span></div>
+        </div>
+      </section>
+
+      <!-- Siguiente paso: invertir lo del sobre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Tu siguiente paso</h2><span class="chip">Sobre Inversión</span></div>
+        <div>
+          <span class="cifra-l">$400.000</span> <span class="de">sin invertir</span>
+          <div class="nota" style="margin-top:4px">El aporte de noviembre está quieto en Bancolombia. Cuando abras el CDT o fondo en tu banco, regístralo.</div>
+        </div>
+        <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:8px">
+          <div class="par">
+            <div><div class="nota suave">Entidad</div><div class="caja" style="margin-top:3px"><b>Bancolombia</b></div></div>
+            <div><div class="nota suave">Capital</div><div class="caja num" style="margin-top:3px"><b>$400.000</b></div></div>
+          </div>
+          <div class="par">
+            <div><div class="nota suave">Tasa E.A.</div><div class="caja num" style="margin-top:3px"><b>11,2%</b></div></div>
+            <div><div class="nota suave">Plazo</div><div class="caja num" style="margin-top:3px"><b>180 días</b></div></div>
+          </div>
+        </div>
+        <button class="btn ancho" style="margin-top:auto">Registrar un CDT o fondo</button>
+      </section>
+
+    </div>
+  </div>
+</template>

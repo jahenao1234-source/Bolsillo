@@ -1,0 +1,106 @@
+<template data-id="suscripciones" data-titulo="Suscripciones">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>Suscripciones</h1>
+        <p>Te cobran solas <b class="num">$157.600 al mes</b>, $1.891.200 al año. Una de ellas no la estás usando.</p>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.25fr) minmax(0,1.1fr) minmax(0,1fr)">
+
+      <!-- Fuga activa -->
+      <section class="panel riesgo">
+        <div class="panel-cab"><h2 class="titulo">Fuga activa</h2><span class="chip mal">47 días sin uso</span></div>
+        <div>
+          <div style="font-weight:700;font-size:15px">Gimnasio Smart Fit</div>
+          <div class="nota">Último uso el 27 sep. Desde entonces te cobró el 1 oct y el 1 nov: <b class="num">$179.800</b> sin ir.</div>
+        </div>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="cifra-xl mal">$1.078.800</span> <span class="de">al año</span></span>
+          <span class="nota num">$89.900 al mes</span>
+        </div>
+        <div class="nota solo-movil">Si cancelas, esos $89.900 al mes pueden ir a Inversión.</div>
+        <div style="margin-top:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <button class="btn">Cancelar Smart Fit</button>
+          <button class="link">Sí lo uso</button>
+          <span class="nota suave solo-escritorio" style="margin-left:auto">Próximo cobro 1 dic</span>
+        </div>
+      </section>
+
+      <!-- Total al mes -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Total al mes</h2><span class="nota num">4 servicios</span></div>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="cifra-xl">$157.600</span> <span class="de">al mes</span></span>
+          <span class="nota num">$1.891.200 al año</span>
+        </div>
+        <svg viewBox="0 0 580 22" width="100%" role="img" aria-label="De $157.600 al mes, $89.900 son de Smart Fit sin uso y $67.700 de servicios en uso">
+          <rect x="0" y="0" width="328.8" height="22" rx="5" class="g-alerta-f"/>
+          <rect x="330.8" y="0" width="97" height="22" rx="5" class="g-acento-f"/>
+          <rect x="429.8" y="0" width="86" height="22" rx="5" class="g-acento-f"/>
+          <rect x="517.8" y="0" width="62.2" height="22" rx="5" class="g-acento-f"/>
+        </svg>
+        <div class="lista lineas" style="margin-top:auto">
+          <div class="fila"><span><span class="bola" style="--c:var(--alerta)"></span> Sin uso · Smart Fit · 57%</span><span>$89.900</span></div>
+          <div class="fila"><span><span class="bola"></span> En uso · Netflix, YouTube, Spotify · 43%</span><span>$67.700</span></div>
+        </div>
+      </section>
+
+      <!-- Lo ahorrado -->
+      <section class="panel destacado solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Si cancelas Smart Fit</h2><button class="link acento" data-ir="activos">Ver Inversión →</button></div>
+        <div>
+          <div class="nota">Pueden ir a Inversión cada mes</div>
+          <div class="cifra-l acento-tx">$89.900</div>
+        </div>
+        <div class="lista lineas" style="margin-top:auto">
+          <div class="fila"><span class="nota">Tu aporte a Inversión</span><span><span class="suave">$400.000 →</span> $489.900</span></div>
+          <div class="fila"><span class="nota">Más invertido en un año</span><span class="ok">+$1.078.800</span></div>
+        </div>
+      </section>
+
+      <!-- Todas las suscripciones -->
+      <section class="panel ancho-2">
+        <div class="panel-cab"><h2 class="titulo">Todas tus suscripciones</h2><span class="nota num">$157.600 al mes</span></div>
+        <table class="tabla">
+          <thead><tr><th>Servicio</th><th style="width:92px">Valor</th><th class="opc2" style="width:80px">Cobra el</th><th class="opc" style="width:170px">Paga con</th><th style="width:118px">Estado</th></tr></thead>
+          <tbody>
+            <tr><td>Gimnasio Smart Fit</td><td class="num">$89.900</td><td class="opc2 num">día 1</td><td class="opc">Bancolombia débito</td><td><span class="pill gasto">Sin uso</span></td></tr>
+            <tr><td>Spotify</td><td class="num">$16.900</td><td class="opc2 num">día 5</td><td class="opc">Bancolombia débito</td><td><span class="pill neutra">En uso</span></td></tr>
+            <tr><td>Netflix</td><td class="num">$26.900</td><td class="opc2 num">día 18</td><td class="opc">Mastercard crédito</td><td><span class="pill neutra">En uso</span></td></tr>
+            <tr><td>YouTube Premium</td><td class="num">$23.900</td><td class="opc2 num">día 22</td><td class="opc">Nequi</td><td><span class="pill neutra">En uso</span></td></tr>
+          </tbody>
+        </table>
+        <div class="caja solo-escritorio" style="margin-top:auto">
+          <b>Netflix va a tu Mastercard crédito, y en Pro está bien.</b> Se paga a 1 cuota: los $26.900 de este ciclo ya están apartados para pagar el 100% el 3 dic, con $0 de intereses. Si algún día lo difieres a cuotas, vuelve la deuda.
+          <button class="link acento" data-ir="anti-recaida">Ver la regla anti-recaída →</button>
+        </div>
+        <div class="nota solo-movil">Netflix va a tu Mastercard a 1 cuota y ya está apartado para el corte: $0 de intereses. <button class="link acento" data-ir="anti-recaida">Ver regla →</button></div>
+      </section>
+
+      <!-- Cobros de noviembre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Cobros de noviembre</h2><span class="nota num">hoy 13 nov</span></div>
+        <div class="lista lineas">
+          <div>
+            <div class="fila"><span>Netflix · 18 nov</span><span>$26.900</span></div>
+            <div style="margin-top:4px"><span class="pill aviso">En 5 días</span> <span class="nota suave">Mastercard</span></div>
+          </div>
+          <div>
+            <div class="fila"><span>YouTube Premium · 22 nov</span><span>$23.900</span></div>
+            <div style="margin-top:4px"><span class="pill neutra">En 9 días</span> <span class="nota suave">Nequi</span></div>
+          </div>
+        </div>
+        <div class="fila nota"><span>Falta por cobrar</span><span>$50.800</span></div>
+        <div class="solo-escritorio" style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:8px">
+          <h3 class="titulo">Ya cobrados este mes</h3>
+          <div class="fila"><span class="suave">Smart Fit · 1 nov</span><span class="suave">$89.900</span></div>
+          <div class="fila"><span class="suave">Spotify · 5 nov</span><span class="suave">$16.900</span></div>
+          <div class="fila nota"><span>Cobrado</span><span>$106.800</span></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>

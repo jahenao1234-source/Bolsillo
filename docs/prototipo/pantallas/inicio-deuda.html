@@ -1,0 +1,101 @@
+<template data-id="inicio-deuda" data-titulo="Inicio">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1.5fr) minmax(0,1fr) minmax(0,0.95fr)">
+
+      <!-- Gastado en el mes -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Gastado en septiembre</h2><span class="nota num">18,5% del mes</span></div>
+        <svg viewBox="0 0 600 150" width="100%" role="img" aria-label="Gasto acumulado de septiembre: $412.800 de un techo de $2.230.000">
+          <defs><linearGradient id="gd-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g-stop" stop-opacity=".22"/><stop offset="1" class="g-stop" stop-opacity="0"/></linearGradient></defs>
+          <line x1="10" y1="20" x2="590" y2="20" class="g-texto-s" stroke-dasharray="4 5"/>
+          <text x="590" y="13" text-anchor="end" font-size="12" class="g-texto">techo del mes $2.230.000</text>
+          <line x1="10" y1="120" x2="590" y2="120" class="g-linea"/>
+          <path d="M10 116 L30 110.6 L50 103.2 L90 102.5 L110 101.5 L250 101.5 L250 120 L10 120 Z" fill="url(#gd-area)"/>
+          <path d="M10 116 L30 110.6 L50 103.2 L90 102.5 L110 101.5 L250 101.5" fill="none" class="g-acento" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="250" cy="101.5" r="5" fill="none" class="g-acento" stroke-width="2.5"/>
+          <text x="10" y="142" font-size="12" class="g-texto">1 sep</text>
+          <text x="250" y="142" font-size="12" text-anchor="middle" class="g-texto">hoy · 13</text>
+          <text x="590" y="142" font-size="12" text-anchor="end" class="g-texto">30 sep</text>
+        </svg>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="cifra-xl">$412.800</span> <span class="de">de $2.230.000</span></span>
+          <span class="nota">vas bien</span>
+        </div>
+      </section>
+
+      <!-- Tu mes con dueño -->
+      <section class="panel">
+        <h2 class="titulo">Tu mes con dueño</h2>
+        <div style="display:flex;align-items:center;gap:16px;flex:1">
+          <svg viewBox="0 0 120 120" style="width:clamp(84px,34cqw,132px);flex:none" role="img" aria-label="$2.230.000 a lo básico y $970.000 a tus deudas; $0 sin dueño">
+            <circle cx="60" cy="60" r="46" fill="none" class="g-fondo" stroke-width="16"/>
+            <circle cx="60" cy="60" r="46" fill="none" class="g-neutro" stroke-width="16" stroke-dasharray="201.4 289" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="46" fill="none" class="g-acento" stroke-width="16" stroke-dasharray="87.6 289" stroke-dashoffset="-201.4" transform="rotate(-90 60 60)"/>
+            <text x="60" y="60" text-anchor="middle" font-size="19" font-weight="800" class="g-tinta-f">$0</text>
+            <text x="60" y="76" text-anchor="middle" font-size="10" class="g-texto2">sin dueño</text>
+          </svg>
+          <div class="lista" style="flex:1;min-width:0">
+            <div><div class="nota">Lo básico</div><div class="cifra-m">$2.230.000</div><div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:70%"></i></div></div>
+            <div><div class="nota">A tus deudas</div><div class="cifra-m">$970.000</div><div class="barra" style="margin-top:5px"><i style="width:30%"></i></div></div>
+            <div class="nota suave">Ingreso <b class="num">$3.200.000</b></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- En qué se fue + siguiente paso -->
+      <section class="panel alto-2">
+        <h2 class="titulo">En qué se fue</h2>
+        <div class="lista">
+          <div><div class="fila"><span>Servicios</span><span>$164.000</span></div><div class="barra" style="--c:var(--azul);margin-top:5px"><i style="width:100%"></i></div></div>
+          <div><div class="fila"><span>Comida</span><span>$120.000</span></div><div class="barra" style="--c:var(--positivo);margin-top:5px"><i style="width:73%"></i></div></div>
+          <div class="solo-escritorio"><div class="fila"><span>Salud</span><span>$89.900</span></div><div class="barra" style="--c:var(--alerta);margin-top:5px"><i style="width:55%"></i></div></div>
+          <div class="solo-escritorio"><div class="fila"><span>Transporte</span><span>$22.000</span></div><div class="barra" style="--c:var(--acento);margin-top:5px"><i style="width:13%"></i></div></div>
+          <div class="solo-escritorio"><div class="fila"><span>Ocio</span><span>$16.900</span></div><div class="barra" style="--c:var(--texto-3);margin-top:5px"><i style="width:10%"></i></div></div>
+        </div>
+        <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:8px">
+          <div class="panel-cab"><h2 class="titulo">Tu siguiente paso</h2><span class="chip">Salir de deudas</span></div>
+          <div style="font-weight:700;font-size:15px">Pagar la libre inversión antes del 15 sep</div>
+          <div class="nota">$450.000 · vence en 2 días. Después: Mastercard $400.000 (3 oct) y Nu $120.000 (10 oct).</div>
+          <button class="btn ancho" data-ir="mi-plan">Ir a Mi plan</button>
+        </div>
+      </section>
+
+      <!-- Tus deudas -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Tus deudas</h2><button class="link" data-ir="deudas">Ver todas →</button></div>
+        <div class="lista">
+          <div>
+            <div class="fila"><span>Mastercard Bancolombia <span class="chip ataque">Ataque</span></span><span>$1.200.000</span></div>
+            <div class="barra" style="margin-top:5px"><i style="width:0%"></i></div>
+            <div class="nota suave" style="margin-top:4px">Sale en ene 2027 · recibe $400.000</div>
+          </div>
+          <div>
+            <div class="fila"><span>Tarjeta Nu</span><span>$2.500.000</span></div>
+            <div class="barra" style="margin-top:5px"><i style="width:0%"></i></div>
+            <div class="nota suave" style="margin-top:4px">Sale en may 2027</div>
+          </div>
+          <div>
+            <div class="fila"><span>Libre inversión Bancolombia</span><span>$6.100.000</span></div>
+            <div class="barra" style="margin-top:5px"><i style="width:0%"></i></div>
+            <div class="nota suave" style="margin-top:4px">Sale en ago 2027 · libre de deudas</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Últimos movimientos -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Últimos movimientos</h2><button class="link" data-ir="billetera">Ver todos →</button></div>
+        <table class="tabla">
+          <thead><tr><th>Concepto</th><th class="opc">Cuenta</th><th style="width:92px">Tipo</th><th class="opc2" style="width:56px">Fecha</th><th style="width:96px">Monto</th></tr></thead>
+          <tbody>
+            <tr><td>Transporte de la semana</td><td class="opc">Efectivo</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">6 sep</td><td class="num">−$22.000</td></tr>
+            <tr><td>Spotify</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">5 sep</td><td class="num">−$16.900</td></tr>
+            <tr><td>Luz y agua</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">3 sep</td><td class="num">−$164.000</td></tr>
+            <tr><td>Salario quincena</td><td class="opc">Nequi</td><td><span class="pill ingreso">Ingreso</span></td><td class="opc2 num">1 sep</td><td class="num">+$1.600.000</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+</template>

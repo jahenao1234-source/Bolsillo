@@ -1,0 +1,145 @@
+<template data-id="sobres" data-titulo="Sobres">
+  <div class="pant">
+
+    <div class="cab">
+      <div>
+        <h1>Tus sobres</h1>
+        <p><span class="solo-escritorio">Tus <b>$3.200.000</b> de noviembre, con dueño antes de gastarlos: <b>$2.230.000</b> lo básico + <b>$970.000</b> lo libre · <b>$0</b> sin dueño</span><span class="solo-movil"><b>$3.200.000</b> con dueño · <b>$0</b> sin dueño</span></p>
+      </div>
+      <div class="acciones"><button class="btn2">+ Nuevo sobre</button></div>
+    </div>
+
+    <!-- LO BÁSICO -->
+    <div class="panel-cab" style="justify-content:flex-start">
+      <h2 class="titulo">Lo básico</h2><span class="nota suave num">$2.230.000 al mes</span>
+    </div>
+    <div class="rejilla llena" style="--cols: repeat(4, minmax(0,1fr))">
+
+      <section class="panel">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Mercado</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$580.000</span> <span class="de">disp.</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$700.000/mes</b></div>
+        <div class="barra" style="--c:var(--neutro)"><i style="width:17%"></i></div>
+        <div class="nota solo-escritorio">Tu lista para el 15 nov suma <b>$305.600</b></div>
+        <button class="btn2 ancho" data-ir="lista-compras" style="margin-top:auto">Abrir lista de compras →</button>
+      </section>
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Arriendo</b></span>
+          <span class="chip ok">Pagado</span>
+        </div>
+        <div class="nota suave">Asignado: <b>$900.000/mes</b></div>
+        <div class="barra" style="--c:var(--neutro)"><i style="width:100%"></i></div>
+        <div class="nota suave" style="margin-top:auto">Pagado el 1 nov · el próximo, el 1 dic</div>
+      </section>
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Servicios</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$186.000</span> <span class="de">disp.</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$350.000/mes</b></div>
+        <div class="barra" style="--c:var(--neutro)"><i style="width:47%"></i></div>
+        <div class="nota suave" style="margin-top:auto">Gastaste $164.000 en luz y agua</div>
+      </section>
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Transporte</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$258.000</span> <span class="de">disp.</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$280.000/mes</b></div>
+        <div class="barra" style="--c:var(--neutro)"><i style="width:8%"></i></div>
+        <div class="nota suave" style="margin-top:auto">Gastaste $22.000 en transporte</div>
+      </section>
+
+      <!-- Celular: lo básico compacto -->
+      <div class="solo-movil" style="display:flex;flex-direction:column;gap:10px">
+        <div class="panel" style="flex-direction:row;align-items:center;justify-content:space-between">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Arriendo</b> <span class="nota suave">$900.000</span></span>
+          <span class="chip ok">Pagado el 1 nov</span>
+        </div>
+        <div class="par">
+          <div class="panel">
+            <span class="nota" style="display:flex;align-items:center;gap:6px"><span class="bola" style="--c:var(--neutro)"></span>Servicios</span>
+            <div class="cifra-m">$186.000</div>
+            <div class="barra" style="--c:var(--neutro)"><i style="width:47%"></i></div>
+          </div>
+          <div class="panel">
+            <span class="nota" style="display:flex;align-items:center;gap:6px"><span class="bola" style="--c:var(--neutro)"></span>Transporte</span>
+            <div class="cifra-m">$258.000</div>
+            <div class="barra" style="--c:var(--neutro)"><i style="width:8%"></i></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LO LIBRE -->
+    <div class="panel-cab" style="justify-content:flex-start">
+      <h2 class="titulo">Lo libre</h2><span class="nota suave num">$970.000 al mes<span class="solo-escritorio"> · lo que antes iba a deudas</span></span>
+    </div>
+    <div class="rejilla llena" style="--cols: repeat(3, minmax(0,1fr))">
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--acento)"></span><b>Fondo blindado</b></span>
+          <span class="cifra-l">$1.200.000</span>
+        </div>
+        <div class="nota suave">Asignado: <b>$400.000/mes</b> · meta $6.690.000</div>
+        <div class="barra" role="img" aria-label="17,9% de la meta; primer hito de $1.000.000 superado"><i style="width:17.9%"></i><span class="marca" style="left:14.9%"></span></div>
+        <div class="nota"><span class="ok">Primer hito de $1.000.000 superado</span> · cubre 0,5 meses de lo básico</div>
+        <div class="fila" style="margin-top:auto"><span class="nota suave">En Nu</span><button class="link acento">+ Abonar</button></div>
+        <button class="btn2 ancho" data-ir="anti-recaida">Qué hacer si compras a cuotas →</button>
+      </section>
+
+      <section class="panel">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--positivo)"></span><b>Inversión</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$400.000</span> <span class="de">sin invertir</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$400.000/mes</b> · <b>$800.000</b> ya en tu CDT</div>
+        <div class="barra" style="--c:var(--positivo)" role="img" aria-label="$1.200.000 de $4.800.000 este año"><i style="width:25%"></i></div>
+        <div class="nota solo-escritorio"><b>$1.200.000</b> de $4.800.000 este año</div>
+        <div class="fila" style="margin-top:auto"><span class="nota suave">En Bancolombia</span><button class="link acento">+ Abonar</button></div>
+        <button class="btn2 ancho" data-ir="activos">Registrar en un CDT o fondo →</button>
+      </section>
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--azul)"></span><b>Gustos</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$153.100</span> <span class="de">disp.</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$170.000/mes</b></div>
+        <div class="barra" style="--c:var(--azul)"><i style="width:10%"></i></div>
+        <div class="nota">Gastaste $16.900 en Spotify</div>
+        <div class="nota suave" style="margin-top:auto">Gasta sin culpa y sin endeudarte</div>
+      </section>
+
+      <!-- Celular: fondo y gustos compactos -->
+      <div class="par solo-movil">
+        <div class="panel">
+          <span class="nota" style="display:flex;align-items:center;gap:6px"><span class="bola" style="--c:var(--acento)"></span>Fondo blindado</span>
+          <div class="cifra-m">$1.200.000</div>
+          <div class="barra"><i style="width:17.9%"></i><span class="marca" style="left:14.9%"></span></div>
+        </div>
+        <div class="panel">
+          <span class="nota" style="display:flex;align-items:center;gap:6px"><span class="bola" style="--c:var(--azul)"></span>Gustos</span>
+          <div class="cifra-m">$153.100</div>
+          <div class="barra" style="--c:var(--azul)"><i style="width:10%"></i></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sobres propios -->
+    <div class="panel plano solo-escritorio" style="flex-direction:row;align-items:center;justify-content:space-between">
+      <span class="nota">Tus sobres propios · <b>0</b> · para metas tuyas, como un viaje o la matrícula</span>
+      <button class="link acento">Crear uno →</button>
+    </div>
+
+  </div>
+</template>

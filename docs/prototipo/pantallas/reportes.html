@@ -1,0 +1,92 @@
+<template data-id="reportes" data-titulo="Reportes">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>Reportes</h1>
+        <p>Cómo te fue en <b>octubre 2027</b> y cuánto tienes en limpio al 13 nov 2027.</p>
+      </div>
+      <div class="acciones">
+        <button class="btn2">Octubre 2027 ▾</button>
+        <button class="btn">Imprimir o guardar PDF</button>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.45fr) minmax(0,1fr)">
+
+      <!-- Estado de resultados de octubre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Así se repartió octubre</h2><span class="chip">Mes cerrado</span></div>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="nota">Ingresos</span> <span class="cifra-l ok">$3.200.000</span></span>
+          <span class="nota solo-escritorio">2 quincenas de $1.600.000</span>
+        </div>
+        <svg viewBox="0 0 580 24" width="100%" role="img" aria-label="De $3.200.000: lo básico $2.148.300, fondo blindado $400.000, inversión $400.000, gustos $150.000 y sobró $101.700">
+          <rect x="0" y="0" width="387.4" height="24" rx="4" class="g-texto2"/>
+          <rect x="389.4" y="0" width="70.5" height="24" rx="4" class="g-positivo-f"/>
+          <rect x="461.9" y="0" width="70.5" height="24" rx="4" class="g-acento-f"/>
+          <rect x="534.4" y="0" width="25.2" height="24" rx="4" class="g-alerta-f"/>
+          <rect x="561.6" y="0" width="18.4" height="24" rx="4" class="g-texto"/>
+        </svg>
+        <table class="tabla">
+          <thead><tr><th>Concepto</th><th class="opc">Detalle</th><th class="opc2 der" style="width:84px">Del ingreso</th><th style="width:108px">Valor</th></tr></thead>
+          <tbody>
+            <tr><td><span class="bola" style="--c:var(--texto-2)"></span> Lo básico gastado</td><td class="opc suave num">$2.148.300 de $2.230.000 · 96%</td><td class="opc2 der num">67,1%</td><td class="num">$2.148.300</td></tr>
+            <tr><td><span class="bola" style="--c:var(--positivo)"></span> Fondo blindado</td><td class="opc suave">Aporte del mes, guardado en Nu</td><td class="opc2 der num">12,5%</td><td class="num">+$400.000</td></tr>
+            <tr><td><span class="bola"></span> Inversión</td><td class="opc suave">Fue al CDT el 20 oct</td><td class="opc2 der num">12,5%</td><td class="num">+$400.000</td></tr>
+            <tr><td><span class="bola" style="--c:var(--alerta)"></span> Gustos gastado</td><td class="opc suave num">$150.000 de $170.000 · 88%</td><td class="opc2 der num">4,7%</td><td class="num">$150.000</td></tr>
+            <tr><td><span class="bola" style="--c:var(--texto-3)"></span> Sobró</td><td class="opc suave">Quedó en Bancolombia</td><td class="opc2 der num">3,2%</td><td class="num">$101.700</td></tr>
+            <tr><td><b>Total repartido</b></td><td class="opc suave">Igual a tus ingresos</td><td class="opc2 der num"><b>100%</b></td><td class="num"><b>$3.200.000</b></td></tr>
+          </tbody>
+        </table>
+        <div class="nota suave solo-escritorio">Sobró $101.700 porque de lo básico no usaste $81.700 y de Gustos $20.000.</div>
+      </section>
+
+      <!-- Balance general -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Balance general</h2><span class="nota num">al 13 nov 2027</span></div>
+        <table class="tabla">
+          <thead><tr><th>Cuenta</th><th style="width:112px">Valor</th></tr></thead>
+          <tbody>
+            <tr><td><span class="titulo">Activos</span></td><td></td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">Bancolombia</td><td class="num suave">$1.450.000</td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">Nu</td><td class="num suave">$1.200.000</td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">Nequi</td><td class="num suave">$310.000</td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">Efectivo</td><td class="num suave">$180.000</td></tr>
+            <tr><td>Activos líquidos</td><td class="num">$3.140.000</td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">CDT digital Bancolombia · 11,2% E.A.</td><td class="num suave">$805.600</td></tr>
+            <tr><td>Inversiones</td><td class="num">$805.600</td></tr>
+            <tr><td><b>Total activos</b></td><td class="num"><b>$3.945.600</b></td></tr>
+            <tr><td><span class="titulo">Pasivos</span></td><td></td></tr>
+            <tr><td>Deudas</td><td class="num">$0</td></tr>
+            <tr><td><b>Total pasivos</b></td><td class="num"><b>$0</b></td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--linea)">
+          <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+            <span class="titulo">Patrimonio neto</span>
+            <span class="cifra-l acento-tx">$3.945.600</span>
+          </div>
+          <div class="nota suave" style="margin-top:4px">Activos $3.945.600 − pasivos $0. Sin deudas desde agosto 2027.</div>
+        </div>
+      </section>
+
+      <!-- Historial que suma -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Historial que suma</h2><button class="link acento" data-ir="auditor">Ir al auditor →</button></div>
+        <div class="par" style="gap:16px">
+          <div>
+            <div class="nota">Intereses que te ahorraste con el plan de deudas</div>
+            <div class="cifra-l ok">$662.144</div>
+            <div class="nota suave solo-escritorio">Frente a pagar solo mínimos. Saliste 17 meses antes.</div>
+          </div>
+          <div>
+            <div class="nota">Por rescatar con el auditor <span class="pill neutra">En curso</span></div>
+            <div><span class="cifra-l">$334.000</span> <span class="de">al año</span></div>
+            <div class="nota suave solo-escritorio">Seguro de vida deudor $222.000 y cuota de manejo $112.000.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>

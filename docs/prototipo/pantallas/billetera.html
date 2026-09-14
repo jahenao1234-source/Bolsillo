@@ -1,0 +1,77 @@
+<template data-id="billetera" data-titulo="Billetera">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- Techo de esta semana -->
+      <section class="panel destacado">
+        <div class="panel-cab"><h2 class="titulo">Techo de esta semana</h2><span class="nota">del 7 al 13 sep</span></div>
+        <div>
+          <div class="nota">Te quedan esta semana</div>
+          <div class="cifra-xl acento-tx">$515.000</div>
+        </div>
+        <div>
+          <div class="fila"><span class="nota">Gastado <b class="num">$0</b></span><span class="nota num">de $515.000</span></div>
+          <div class="barra" style="margin-top:5px"><i style="width:0%"></i></div>
+        </div>
+        <div class="nota suave solo-escritorio">Sale de lo básico: $2.230.000 × 12 ÷ 52.</div>
+        <div class="caja" style="margin-top:auto">Pasarte atrasa tu fecha de libertad: <b class="num">$50.000</b> por encima del techo la corren <b>2 días</b>.</div>
+      </section>
+
+      <!-- Tus cuentas -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Tus cuentas</h2><button class="link acento">+ Agregar cuenta</button></div>
+        <div><span class="cifra-l">$1.240.000</span> <span class="de">en 4 cuentas</span></div>
+        <div class="lista">
+          <div>
+            <div class="fila"><span>Efectivo</span><span>$180.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:5px"><i style="width:15%"></i></div>
+          </div>
+          <div>
+            <div class="fila"><span>Nequi</span><span>$310.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:5px"><i style="width:25%"></i></div>
+          </div>
+          <div>
+            <div class="fila"><span>Bancolombia</span><span>$450.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:5px"><i style="width:36%"></i></div>
+          </div>
+          <div>
+            <div class="fila"><span>Ahorros</span><span>$300.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:5px"><i style="width:24%"></i></div>
+          </div>
+        </div>
+        <button class="btn ancho" style="margin-top:auto">Registrar ingreso</button>
+      </section>
+
+      <!-- Gastado en septiembre por categoría -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Gastado en septiembre</h2><span class="nota num">18,5% de lo básico</span></div>
+        <div><span class="cifra-l">$412.800</span> <span class="de">de $2.230.000</span></div>
+        <div class="barra"><i style="width:18.5%"></i></div>
+        <div class="lista solo-escritorio">
+          <div><div class="fila"><span>Servicios</span><span>$164.000</span></div><div class="barra" style="--c:var(--azul);margin-top:5px"><i style="width:100%"></i></div></div>
+          <div><div class="fila"><span>Comida</span><span>$120.000</span></div><div class="barra" style="--c:var(--positivo);margin-top:5px"><i style="width:73%"></i></div></div>
+          <div><div class="fila"><span>Salud</span><span>$89.900</span></div><div class="barra" style="--c:var(--alerta);margin-top:5px"><i style="width:55%"></i></div></div>
+          <div><div class="fila"><span>Transporte</span><span>$22.000</span></div><div class="barra" style="--c:var(--acento);margin-top:5px"><i style="width:13%"></i></div></div>
+          <div><div class="fila"><span>Ocio</span><span>$16.900</span></div><div class="barra" style="--c:var(--texto-3);margin-top:5px"><i style="width:10%"></i></div></div>
+        </div>
+      </section>
+
+      <!-- Movimientos de septiembre -->
+      <section class="panel ancho-todo">
+        <div class="panel-cab"><h2 class="titulo">Movimientos de septiembre</h2><span class="nota num solo-escritorio">Entró $1.600.000 · salió $412.800</span></div>
+        <table class="tabla">
+          <thead><tr><th>Concepto</th><th class="opc" style="width:22%">Cuenta</th><th class="opc2" style="width:20%">Categoría</th><th style="width:52px">Fecha</th><th style="width:118px">Monto</th></tr></thead>
+          <tbody>
+            <tr><td>Transporte de la semana</td><td class="opc">Efectivo</td><td class="opc2">Transporte</td><td class="num">6 sep</td><td><span class="pill gasto num">−$22.000</span></td></tr>
+            <tr><td>Spotify</td><td class="opc">Bancolombia</td><td class="opc2">Ocio</td><td class="num">5 sep</td><td><span class="pill gasto num">−$16.900</span></td></tr>
+            <tr><td>Luz y agua</td><td class="opc">Bancolombia</td><td class="opc2">Servicios</td><td class="num">3 sep</td><td><span class="pill gasto num">−$164.000</span></td></tr>
+            <tr><td>Mercado</td><td class="opc">Efectivo</td><td class="opc2">Comida</td><td class="num">2 sep</td><td><span class="pill gasto num">−$120.000</span></td></tr>
+            <tr><td>Gimnasio Smart Fit</td><td class="opc">Bancolombia</td><td class="opc2">Salud</td><td class="num">1 sep</td><td><span class="pill gasto num">−$89.900</span></td></tr>
+            <tr><td>Salario quincena</td><td class="opc">Nequi</td><td class="opc2">Salario</td><td class="num">1 sep</td><td><span class="pill ingreso num">+$1.600.000</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+</template>

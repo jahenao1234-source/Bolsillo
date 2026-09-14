@@ -1,0 +1,2338 @@
+<title>Bolsillo prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+/* ==========================================================================
+   KIT BOLSILLO — tokens y piezas compartidas del prototipo.
+   Oscuro es el principal; .claro (en #escenario) es el secundario.
+   Todo color sale de estos tokens. Nada de colores sueltos en las pantallas.
+   ========================================================================== */
+
+:root {
+  --pagina: #081315;
+  --fondo: #0E1B1E;
+  --superficie: #152A2D;
+  --superficie-2: #102124;
+  --elevada: #1B3438;
+  --linea: #20393C;
+  --hairline: rgba(205, 255, 248, 0.07);
+  --texto: #EAF6F4;
+  --texto-2: #93B6B4;
+  --texto-3: #5F8180;
+  --acento: #25C9BE;          /* teal: identidad, lo activo, lo libre */
+  --accion: #FF7A3D;          /* naranja: acciones (solo en botones principales y chip de ataque) */
+  --positivo: #5FE0A8;        /* menta: logros, ingresos, progreso bueno */
+  --alerta: #E89385;          /* coral: gasto, exceso, riesgo */
+  --azul: #8AA9FF;            /* categorías, traslados */
+  --ambar: #F2C879;           /* avisos que no son error (vence pronto) */
+  --neutro: #93B6B4;          /* lo básico */
+  --nav-activo: #25C9BE;
+  --on-nav-activo: #04211F;
+  --boton-principal: #FF7A3D;
+  --on-boton-principal: #2A1206;
+  --sombra-marco: 0 30px 80px -24px rgba(0, 0, 0, 0.75);
+  --display: "Bricolage Grotesque", "Hanken Grotesk", system-ui, sans-serif;
+  --f: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.claro {
+  --pagina: #D9D9D5;
+  --fondo: #ECECEA;
+  --superficie: #FFFFFF;
+  --superficie-2: #F6F6F4;
+  --elevada: #F0F0ED;
+  --linea: #E3E3DF;
+  --hairline: #EFEFEC;
+  --texto: #141414;
+  --texto-2: #62625D;
+  --texto-3: #85857F;
+  --acento: #0C8C7E;
+  --accion: #E0621F;
+  --positivo: #13905F;
+  --alerta: #C0574A;
+  --azul: #4F6FD0;
+  --ambar: #B07D12;
+  --neutro: #141414;
+  --nav-activo: #141414;
+  --on-nav-activo: #FFFFFF;
+  --boton-principal: #141414;
+  --on-boton-principal: #FFFFFF;
+  --sombra-marco: 0 30px 80px -24px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   APP (dentro de cada marco). El marco de escritorio mide 1366×768 y el de
+   celular 375×812. Las pantallas se adaptan con container queries sobre
+   .contenido (container "pant"), nunca con el ancho de la ventana.
+   -------------------------------------------------------------------------- */
+
+.app { height: 100%; display: grid; grid-template-columns: 232px minmax(0, 1fr); background: var(--fondo); color: var(--texto); font-family: var(--f); font-size: 14px; -webkit-font-smoothing: antialiased; }
+.app * { box-sizing: border-box; }
+.num, .app .tabular { font-variant-numeric: tabular-nums; }
+
+.lado { background: var(--superficie-2); border-right: 1px solid var(--linea); padding: 22px 12px; display: flex; flex-direction: column; gap: 3px; min-height: 0; }
+.lado .marca { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -0.02em; padding: 0 10px 20px; }
+.lado .marca i { font-style: normal; color: var(--acento); }
+.lado .grupo { font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--texto-3); padding: 14px 12px 6px; }
+.nav-it { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; font-size: 14.5px; font-weight: 500; color: var(--texto-2); cursor: pointer; }
+.nav-it:hover { background: var(--superficie); color: var(--texto); }
+.nav-it:focus-visible { outline: 2px solid var(--acento); outline-offset: 1px; }
+.nav-it[aria-current="page"] { background: var(--nav-activo); color: var(--on-nav-activo); font-weight: 700; }
+.nav-it .ico { width: 17px; height: 17px; border-radius: 5px; border: 2px solid currentColor; opacity: 0.8; flex: none; }
+.nav-it .cnt { margin-left: auto; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: color-mix(in srgb, var(--acento) 16%, transparent); color: var(--acento); }
+.nav-it[aria-current="page"] .cnt { background: rgba(0,0,0,.15); color: inherit; }
+.lado .perfil { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600; }
+.av { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--elevada); border: 1px solid var(--linea); color: var(--acento); font-size: 11px; font-weight: 700; flex: none; }
+
+.cuerpo { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.barra-sup { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 12px 22px 0; }
+.barra-sup .marca-movil { display: none; font-family: var(--display); font-weight: 800; font-size: 17px; margin-right: auto; }
+.barra-sup .marca-movil i { font-style: normal; color: var(--acento); }
+.conmutador { display: inline-flex; padding: 3px; border-radius: 999px; border: 1px solid var(--linea); background: var(--superficie-2); font-size: 11.5px; font-weight: 700; }
+.conmutador span { padding: 4px 11px; border-radius: 999px; color: var(--texto-3); }
+.conmutador span.on { background: var(--elevada); color: var(--texto); }
+.conmutador .punto { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--alerta); margin-left: 5px; vertical-align: middle; }
+.btn-gasto { padding: 6px 13px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--acento) 45%, transparent); color: var(--acento); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+.contenido { container: pant / inline-size; flex: 1; min-height: 0; overflow: auto; padding: 14px 22px 22px; scrollbar-width: thin; scrollbar-color: var(--elevada) transparent; }
+
+.nav-abajo { display: none; }
+
+/* Celular: sin menú lateral, barra de abajo. El container "app" es el marco que envuelve a .app (una regla @container no puede cambiar al propio container). */
+.marco-app { container: app / inline-size; }
+@container app (max-width: 720px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .lado { display: none; }
+  .barra-sup { padding: 12px 16px 10px; border-bottom: 1px solid var(--hairline); }
+  .barra-sup .marca-movil { display: block; }
+  .contenido { padding: 12px 14px 14px; }
+  .nav-abajo { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 7px 8px 16px; background: var(--superficie-2); border-top: 1px solid var(--linea); }
+  .nav-abajo .nav-it { flex-direction: column; gap: 3px; padding: 6px 2px; font-size: 10.5px; font-weight: 600; justify-content: center; text-align: center; }
+  .nav-abajo .nav-it .ico { width: 16px; height: 16px; }
+}
+
+/* --------------------------------------------------------------------------
+   PIEZAS PARA LAS PANTALLAS
+   -------------------------------------------------------------------------- */
+
+.pant { display: flex; flex-direction: column; gap: 14px; min-height: 100%; }
+
+/* Cabecera de pantalla */
+.cab { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+.cab h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(20px, 2.4cqw, 26px); letter-spacing: -0.02em; line-height: 1.1; text-wrap: balance; }
+.cab p { margin: 4px 0 0; font-size: 13.5px; color: var(--texto-2); max-width: 70ch; }
+.cab p b { color: var(--texto); font-weight: 700; }
+.cab .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Rejilla: en escritorio usa --cols; por debajo de 720 px de contenido, una columna.
+   Los hijos pueden usar .ancho-2 / .ancho-3 / .ancho-todo y .alto-2 */
+.rejilla { display: grid; gap: 14px; grid-template-columns: var(--cols, repeat(3, minmax(0, 1fr))); align-items: stretch; }
+.ancho-2 { grid-column: span 2; }
+.ancho-3 { grid-column: span 3; }
+.ancho-todo { grid-column: 1 / -1; }
+.alto-2 { grid-row: span 2; }
+@container pant (max-width: 720px) {
+  .rejilla { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .ancho-2, .ancho-3, .ancho-todo { grid-column: auto; }
+  .alto-2 { grid-row: auto; }
+  .pant { gap: 10px; }
+}
+/* Dos columnas que se mantienen incluso en celular (p. ej. dos cifras pequeñas) */
+.par { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+/* Panel: cada uno es container para que sus tamaños sigan su propio ancho */
+.panel { container-type: inline-size; background: var(--superficie); border: 1px solid var(--linea); border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.panel.plano { background: transparent; border-style: dashed; }
+.panel.destacado { border-color: color-mix(in srgb, var(--acento) 45%, var(--linea)); }
+.panel.riesgo { border-color: color-mix(in srgb, var(--alerta) 50%, var(--linea)); }
+@container pant (max-width: 720px) { .panel { padding: 13px 14px; gap: 10px; } }
+.panel-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.titulo { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--texto-2); margin: 0; }
+.link { all: unset; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--texto-2); white-space: nowrap; }
+.link:hover { color: var(--texto); }
+.link.acento { color: var(--acento); font-weight: 700; }
+
+/* Cifras: se achican con el panel */
+.cifra-xl { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 8cqw, 40px); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.cifra-l { font-family: var(--display); font-weight: 800; font-size: clamp(20px, 6.5cqw, 30px); line-height: 1.05; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+.cifra-m { font-family: var(--display); font-weight: 800; font-size: clamp(16px, 5cqw, 20px); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.de { font-size: 13px; color: var(--texto-3); font-weight: 500; white-space: nowrap; }
+.nota { font-size: 12.5px; color: var(--texto-2); line-height: 1.45; }
+.nota b { color: var(--texto); }
+.suave { color: var(--texto-3); }
+.ok { color: var(--positivo); } .mal { color: var(--alerta); } .aviso-tx { color: var(--ambar); } .acento-tx { color: var(--acento); } .accion-tx { color: var(--accion); }
+
+/* Fila etiqueta / valor */
+.fila { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-width: 0; font-size: 13.5px; }
+.fila > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fila > :last-child { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lista { display: flex; flex-direction: column; gap: 11px; }
+.lista.lineas > * + * { border-top: 1px solid var(--hairline); padding-top: 11px; }
+
+/* Barras de progreso. Color con --c */
+.barra { height: 7px; border-radius: 6px; background: var(--superficie-2); overflow: hidden; position: relative; }
+.barra i { display: block; height: 100%; border-radius: 6px; background: var(--c, var(--acento)); }
+.barra .marca { position: absolute; top: -2px; width: 2px; height: 11px; background: var(--texto-2); border-radius: 2px; }
+@container pant (max-width: 720px) { .barra { height: 6px; } }
+
+/* Chips y pastillas */
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--linea); font-size: 11px; font-weight: 700; color: var(--texto); white-space: nowrap; }
+.chip.ataque { color: var(--accion); border-color: color-mix(in srgb, var(--accion) 40%, transparent); }
+.chip.acento { color: var(--acento); border-color: color-mix(in srgb, var(--acento) 40%, transparent); }
+.chip.ok { color: var(--positivo); border-color: color-mix(in srgb, var(--positivo) 40%, transparent); }
+.chip.mal { color: var(--alerta); border-color: color-mix(in srgb, var(--alerta) 45%, transparent); }
+.chip.aviso { color: var(--ambar); border-color: color-mix(in srgb, var(--ambar) 45%, transparent); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.gasto { color: var(--alerta); background: color-mix(in srgb, var(--alerta) 13%, transparent); }
+.pill.ingreso { color: var(--positivo); background: color-mix(in srgb, var(--positivo) 13%, transparent); }
+.pill.traslado { color: var(--azul); background: color-mix(in srgb, var(--azul) 13%, transparent); }
+.pill.neutra { color: var(--texto-2); background: var(--superficie-2); }
+.pill.aviso { color: var(--ambar); background: color-mix(in srgb, var(--ambar) 14%, transparent); }
+
+/* Botones */
+.btn, .btn2, .btn-borde { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; padding: 9px 14px; font-size: 13.5px; font-weight: 700; cursor: pointer; white-space: nowrap; text-align: center; }
+.btn { background: var(--boton-principal); color: var(--on-boton-principal); }
+.btn2 { background: var(--superficie-2); color: var(--texto); border: 1px solid var(--linea); }
+.btn-borde { color: var(--acento); border: 1px solid color-mix(in srgb, var(--acento) 40%, transparent); }
+.btn:hover, .btn2:hover, .btn-borde:hover { filter: brightness(1.08); }
+.btn:focus-visible, .btn2:focus-visible, .btn-borde:focus-visible, .link:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.ancho { width: 100%; }
+
+/* Caja de aviso dentro de un panel (semántica, no decorativa) */
+.caja { border-radius: 11px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; background: var(--superficie-2); border: 1px solid var(--linea); color: var(--texto-2); }
+.caja b { color: var(--texto); }
+.caja.mal { background: color-mix(in srgb, var(--alerta) 10%, transparent); border-color: color-mix(in srgb, var(--alerta) 35%, transparent); }
+.caja.ok { background: color-mix(in srgb, var(--positivo) 9%, transparent); border-color: color-mix(in srgb, var(--positivo) 30%, transparent); }
+.caja.aviso { background: color-mix(in srgb, var(--ambar) 10%, transparent); border-color: color-mix(in srgb, var(--ambar) 35%, transparent); }
+
+/* Punto de color de una categoría o sobre (usa --c) */
+.bola { width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--acento)); flex: none; display: inline-block; }
+.inicial { width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--superficie-2); border: 1px solid var(--linea); color: var(--texto-2); font-size: 10.5px; font-weight: 700; flex: none; }
+
+/* Tabla: nunca scroll horizontal. Las columnas .opc se esconden cuando el panel es angosto */
+.tabla { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13.5px; }
+.tabla th { text-align: left; font-size: 11.5px; font-weight: 600; color: var(--texto-2); padding: 0 8px 8px; border-bottom: 1px solid var(--linea); }
+.tabla td { padding: 9px 8px; border-bottom: 1px solid var(--hairline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tabla tr > :first-child { padding-left: 0; }
+.tabla tr > :last-child { padding-right: 0; text-align: right; }
+.tabla .der { text-align: right; }
+@container (max-width: 34rem) { .tabla .opc { display: none; } }
+@container (max-width: 26rem) { .tabla .opc2 { display: none; } }
+
+/* Casilla de lista (lista de compras, pasos) */
+.check { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--hairline); font-size: 13.5px; min-width: 0; }
+.check .caja-check { width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--texto-3); flex: none; display: grid; place-items: center; }
+.check.hecho .caja-check { background: var(--acento); border-color: var(--acento); }
+.check.hecho .caja-check::after { content: ""; width: 5px; height: 9px; border: solid var(--on-nav-activo); border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-1px); }
+.check.hecho .txt { color: var(--texto-3); text-decoration: line-through; }
+.check .txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.check .val { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Pasos numerados (solo cuando el orden es real: plan de pago, reclamo al banco) */
+.pasos { display: flex; flex-direction: column; gap: 0; counter-reset: paso; }
+.paso { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--hairline); }
+.paso::before { counter-increment: paso; content: counter(paso); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; background: var(--superficie-2); border: 1px solid var(--linea); color: var(--texto-2); }
+.paso.hecho::before { content: "✓"; background: color-mix(in srgb, var(--positivo) 18%, transparent); border-color: transparent; color: var(--positivo); }
+.paso.actual::before { background: var(--nav-activo); color: var(--on-nav-activo); border-color: transparent; }
+
+/* Solo escritorio / solo celular, según el ancho del contenido */
+@container pant (max-width: 720px) { .solo-escritorio { display: none !important; } }
+@container pant (min-width: 721px) { .solo-movil { display: none !important; } }
+
+/* Gráficas SVG: usar clases de trazo/relleno para heredar el tema */
+.g-linea { stroke: var(--linea); } .g-acento { stroke: var(--acento); } .g-acento-f { fill: var(--acento); }
+.g-alerta { stroke: var(--alerta); } .g-alerta-f { fill: var(--alerta); } .g-azul { stroke: var(--azul); } .g-neutro { stroke: var(--neutro); }
+.g-texto { fill: var(--texto-3); } .g-texto2 { fill: var(--texto-2); } .g-fondo { stroke: var(--superficie-2); } .g-positivo { stroke: var(--positivo); } .g-positivo-f { fill: var(--positivo); }
+.g-texto-s { stroke: var(--texto-3); } .g-stop { stop-color: var(--acento); } .g-stop-alerta { stop-color: var(--alerta); } .g-tinta-f { fill: var(--texto); }
+
+/* .llena: en escritorio la rejilla ocupa todo el alto del marco y reparte el sobrante entre filas */
+@container pant (min-width: 721px) { .rejilla.llena { flex: 1; grid-auto-rows: auto; align-content: stretch; } }
+.g-azul-f { fill: var(--azul); } .g-neutro-f { fill: var(--neutro); } .g-ambar-f { fill: var(--ambar); } .g-ambar { stroke: var(--ambar); } .g-superficie2-f { fill: var(--superficie-2); } .g-linea-f { fill: var(--linea); }
+
+/* Ajustes pedidos por los diseñadores de pantallas */
+.panel[data-ir], [data-ir].panel { cursor: pointer; transition: border-color .15s; }
+.panel[data-ir]:hover { border-color: var(--texto-3); }
+.panel[data-ir]:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.barra { overflow: visible; }
+.barra i { max-width: 100%; }
+.fila.suelta > :last-child { font-weight: inherit; }
+.pill.acento { color: var(--acento); background: color-mix(in srgb, var(--acento) 13%, transparent); }
+.g-fondo-f { fill: var(--superficie-2); } .g-texto-f { fill: var(--texto-3); }
+.fuerte { font-weight: 700; color: var(--texto); }
+
+/* ---- Correcciones de la revisión en celular ---- */
+/* Cifras: se miden contra su propia celda y bajan más en espacios angostos */
+.par > *, .rejilla > * { min-width: 0; }
+.par > * { container-type: inline-size; }
+.cifra-xl { font-size: clamp(20px, 10cqw, 40px); }
+.cifra-l { font-size: clamp(17px, 8cqw, 30px); }
+.cifra-m { font-size: clamp(14px, 6.5cqw, 20px); }
+/* Botones y chips largos bajan de línea en vez de salirse */
+.btn, .btn2, .btn-borde { white-space: normal; line-height: 1.25; text-wrap: balance; max-width: 100%; }
+.chip { white-space: normal; max-width: 100%; line-height: 1.25; }
+/* Tablas angostas: los anchos fijos de columna se sueltan */
+@container (max-width: 30rem) {
+  .tabla th { width: auto !important; }
+  .tabla th, .tabla td { padding-left: 4px; padding-right: 4px; }
+}
+
+
+/* ---- Cromo del prototipo (fuera de la app) ---- */
+html, body { margin: 0; background: #081315; }
+#escenario { min-height: 100vh; background: var(--pagina); color: var(--texto); font-family: var(--f); -webkit-font-smoothing: antialiased; }
+#escenario * { box-sizing: border-box; }
+.cromo { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; padding: 12px 20px; background: color-mix(in srgb, var(--pagina) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--linea); }
+.cromo .nombre { font-family: var(--display); font-weight: 800; font-size: 17px; letter-spacing: -0.02em; margin-right: auto; }
+.cromo .nombre i { font-style: normal; color: var(--acento); }
+.cromo .nombre small { font-family: var(--f); font-weight: 500; font-size: 12.5px; color: var(--texto-2); margin-left: 8px; }
+.seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--superficie); border: 1px solid var(--linea); }
+.seg button { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; color: var(--texto-2); }
+.seg button[aria-pressed="true"] { background: var(--nav-activo); color: var(--on-nav-activo); }
+.seg button:focus-visible, .sel-pant:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.sel-pant { font: 600 13px var(--f); color: var(--texto); background: var(--superficie); border: 1px solid var(--linea); border-radius: 10px; padding: 7px 10px; max-width: 260px; }
+
+.escena { display: flex; gap: 22px; align-items: flex-start; padding: 18px 20px 40px; }
+.col-esc { flex: 1; min-width: 0; }
+.col-cel { flex: none; width: 338px; }
+.rotulo { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--texto-3); margin: 0 0 8px; }
+.caja-esc { position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--linea); box-shadow: var(--sombra-marco); }
+.marco-esc { width: 1366px; height: 768px; transform-origin: top left; }
+.caja-cel { width: 338px; height: 731px; overflow: hidden; border-radius: 34px; box-shadow: 0 0 0 7px #030809, var(--sombra-marco); }
+.marco-cel { width: 375px; height: 812px; transform: scale(0.9); transform-origin: top left; }
+.ayuda { font-size: 12.5px; color: var(--texto-2); margin: 10px 2px 0; line-height: 1.5; max-width: 80ch; }
+.ayuda b { color: var(--texto); }
+@media (max-width: 1000px) { .escena { flex-direction: column; } .col-cel { width: 100%; display: flex; flex-direction: column; align-items: center; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div id="escenario">
+  <header class="cromo">
+    <div class="nombre">Bolsillo<i>.</i> <small>prototipo navegable · datos de ejemplo</small></div>
+    <select class="sel-pant" id="sel-pant" aria-label="Ir a una pantalla"></select>
+    <div class="seg" role="group" aria-label="Modo">
+      <button type="button" data-modo="deuda">Deuda</button>
+      <button type="button" data-modo="pro">Pro</button>
+    </div>
+    <div class="seg" role="group" aria-label="Tema">
+      <button type="button" data-tema="oscuro">Oscuro</button>
+      <button type="button" data-tema="claro">Claro</button>
+    </div>
+  </header>
+
+  <main class="escena">
+    <div class="col-esc">
+      <p class="rotulo">Computador · 1366 × 768</p>
+      <div class="caja-esc" id="caja-esc"><div class="marco-esc marco-app" id="marco-esc"></div></div>
+      <p class="ayuda" id="ayuda"></p>
+    </div>
+    <div class="col-cel">
+      <p class="rotulo">Celular · 375 × 812</p>
+      <div class="caja-cel"><div class="marco-cel marco-app" id="marco-cel"></div></div>
+    </div>
+  </main>
+</div>
+
+<div id="fragmentos" hidden>
+<!-- activos.html -->
+<template data-id="activos" data-titulo="Activos y F.I.R.E.">
+  <div class="pant">
+    <div class="cab">
+      <div>
+        <h1>Activos y F.I.R.E.</h1>
+        <p>Tienes <b>$800.000</b> produciendo en un CDT y <b>$400.000</b> esperando turno. Al ritmo de hoy dejas de depender del sueldo en <b>agosto 2053</b>.</p>
+      </div>
+    </div>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.2fr) minmax(0,1fr) minmax(0,0.95fr)">
+
+      <!-- F.I.R.E.: fecha, meta y proyección -->
+      <section class="panel destacado ancho-2 alto-2">
+        <div class="panel-cab"><h2 class="titulo">Tu libertad financiera</h2><span class="chip acento">Regla del 4%</span></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px 28px;flex-wrap:wrap">
+          <div>
+            <div class="nota">Dejas de depender del sueldo en</div>
+            <div class="cifra-xl" style="margin-top:4px">agosto 2053</div>
+            <div class="nota" style="margin-top:6px">En 25 años y 9 meses, aportando <b class="num">$400.000</b> al mes al 11,2% E.A.</div>
+          </div>
+          <div class="par" style="gap:10px 28px">
+            <div><div class="nota">Invertido hoy</div><div class="cifra-m">$1.200.000</div></div>
+            <div><div class="nota">Meta de libertad</div><div class="cifra-m">$669.000.000</div></div>
+          </div>
+        </div>
+
+        <svg class="solo-escritorio" viewBox="0 0 640 232" width="100%" role="img" aria-label="Proyección de tu inversión: de $1.200.000 hoy a la meta de $669.000.000 en agosto de 2053">
+          <defs><linearGradient id="ga-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g-stop" stop-opacity=".24"/><stop offset="1" class="g-stop" stop-opacity="0"/></linearGradient></defs>
+          <line x1="16" y1="37.4" x2="600" y2="37.4" class="g-texto-s" stroke-dasharray="4 5"/>
+          <text x="16" y="26" font-size="12" class="g-texto">meta $669.000.000</text>
+          <text x="600" y="26" font-size="12" font-weight="700" text-anchor="end" class="g-texto2">llegas en ago 2053</text>
+          <line x1="16" y1="196" x2="600" y2="196" class="g-linea"/>
+          <path d="M16 195.7 L23.6 195.3 L31.1 194.9 L38.7 194.5 L46.2 194 L53.8 193.6 L61.4 193.1 L68.9 192.6 L76.5 192.1 L84 191.6 L91.6 191 L99.2 190.5 L106.7 189.9 L114.3 189.3 L121.8 188.6 L129.4 188 L137 187.3 L144.5 186.6 L152.1 185.9 L159.6 185.1 L167.2 184.3 L174.8 183.5 L182.3 182.7 L189.9 181.8 L197.4 180.9 L205 180 L212.6 179 L220.1 178 L227.7 177 L235.2 175.9 L242.8 174.8 L250.4 173.7 L257.9 172.5 L265.5 171.2 L273 170 L280.6 168.6 L288.2 167.3 L295.7 165.8 L303.3 164.4 L310.8 162.8 L318.4 161.2 L326 159.6 L333.5 157.9 L341.1 156.1 L348.6 154.3 L356.2 152.4 L363.8 150.5 L371.3 148.4 L378.9 146.3 L386.4 144.2 L394 141.9 L401.6 139.6 L409.1 137.2 L416.7 134.7 L424.2 132.1 L431.8 129.4 L439.4 126.6 L446.9 123.7 L454.5 120.7 L462 117.6 L469.6 114.4 L477.2 111.1 L484.7 107.6 L492.3 104 L499.8 100.3 L507.4 96.5 L515 92.5 L522.5 88.4 L530.1 84.1 L537.6 79.7 L545.2 75.2 L552.8 70.4 L560.3 65.5 L567.9 60.4 L575.4 55.1 L583 49.7 L590.6 44 L598.1 38.2 L600 37.4 L600 196 L16 196 Z" fill="url(#ga-area)"/>
+          <path d="M16 195.7 L23.6 195.3 L31.1 194.9 L38.7 194.5 L46.2 194 L53.8 193.6 L61.4 193.1 L68.9 192.6 L76.5 192.1 L84 191.6 L91.6 191 L99.2 190.5 L106.7 189.9 L114.3 189.3 L121.8 188.6 L129.4 188 L137 187.3 L144.5 186.6 L152.1 185.9 L159.6 185.1 L167.2 184.3 L174.8 183.5 L182.3 182.7 L189.9 181.8 L197.4 180.9 L205 180 L212.6 179 L220.1 178 L227.7 177 L235.2 175.9 L242.8 174.8 L250.4 173.7 L257.9 172.5 L265.5 171.2 L273 170 L280.6 168.6 L288.2 167.3 L295.7 165.8 L303.3 164.4 L310.8 162.8 L318.4 161.2 L326 159.6 L333.5 157.9 L341.1 156.1 L348.6 154.3 L356.2 152.4 L363.8 150.5 L371.3 148.4 L378.9 146.3 L386.4 144.2 L394 141.9 L401.6 139.6 L409.1 137.2 L416.7 134.7 L424.2 132.1 L431.8 129.4 L439.4 126.6 L446.9 123.7 L454.5 120.7 L462 117.6 L469.6 114.4 L477.2 111.1 L484.7 107.6 L492.3 104 L499.8 100.3 L507.4 96.5 L515 92.5 L522.5 88.4 L530.1 84.1 L537.6 79.7 L545.2 75.2 L552.8 70.4 L560.3 65.5 L567.9 60.4 L575.4 55.1 L583 49.7 L590.6 44 L598.1 38.2 L600 37.4" fill="none" class="g-acento" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="16" cy="195.7" r="4" class="g-acento-f"/>
+          <text x="16" y="182" font-size="12" class="g-texto2">hoy $1.200.000</text>
+          <circle cx="267.4" cy="170.9" r="3.5" class="g-acento-f"/>
+          <text x="261" y="159" font-size="12" text-anchor="end" class="g-texto2">$106 millones</text>
+          <circle cx="380.8" cy="145.8" r="3.5" class="g-acento-f"/>
+          <text x="374" y="134" font-size="12" text-anchor="end" class="g-texto2">$212 millones</text>
+          <circle cx="494.2" cy="103.1" r="3.5" class="g-acento-f"/>
+          <text x="488" y="91" font-size="12" text-anchor="end" class="g-texto2">$392 millones</text>
+          <circle cx="600" cy="37.4" r="5.5" fill="none" class="g-acento" stroke-width="2.5"/>
+          <text x="16" y="220" font-size="12" class="g-texto">2027</text>
+          <text x="154" y="220" font-size="12" text-anchor="middle" class="g-texto">2033</text>
+          <text x="267.4" y="220" font-size="12" text-anchor="middle" class="g-texto">2038</text>
+          <text x="380.8" y="220" font-size="12" text-anchor="middle" class="g-texto">2043</text>
+          <text x="494.2" y="220" font-size="12" text-anchor="middle" class="g-texto">2048</text>
+          <text x="600" y="220" font-size="12" text-anchor="end" class="g-texto">2053</text>
+        </svg>
+
+        <div class="rejilla solo-escritorio" style="--cols: repeat(3, minmax(0,1fr));margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline)">
+          <div>
+            <div class="titulo">Cómo sale tu meta</div>
+            <div class="nota" style="margin-top:6px">Lo básico <b class="num">$2.230.000</b> × 12 meses × 25 años. Con esa plata invertida puedes sacar el 4% cada año y vivir sin gastarte el capital.</div>
+          </div>
+          <div>
+            <div class="titulo">Quién pone la plata</div>
+            <div class="nota" style="margin-top:6px">Tú pones <b class="num">$124.800.000</b>: lo de hoy más 309 aportes de $400.000. El resto lo pone el interés compuesto. La mitad del camino llega en sep 2047.</div>
+          </div>
+          <div class="caja ok">Un abono extra de <b class="num">$400.000</b> hoy adelanta tu retiro <b>30 días</b>.</div>
+        </div>
+      </section>
+
+      <!-- Plata en producción -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Plata en producción</h2><button class="link" data-ir="mi-plata">Mi plata →</button></div>
+        <div class="fila"><span style="font-weight:700">CDT digital Bancolombia</span><span class="chip acento">11,2% E.A.</span></div>
+        <div>
+          <span class="cifra-l">$805.600</span> <span class="de">valor hoy</span>
+          <div class="nota suave" style="margin-top:3px">Invertiste $800.000 el 20 oct 2027</div>
+        </div>
+        <div>
+          <div class="barra"><i style="width:13%"></i></div>
+          <div class="fila nota" style="margin-top:6px"><span>Día 24 de 180</span><span>vence 17 abr 2028</span></div>
+        </div>
+        <div class="lista lineas" style="margin-top:auto">
+          <div class="fila"><span>Rendimiento proyectado</span><span class="ok">+$42.998</span></div>
+          <div class="fila"><span>Recibes al vencer</span><span>$842.998</span></div>
+        </div>
+      </section>
+
+      <!-- Siguiente paso: invertir lo del sobre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Tu siguiente paso</h2><span class="chip">Sobre Inversión</span></div>
+        <div>
+          <span class="cifra-l">$400.000</span> <span class="de">sin invertir</span>
+          <div class="nota" style="margin-top:4px">El aporte de noviembre está quieto en Bancolombia. Cuando abras el CDT o fondo en tu banco, regístralo.</div>
+        </div>
+        <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:8px">
+          <div class="par">
+            <div><div class="nota suave">Entidad</div><div class="caja" style="margin-top:3px"><b>Bancolombia</b></div></div>
+            <div><div class="nota suave">Capital</div><div class="caja num" style="margin-top:3px"><b>$400.000</b></div></div>
+          </div>
+          <div class="par">
+            <div><div class="nota suave">Tasa E.A.</div><div class="caja num" style="margin-top:3px"><b>11,2%</b></div></div>
+            <div><div class="nota suave">Plazo</div><div class="caja num" style="margin-top:3px"><b>180 días</b></div></div>
+          </div>
+        </div>
+        <button class="btn ancho" style="margin-top:auto">Registrar un CDT o fondo</button>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- anti-recaida.html -->
+<template data-id="anti-recaida" data-titulo="Anti-recaída">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>¿Puedo usar la tarjeta sin volver a endeudarme?</h1>
+        <p>Sí, si compras <b>a 1 cuota</b> y la pagas completa en el corte. Diferir a cuotas es volver a la deuda.</p>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.9fr)">
+
+      <!-- Simulador: tres caminos para la misma compra -->
+      <section class="panel ancho-3">
+        <div class="panel-cab">
+          <h2 class="cifra-m" style="margin:0">Quieres un celular de $900.000</h2>
+          <span class="nota solo-escritorio">Simulador · con la Mastercard: corte 16 nov, pagas el 3 dic</span>
+        </div>
+
+        <!-- Escritorio: tres columnas con las mismas métricas -->
+        <div class="rejilla solo-escritorio" style="--cols: minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);flex:1">
+          <div class="panel destacado">
+            <div class="panel-cab"><span style="font-weight:700">Pagar hoy con el Fondo blindado</span><span class="chip acento">Recomendada</span></div>
+            <div><div class="cifra-xl ok">$0</div><div class="nota">de intereses</div></div>
+            <div class="lista">
+              <div class="fila"><span class="nota">Tu fondo queda en</span><span>$300.000</span></div>
+              <div class="fila"><span class="nota">Modo</span><span class="chip acento">Pro</span></div>
+              <div class="fila"><span class="nota">Pagas</span><span>$900.000 hoy</span></div>
+            </div>
+            <div class="nota">Baja de $1.200.000 a $300.000 y se repone en 3 meses con tus aportes de $400.000.</div>
+            <button class="btn ancho" style="margin-top:auto">Pagar con el Fondo blindado</button>
+          </div>
+
+          <div class="panel">
+            <div class="panel-cab"><span style="font-weight:700">A 1 cuota</span><span class="chip">No es deuda</span></div>
+            <div><div class="cifra-xl">$0</div><div class="nota">de intereses si pagas completo</div></div>
+            <div class="lista">
+              <div class="fila"><span class="nota">Tu fondo queda en</span><span>$300.000</span></div>
+              <div class="fila"><span class="nota">Modo</span><span class="chip acento">Pro</span></div>
+              <div class="fila"><span class="nota">Pagas</span><span>$900.000 el 3 dic</span></div>
+            </div>
+            <div class="caja aviso"><b>Ojo:</b> tienes que apartar $900.000 antes del 3 dic y Gustos solo tiene $153.100. Saldría del fondo igual.</div>
+            <button class="btn2 ancho" style="margin-top:auto">Apartar para el 3 dic</button>
+          </div>
+
+          <div class="panel riesgo">
+            <div class="panel-cab"><span style="font-weight:700">Diferido a 6 cuotas</span><span class="chip mal">Es deuda</span></div>
+            <div><div class="cifra-xl mal">$66.594</div><div class="nota">de intereses al 28% E.A.</div></div>
+            <div class="lista">
+              <div class="fila"><span class="nota">Tu fondo queda en</span><span>$1.200.000</span></div>
+              <div class="fila"><span class="nota">Modo</span><span class="chip mal">Deuda hasta may 2028</span></div>
+              <div class="fila"><span class="nota">Pagas</span><span>6 × $161.099</span></div>
+            </div>
+            <div class="nota">Al final pagas <b>$966.594</b> por un celular de $900.000.</div>
+            <button class="btn2 ancho" style="margin-top:auto">Diferir a 6 cuotas</button>
+          </div>
+        </div>
+
+        <!-- Celular: la misma comparación en una tabla corta -->
+        <table class="tabla solo-movil">
+          <thead><tr><th>Camino</th><th style="width:68px">Intereses</th><th style="width:60px">Modo</th><th style="width:80px">Fondo queda</th></tr></thead>
+          <tbody>
+            <tr><td class="acento-tx" style="font-weight:700">Fondo, hoy</td><td class="num ok">$0</td><td>Pro</td><td class="num">$300.000</td></tr>
+            <tr><td>A 1 cuota</td><td class="num">$0</td><td>Pro</td><td class="num">$300.000</td></tr>
+            <tr><td>6 cuotas</td><td class="num mal">$66.594</td><td class="mal">Deuda</td><td class="num">$1.200.000</td></tr>
+          </tbody>
+        </table>
+        <div class="caja aviso solo-movil"><b>A 1 cuota:</b> Gustos solo tiene $153.100, así que los $900.000 saldrían del fondo igual.</div>
+        <div class="nota solo-movil">Diferido: 6 cuotas de $161.099 y modo Deuda hasta mayo 2028. Con el fondo, se repone en 3 meses.</div>
+        <div class="solo-movil" style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn ancho">Pagar con el Fondo blindado</button>
+          <div class="par"><button class="btn2">A 1 cuota</button><button class="btn2">A 6 cuotas</button></div>
+        </div>
+      </section>
+
+      <!-- Tus tarjetas en Pro -->
+      <section class="panel solo-escritorio">
+        <h2 class="titulo">Tus tarjetas</h2>
+        <div>
+          <div class="panel-cab"><span style="font-weight:700">Mastercard Bancolombia</span></div>
+          <div class="fila" style="margin-top:6px"><span class="nota">Este ciclo · Netflix</span><span>$26.900 <span class="de">de $5.000.000</span></span></div>
+          <div class="barra" style="margin-top:6px"><i style="width:1%"></i></div>
+          <div class="nota suave" style="margin-top:6px">Corte 16 · pagas el 3 dic · a 1 cuota</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <span class="chip ok">Pro limpio</span><span class="nota">Ya apartado: <b class="ok">$0</b> de intereses</span>
+          </div>
+        </div>
+        <div style="padding-top:12px;border-top:1px solid var(--hairline)">
+          <div class="panel-cab"><span style="font-weight:700">Tarjeta Nu</span></div>
+          <div class="fila" style="margin-top:6px"><span class="nota">Este ciclo</span><span>$0 <span class="de">de $3.000.000</span></span></div>
+          <div class="barra" style="margin-top:6px"><i style="width:0%"></i></div>
+          <div class="nota suave" style="margin-top:6px">Corte 25 · sin compras este ciclo</div>
+        </div>
+        <div class="caja" style="margin-top:auto">El cupo no es plata tuya. Usa la tarjeta solo con lo que <b>ya tienes en un sobre</b>.</div>
+      </section>
+
+      <!-- La regla en dos caminos -->
+      <section class="panel ancho-2">
+        <div class="panel-cab"><h2 class="titulo">La regla</h2><span class="nota solo-escritorio">Hoy: $26.900 a 1 cuota · $0 diferido</span></div>
+        <div class="rejilla" style="--cols: minmax(0,1fr) minmax(0,1fr);flex:1">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="chip ok">A 1 cuota</span><b>No es deuda</b></div>
+            <div class="nota">Se aparta del sobre que elijas y se paga completo en el corte. $0 de intereses y sigues en Pro.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="chip mal">Diferido a cuotas</span><b>Es deuda con intereses</b></div>
+            <div class="nota">Salta la alerta, te ofrece pagarla con el Fondo blindado y, si financias, vuelve el modo Deuda hasta liquidarla.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Vista previa del aviso -->
+      <section class="panel ancho-2 solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Así te avisa la app</h2><span class="nota">al registrar una compra diferida</span></div>
+        <div class="caja mal">
+          <div class="fila"><b>Esta compra es deuda</b><span class="mal">$66.594 de intereses</span></div>
+          <div style="margin-top:4px">Diferiste $900.000 a 6 cuotas de $161.099. Si la dejas así, vuelves al modo Deuda hasta mayo 2028. Tu Fondo blindado tiene $1.200.000: págala hoy y no pagas intereses.</div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn2">Pagarla con el fondo</button><button class="link">Financiar igual</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- auditor.html -->
+<template data-id="auditor" data-titulo="Auditor bancario">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>¿Qué me está cobrando el banco que no debería?</h1>
+        <p>Encontramos <b>2 cobros</b> que puedes quitar. Lo que rescates va a tu sobre de Inversión.</p>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- Total por rescatar -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Por rescatar</h2><span class="nota">rescatado hasta hoy $0</span></div>
+        <div><span class="cifra-xl">$334.000</span> <span class="de">al año</span></div>
+        <div class="barra solo-escritorio" style="display:flex;gap:2px" role="img" aria-label="Seguro de vida deudor $222.000 y cuota de manejo $112.000 al año">
+          <i style="width:66%;--c:var(--alerta)"></i><i style="width:34%;--c:var(--texto-3)"></i>
+        </div>
+        <div class="lista solo-escritorio">
+          <div class="fila"><span><span class="bola" style="--c:var(--alerta)"></span> Seguro de vida deudor</span><span>$222.000</span></div>
+          <div class="fila"><span><span class="bola" style="--c:var(--texto-3)"></span> Cuota de manejo</span><span>$112.000</span></div>
+        </div>
+        <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:6px">
+          <div class="fila"><span>Va al sobre Inversión</span><span class="acento-tx">+$334.000 al año</span></div>
+          <div class="nota">Hoy tiene $400.000 sin invertir en Bancolombia. Lo que te devuelvan se suma ahí.</div>
+        </div>
+      </section>
+
+      <!-- Cobros detectados + ciclo -->
+      <section class="panel ancho-2">
+        <div class="panel-cab"><h2 class="titulo">Cobros detectados</h2><span class="nota">2 cobros · 2 entidades</span></div>
+        <div class="lista lineas">
+          <div>
+            <div class="fila"><span><b>Seguro de vida deudor</b> <span class="suave">· Bancolombia</span></span><span>$222.000 <span class="de">al año</span></span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+              <span class="pill aviso">Carta generada</span><span class="nota num">$18.500 al mes</span><span class="chip acento" style="margin-left:auto">Reclamo abierto</span>
+            </div>
+            <div class="nota" style="margin-top:6px">Sigue cobrándose aunque la libre inversión quedó en $0 en agosto 2027. Cubre una deuda que ya no existe.</div>
+          </div>
+          <div>
+            <div class="fila"><span><b>Cuota de manejo</b> <span class="suave">· Mastercard</span></span><span>$112.000 <span class="de">al año</span></span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+              <span class="pill neutra">Detectado</span><span class="nota num">$28.000 cada trimestre</span><button class="link acento" style="margin-left:auto">Generar carta →</button>
+            </div>
+            <div class="nota solo-escritorio" style="margin-top:6px">Usas la tarjeta solo a 1 cuota y al día: pide que te la exoneren.</div>
+          </div>
+        </div>
+        <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="nota">Así avanza cada cobro:</span>
+          <span class="pill neutra">Detectado</span><span class="suave">→</span>
+          <span class="pill aviso">Carta generada</span><span class="suave">→</span>
+          <span class="pill traslado">Radicado</span><span class="suave">→</span>
+          <span class="pill ingreso">Exonerado</span>
+        </div>
+      </section>
+
+      <!-- Reclamo seleccionado -->
+      <section class="panel destacado ancho-2">
+        <div class="panel-cab"><h2 class="titulo">Reclamo · Seguro de vida deudor</h2><span class="pill aviso">Carta generada</span></div>
+        <div class="rejilla" style="--cols: minmax(0,1.3fr) minmax(0,1fr);flex:1">
+          <div class="pasos">
+            <div class="paso hecho"><div><div style="font-weight:700">Descargar el derecho de petición</div><div class="nota solo-escritorio">Ya está listo con tus datos.</div></div></div>
+            <div class="paso actual"><div><div style="font-weight:700">Radicarlo en la app o sucursal de Bancolombia</div><div class="nota solo-escritorio">Guarda el número de radicado que te den.</div></div></div>
+            <div class="paso"><div><div style="font-weight:700">El banco responde en 15 días hábiles</div><div class="nota solo-escritorio">Te avisamos si pasa el plazo sin respuesta.</div></div></div>
+            <div class="paso"><div><div style="font-weight:700">Registrar respuesta y reintegro</div><div class="nota solo-escritorio">Lo que te devuelvan va al sobre de Inversión.</div></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="lista solo-escritorio">
+              <div class="fila"><span class="nota">Banco</span><span>Bancolombia</span></div>
+              <div class="fila"><span class="nota">Cobro</span><span>$18.500 al mes</span></div>
+              <div class="fila"><span class="nota">Al año</span><span>$222.000</span></div>
+              <div class="fila"><span class="nota">Pides</span><span>Cancelarlo y reintegro</span></div>
+            </div>
+            <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+              <button class="btn ancho">Marcar como radicado</button>
+              <button class="btn2 ancho">Descargar derecho de petición</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Guion para llamar (solo escritorio) -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Si prefieres llamar</h2><span class="nota">Bancolombia</span></div>
+        <div class="caja">
+          <div>“Hola, llamo por mi crédito de libre inversión, que quedó en $0 en agosto de 2027.</div>
+          <div style="margin-top:6px">Me siguen cobrando el seguro de vida deudor: <b>$18.500 cada mes</b>.</div>
+          <div style="margin-top:6px">Ese seguro cubre una deuda que ya no existe. Pido cancelarlo hoy y que me devuelvan lo cobrado después del pago.</div>
+          <div style="margin-top:6px">Por favor deme el número de radicado de esta solicitud.”</div>
+        </div>
+        <div class="nota" style="margin-top:auto">Anota la fecha y el número de radicado: lo necesitas para el paso 2.</div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- billetera.html -->
+<template data-id="billetera" data-titulo="Billetera">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- Techo de esta semana -->
+      <section class="panel destacado">
+        <div class="panel-cab"><h2 class="titulo">Techo de esta semana</h2><span class="nota">del 7 al 13 sep</span></div>
+        <div>
+          <div class="nota">Te quedan esta semana</div>
+          <div class="cifra-xl acento-tx">$515.000</div>
+        </div>
+        <div>
+          <div class="fila"><span class="nota">Gastado <b class="num">$0</b></span><span class="nota num">de $515.000</span></div>
+          <div class="barra" style="margin-top:5px"><i style="width:0%"></i></div>
+        </div>
+        <div class="nota suave solo-escritorio">Sale de lo básico: $2.230.000 × 12 ÷ 52.</div>
+        <div class="caja" style="margin-top:auto">Pasarte atrasa tu fecha de libertad: <b class="num">$50.000</b> por encima del techo la corren <b>2 días</b>.</div>
+      </section>
+
+      <!-- Tus cuentas -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Tus cuentas</h2><button class="link acento">+ Agregar cuenta</button></div>
+        <div><span class="cifra-l">$1.240.000</span> <span class="de">en 4 cuentas</span></div>
+        <div class="lista">
+          <div>
+            <div class="fila"><span>Efectivo</span><span>$180.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:5px"><i style="width:15%"></i></div>
+          </div>
+          <div>
+            <div class="fila"><span>Nequi</span><span>$310.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:5px"><i style="width:25%"></i></div>
+          </div>
+          <div>
+            <div class="fila"><span>Bancolombia</span><span>$450.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:5px"><i style="width:36%"></i></div>
+          </div>
+          <div>
+            <div class="fila"><span>Ahorros</span><span>$300.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:5px"><i style="width:24%"></i></div>
+          </div>
+        </div>
+        <button class="btn ancho" style="margin-top:auto">Registrar ingreso</button>
+      </section>
+
+      <!-- Gastado en septiembre por categoría -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Gastado en septiembre</h2><span class="nota num">18,5% de lo básico</span></div>
+        <div><span class="cifra-l">$412.800</span> <span class="de">de $2.230.000</span></div>
+        <div class="barra"><i style="width:18.5%"></i></div>
+        <div class="lista solo-escritorio">
+          <div><div class="fila"><span>Servicios</span><span>$164.000</span></div><div class="barra" style="--c:var(--azul);margin-top:5px"><i style="width:100%"></i></div></div>
+          <div><div class="fila"><span>Comida</span><span>$120.000</span></div><div class="barra" style="--c:var(--positivo);margin-top:5px"><i style="width:73%"></i></div></div>
+          <div><div class="fila"><span>Salud</span><span>$89.900</span></div><div class="barra" style="--c:var(--alerta);margin-top:5px"><i style="width:55%"></i></div></div>
+          <div><div class="fila"><span>Transporte</span><span>$22.000</span></div><div class="barra" style="--c:var(--acento);margin-top:5px"><i style="width:13%"></i></div></div>
+          <div><div class="fila"><span>Ocio</span><span>$16.900</span></div><div class="barra" style="--c:var(--texto-3);margin-top:5px"><i style="width:10%"></i></div></div>
+        </div>
+      </section>
+
+      <!-- Movimientos de septiembre -->
+      <section class="panel ancho-todo">
+        <div class="panel-cab"><h2 class="titulo">Movimientos de septiembre</h2><span class="nota num solo-escritorio">Entró $1.600.000 · salió $412.800</span></div>
+        <table class="tabla">
+          <thead><tr><th>Concepto</th><th class="opc" style="width:22%">Cuenta</th><th class="opc2" style="width:20%">Categoría</th><th style="width:52px">Fecha</th><th style="width:118px">Monto</th></tr></thead>
+          <tbody>
+            <tr><td>Transporte de la semana</td><td class="opc">Efectivo</td><td class="opc2">Transporte</td><td class="num">6 sep</td><td><span class="pill gasto num">−$22.000</span></td></tr>
+            <tr><td>Spotify</td><td class="opc">Bancolombia</td><td class="opc2">Ocio</td><td class="num">5 sep</td><td><span class="pill gasto num">−$16.900</span></td></tr>
+            <tr><td>Luz y agua</td><td class="opc">Bancolombia</td><td class="opc2">Servicios</td><td class="num">3 sep</td><td><span class="pill gasto num">−$164.000</span></td></tr>
+            <tr><td>Mercado</td><td class="opc">Efectivo</td><td class="opc2">Comida</td><td class="num">2 sep</td><td><span class="pill gasto num">−$120.000</span></td></tr>
+            <tr><td>Gimnasio Smart Fit</td><td class="opc">Bancolombia</td><td class="opc2">Salud</td><td class="num">1 sep</td><td><span class="pill gasto num">−$89.900</span></td></tr>
+            <tr><td>Salario quincena</td><td class="opc">Nequi</td><td class="opc2">Salario</td><td class="num">1 sep</td><td><span class="pill ingreso num">+$1.600.000</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- deudas.html -->
+<template data-id="deudas" data-titulo="Deudas">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- Lo que debes -->
+      <section class="panel ancho-todo">
+        <div class="panel-cab"><h2 class="titulo">Lo que debes</h2><button class="btn2">+ Agregar deuda</button></div>
+        <div class="rejilla" style="--cols: minmax(0,1.25fr) minmax(0,1fr);align-items:center">
+          <div class="par">
+            <div>
+              <div class="nota">Debes en total</div>
+              <div class="cifra-l">$9.800.000</div>
+              <div class="nota suave">3 deudas · de menor a mayor saldo</div>
+            </div>
+            <div>
+              <div class="nota">Has pagado</div>
+              <div class="cifra-l">$0 <span class="de">0%</span></div>
+              <div class="barra" style="margin-top:8px"><i style="width:0%"></i></div>
+            </div>
+          </div>
+          <div class="caja"><b>Mientras pagas, no uses tus tarjetas.</b> Cada compra nueva vuelve a subir la deuda y corre tu fecha de libertad.</div>
+        </div>
+      </section>
+
+      <!-- 1 · Mastercard -->
+      <section class="panel destacado">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="inicial">1</span><b>Mastercard Bancolombia</b></span>
+          <span class="chip ataque">Ataque</span>
+        </div>
+        <div class="fila" style="align-items:flex-end">
+          <div><div class="nota">Debes</div><div class="cifra-l">$1.200.000</div></div>
+          <div style="text-align:right"><div class="nota">Sale en</div><div class="cifra-m acento-tx">ene 2027</div></div>
+        </div>
+        <div class="lista solo-escritorio" style="gap:8px">
+          <div class="fila"><span class="suave">Tasa</span><span>28% E.A.</span></div>
+          <div class="fila"><span class="suave">Pago mínimo</span><span>$180.000</span></div>
+          <div class="fila"><span class="suave">Corte y pago</span><span>corte 16 · paga el 3</span></div>
+          <div class="fila"><span class="suave">Este mes le pagas</span><span>$400.000</span></div>
+        </div>
+        <div class="nota solo-movil">28% E.A. · mínimo $180.000 · corte 16, paga el 3 · este mes le pagas <b>$400.000</b></div>
+        <div>
+          <div class="fila"><span class="suave">Uso del cupo</span><span>24% de $5.000.000</span></div>
+          <div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:24%"></i></div>
+        </div>
+        <button class="btn ancho" style="margin-top:auto">Abonar a Mastercard</button>
+      </section>
+
+      <!-- 2 · Nu -->
+      <section class="panel">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="inicial">2</span><b>Tarjeta Nu</b></span>
+          <span class="chip">Le toca en feb 2027</span>
+        </div>
+        <div class="fila" style="align-items:flex-end">
+          <div><div class="nota">Debes</div><div class="cifra-l">$2.500.000</div></div>
+          <div style="text-align:right"><div class="nota">Sale en</div><div class="cifra-m">may 2027</div></div>
+        </div>
+        <div class="lista solo-escritorio" style="gap:8px">
+          <div class="fila"><span class="suave">Tasa</span><span>29% E.A.</span></div>
+          <div class="fila"><span class="suave">Pago mínimo</span><span>$120.000</span></div>
+          <div class="fila"><span class="suave">Corte y pago</span><span>corte 25 · paga el 10</span></div>
+          <div class="fila"><span class="suave">Este mes le pagas</span><span>$120.000</span></div>
+        </div>
+        <div class="nota solo-movil">29% E.A. · mínimo $120.000 · corte 25, paga el 10 · desde feb recibe <b>$520.000</b></div>
+        <div>
+          <div class="fila"><span class="suave">Uso del cupo</span><span class="mal">83% de $3.000.000</span></div>
+          <div class="barra" style="--c:var(--alerta);margin-top:5px"><i style="width:83%"></i></div>
+          <div class="nota mal" style="margin-top:5px">Riesgo: solo te quedan $500.000 de cupo.</div>
+        </div>
+        <button class="btn2 ancho solo-escritorio" style="margin-top:auto">Abonar</button>
+      </section>
+
+      <!-- 3 · Libre inversión -->
+      <section class="panel">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:9px;min-width:0"><span class="inicial">3</span><b>Libre inversión Bancolombia</b></span>
+        </div>
+        <div class="fila" style="align-items:flex-end">
+          <div><div class="nota">Debes</div><div class="cifra-l">$6.100.000</div></div>
+          <div style="text-align:right"><div class="nota">Sale en</div><div class="cifra-m">ago 2027</div></div>
+        </div>
+        <div class="lista solo-escritorio" style="gap:8px">
+          <div class="fila"><span class="suave">Tasa</span><span>19,5% E.A.</span></div>
+          <div class="fila"><span class="suave">Cuota fija</span><span>$450.000</span></div>
+          <div class="fila"><span class="suave">Pago</span><span>el 15 de cada mes</span></div>
+          <div class="fila"><span class="suave">Le toca en jun 2027 · recibe</span><span>$970.000</span></div>
+        </div>
+        <div class="nota solo-movil">19,5% E.A. · cuota $450.000 · paga el 15 · desde jun recibe <b>$970.000</b></div>
+        <div>
+          <div class="fila"><span class="suave">Próximo pago · 15 sep</span><span class="chip aviso">En 2 días</span></div>
+          <div class="nota suave" style="margin-top:5px">Con esta quedas libre de deudas.</div>
+        </div>
+        <button class="btn2 ancho solo-escritorio" style="margin-top:auto">Pagar cuota</button>
+      </section>
+
+      <!-- Simulador -->
+      <section class="panel ancho-todo">
+        <div class="panel-cab"><h2 class="titulo">¿Y si abonas más al mes?</h2><span class="nota num solo-escritorio">Hoy: $970.000 al mes · sales en agosto 2027</span></div>
+        <div class="rejilla" style="--cols: minmax(0,1.25fr) minmax(0,1fr);align-items:center">
+          <div class="par">
+            <button class="btn-borde" aria-pressed="true" style="flex-direction:column;align-items:flex-start;gap:2px;padding:11px 14px">
+              <span>+$100.000 al mes</span>
+              <span class="cifra-m">Julio 2027</span>
+              <span class="nota">1 mes antes</span>
+              <span class="nota num">$100.672 menos</span>
+            </button>
+            <button class="btn2" aria-pressed="false" style="flex-direction:column;align-items:flex-start;gap:2px;padding:11px 14px">
+              <span>+$200.000 al mes</span>
+              <span class="cifra-m">Junio 2027</span>
+              <span class="nota">2 meses antes</span>
+              <span class="nota num">$181.293 menos</span>
+            </button>
+          </div>
+          <div class="lista solo-escritorio" style="gap:8px">
+            <div class="fila"><span class="nota">Hoy · $970.000 al mes</span><span>11 meses · $822.229 de intereses</span></div>
+            <div class="fila"><span class="nota">Con $1.070.000 al mes</span><span class="acento-tx">10 meses · $721.557 de intereses</span></div>
+            <div class="caja ok">Sales en <b>julio 2027</b> y pagas <b class="num">$100.672 menos</b> de intereses.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- herramientas.html -->
+<template data-id="herramientas" data-titulo="Herramientas">
+  <div class="pant">
+
+    <div class="cab">
+      <div>
+        <h1>Herramientas</h1>
+        <p>Agrupadas por lo que te resuelven. <b>Cuatro</b> te piden algo esta semana.</p>
+      </div>
+    </div>
+
+    <div class="rejilla llena" style="--cols: minmax(0,0.6fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- CONTROLAR EL MES -->
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0">
+        <h2 class="titulo">Controlar el mes</h2>
+        <p class="nota solo-escritorio" style="margin:0">Que lo del mes alcance y no se vaya en cobros que no usas.</p>
+      </div>
+      <div class="par ancho-2" style="gap:14px">
+        <div class="panel" data-ir="lista-compras" role="link" tabindex="0">
+          <div class="panel-cab" style="flex-wrap:wrap"><b>Lista de compras</b></div>
+          <div><span class="cifra-m">$305.600</span> <span class="de">en tu lista</span></div>
+          <div class="fila solo-escritorio" style="margin-top:auto"><span class="nota">Mercado tiene <b>$580.000</b> · para el 15 nov</span><span class="link acento">Abrir →</span></div>
+        </div>
+        <div class="panel" data-ir="suscripciones" role="link" tabindex="0">
+          <div class="panel-cab" style="flex-wrap:wrap"><b>Suscripciones</b><span class="chip mal">1 fuga</span></div>
+          <div><span class="cifra-m">$157.600</span> <span class="de">al mes</span></div>
+          <div class="fila solo-escritorio" style="margin-top:auto"><span class="nota">Smart Fit: 47 días sin uso, <b>$89.900</b> al mes</span><span class="link acento">Abrir →</span></div>
+        </div>
+      </div>
+
+      <!-- PROTEGERME -->
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0">
+        <h2 class="titulo">Protegerme</h2>
+        <p class="nota solo-escritorio" style="margin:0">Que las deudas no vuelvan y el banco no te cobre de más.</p>
+      </div>
+      <div class="par ancho-2" style="gap:14px">
+        <div class="panel" data-ir="anti-recaida" role="link" tabindex="0">
+          <div class="panel-cab" style="flex-wrap:wrap"><b>Anti-recaída</b></div>
+          <div><span class="cifra-m">$26.900</span> <span class="de">apartados</span></div>
+          <div class="fila solo-escritorio" style="margin-top:auto"><span class="nota">Tarjetas a 1 cuota · $0 de intereses</span><span class="link acento">Abrir →</span></div>
+        </div>
+        <div class="panel" data-ir="auditor" role="link" tabindex="0">
+          <div class="panel-cab" style="flex-wrap:wrap"><b>Auditor bancario</b><span class="chip aviso">Falta radicar</span></div>
+          <div><span class="cifra-m">$334.000</span> <span class="de">al año</span></div>
+          <div class="fila solo-escritorio" style="margin-top:auto"><span class="nota">Por rescatar: seguro deudor y cuota de manejo</span><span class="link acento">Abrir →</span></div>
+        </div>
+      </div>
+
+      <!-- CRECER -->
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0">
+        <h2 class="titulo">Crecer</h2>
+        <p class="nota solo-escritorio" style="margin:0">Que tu plata trabaje y adelante tu retiro.</p>
+      </div>
+      <div class="par ancho-2" style="gap:14px">
+        <div class="panel" data-ir="activos" role="link" tabindex="0">
+          <div class="panel-cab" style="flex-wrap:wrap"><b>Activos y F.I.R.E.</b><span class="chip acento">Por invertir</span></div>
+          <div><span class="cifra-m">$805.600</span> <span class="de">invertidos</span></div>
+          <div class="fila solo-escritorio" style="margin-top:auto"><span class="nota">Retiro en ago 2053 · <b>$400.000</b> en tu sobre</span><span class="link acento">Abrir →</span></div>
+        </div>
+        <div class="panel" data-ir="retos" role="link" tabindex="0">
+          <div class="panel-cab" style="flex-wrap:wrap"><b>Retos</b><span class="chip acento">Aporta $24.000</span></div>
+          <div><span class="cifra-m">2</span> <span class="de">activos</span></div>
+          <div class="fila solo-escritorio" style="margin-top:auto"><span class="nota">Semana 12 de 52 · día 9 de 21 sin domicilios</span><span class="link acento">Abrir →</span></div>
+        </div>
+      </div>
+
+      <!-- VER CÓMO VOY -->
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0">
+        <h2 class="titulo">Ver cómo voy</h2>
+        <p class="nota solo-escritorio" style="margin:0">Tu puntaje y el cierre de cada mes.</p>
+      </div>
+      <div class="par ancho-2" style="gap:14px">
+        <div class="panel" data-ir="salud" role="link" tabindex="0">
+          <div class="panel-cab" style="flex-wrap:wrap"><b>Salud financiera</b></div>
+          <div><span class="cifra-m">70</span> <span class="de">de 100</span></div>
+          <div class="fila solo-escritorio" style="margin-top:auto"><span class="nota">Lo que más te sube: llenar el fondo</span><span class="link acento">Abrir →</span></div>
+        </div>
+        <div class="panel" data-ir="reportes" role="link" tabindex="0">
+          <div class="panel-cab" style="flex-wrap:wrap"><b>Reportes</b></div>
+          <div><span class="cifra-m">$101.700</span> <span class="de">sobró en oct.</span></div>
+          <div class="fila solo-escritorio" style="margin-top:auto"><span class="nota">Balance de octubre listo</span><span class="link acento">Abrir →</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</template>
+
+<!-- inicio-deuda.html -->
+<template data-id="inicio-deuda" data-titulo="Inicio">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1.5fr) minmax(0,1fr) minmax(0,0.95fr)">
+
+      <!-- Gastado en el mes -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Gastado en septiembre</h2><span class="nota num">18,5% del mes</span></div>
+        <svg viewBox="0 0 600 150" width="100%" role="img" aria-label="Gasto acumulado de septiembre: $412.800 de un techo de $2.230.000">
+          <defs><linearGradient id="gd-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g-stop" stop-opacity=".22"/><stop offset="1" class="g-stop" stop-opacity="0"/></linearGradient></defs>
+          <line x1="10" y1="20" x2="590" y2="20" class="g-texto-s" stroke-dasharray="4 5"/>
+          <text x="590" y="13" text-anchor="end" font-size="12" class="g-texto">techo del mes $2.230.000</text>
+          <line x1="10" y1="120" x2="590" y2="120" class="g-linea"/>
+          <path d="M10 116 L30 110.6 L50 103.2 L90 102.5 L110 101.5 L250 101.5 L250 120 L10 120 Z" fill="url(#gd-area)"/>
+          <path d="M10 116 L30 110.6 L50 103.2 L90 102.5 L110 101.5 L250 101.5" fill="none" class="g-acento" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="250" cy="101.5" r="5" fill="none" class="g-acento" stroke-width="2.5"/>
+          <text x="10" y="142" font-size="12" class="g-texto">1 sep</text>
+          <text x="250" y="142" font-size="12" text-anchor="middle" class="g-texto">hoy · 13</text>
+          <text x="590" y="142" font-size="12" text-anchor="end" class="g-texto">30 sep</text>
+        </svg>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="cifra-xl">$412.800</span> <span class="de">de $2.230.000</span></span>
+          <span class="nota">vas bien</span>
+        </div>
+      </section>
+
+      <!-- Tu mes con dueño -->
+      <section class="panel">
+        <h2 class="titulo">Tu mes con dueño</h2>
+        <div style="display:flex;align-items:center;gap:16px;flex:1">
+          <svg viewBox="0 0 120 120" style="width:clamp(84px,34cqw,132px);flex:none" role="img" aria-label="$2.230.000 a lo básico y $970.000 a tus deudas; $0 sin dueño">
+            <circle cx="60" cy="60" r="46" fill="none" class="g-fondo" stroke-width="16"/>
+            <circle cx="60" cy="60" r="46" fill="none" class="g-neutro" stroke-width="16" stroke-dasharray="201.4 289" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="46" fill="none" class="g-acento" stroke-width="16" stroke-dasharray="87.6 289" stroke-dashoffset="-201.4" transform="rotate(-90 60 60)"/>
+            <text x="60" y="60" text-anchor="middle" font-size="19" font-weight="800" class="g-tinta-f">$0</text>
+            <text x="60" y="76" text-anchor="middle" font-size="10" class="g-texto2">sin dueño</text>
+          </svg>
+          <div class="lista" style="flex:1;min-width:0">
+            <div><div class="nota">Lo básico</div><div class="cifra-m">$2.230.000</div><div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:70%"></i></div></div>
+            <div><div class="nota">A tus deudas</div><div class="cifra-m">$970.000</div><div class="barra" style="margin-top:5px"><i style="width:30%"></i></div></div>
+            <div class="nota suave">Ingreso <b class="num">$3.200.000</b></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- En qué se fue + siguiente paso -->
+      <section class="panel alto-2">
+        <h2 class="titulo">En qué se fue</h2>
+        <div class="lista">
+          <div><div class="fila"><span>Servicios</span><span>$164.000</span></div><div class="barra" style="--c:var(--azul);margin-top:5px"><i style="width:100%"></i></div></div>
+          <div><div class="fila"><span>Comida</span><span>$120.000</span></div><div class="barra" style="--c:var(--positivo);margin-top:5px"><i style="width:73%"></i></div></div>
+          <div class="solo-escritorio"><div class="fila"><span>Salud</span><span>$89.900</span></div><div class="barra" style="--c:var(--alerta);margin-top:5px"><i style="width:55%"></i></div></div>
+          <div class="solo-escritorio"><div class="fila"><span>Transporte</span><span>$22.000</span></div><div class="barra" style="--c:var(--acento);margin-top:5px"><i style="width:13%"></i></div></div>
+          <div class="solo-escritorio"><div class="fila"><span>Ocio</span><span>$16.900</span></div><div class="barra" style="--c:var(--texto-3);margin-top:5px"><i style="width:10%"></i></div></div>
+        </div>
+        <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:8px">
+          <div class="panel-cab"><h2 class="titulo">Tu siguiente paso</h2><span class="chip">Salir de deudas</span></div>
+          <div style="font-weight:700;font-size:15px">Pagar la libre inversión antes del 15 sep</div>
+          <div class="nota">$450.000 · vence en 2 días. Después: Mastercard $400.000 (3 oct) y Nu $120.000 (10 oct).</div>
+          <button class="btn ancho" data-ir="mi-plan">Ir a Mi plan</button>
+        </div>
+      </section>
+
+      <!-- Tus deudas -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Tus deudas</h2><button class="link" data-ir="deudas">Ver todas →</button></div>
+        <div class="lista">
+          <div>
+            <div class="fila"><span>Mastercard Bancolombia <span class="chip ataque">Ataque</span></span><span>$1.200.000</span></div>
+            <div class="barra" style="margin-top:5px"><i style="width:0%"></i></div>
+            <div class="nota suave" style="margin-top:4px">Sale en ene 2027 · recibe $400.000</div>
+          </div>
+          <div>
+            <div class="fila"><span>Tarjeta Nu</span><span>$2.500.000</span></div>
+            <div class="barra" style="margin-top:5px"><i style="width:0%"></i></div>
+            <div class="nota suave" style="margin-top:4px">Sale en may 2027</div>
+          </div>
+          <div>
+            <div class="fila"><span>Libre inversión Bancolombia</span><span>$6.100.000</span></div>
+            <div class="barra" style="margin-top:5px"><i style="width:0%"></i></div>
+            <div class="nota suave" style="margin-top:4px">Sale en ago 2027 · libre de deudas</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Últimos movimientos -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Últimos movimientos</h2><button class="link" data-ir="billetera">Ver todos →</button></div>
+        <table class="tabla">
+          <thead><tr><th>Concepto</th><th class="opc">Cuenta</th><th style="width:92px">Tipo</th><th class="opc2" style="width:56px">Fecha</th><th style="width:96px">Monto</th></tr></thead>
+          <tbody>
+            <tr><td>Transporte de la semana</td><td class="opc">Efectivo</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">6 sep</td><td class="num">−$22.000</td></tr>
+            <tr><td>Spotify</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">5 sep</td><td class="num">−$16.900</td></tr>
+            <tr><td>Luz y agua</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">3 sep</td><td class="num">−$164.000</td></tr>
+            <tr><td>Salario quincena</td><td class="opc">Nequi</td><td><span class="pill ingreso">Ingreso</span></td><td class="opc2 num">1 sep</td><td class="num">+$1.600.000</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- inicio-pro.html -->
+<template data-id="inicio-pro" data-titulo="Inicio">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1.5fr) minmax(0,1fr) minmax(0,0.95fr)">
+
+      <!-- Tus tres cifras: patrimonio manda; meta y salud acompañan -->
+      <section class="panel ancho-2">
+        <div class="rejilla" style="--cols: minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr); gap:28px; flex:1">
+
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <h2 class="titulo">Tu patrimonio neto</h2>
+            <div class="cifra-xl">$3.945.600</div>
+            <div class="nota">Todo lo que tienes, con <b>$0 en deudas</b>.</div>
+            <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:9px;margin-top:auto">
+              <div class="barra" style="display:flex;gap:2px" role="img" aria-label="$3.140.000 en tus cuentas y $805.600 invertidos">
+                <i style="width:79.6%;--c:var(--neutro)"></i><i style="width:20.4%;--c:var(--positivo)"></i>
+              </div>
+              <div class="lista" style="gap:7px">
+                <div class="fila"><span><span class="bola" style="--c:var(--neutro)"></span> En tus cuentas</span><span>$3.140.000</span></div>
+                <div class="fila"><span><span class="bola" style="--c:var(--positivo)"></span> Invertido en tu CDT</span><span>$805.600</span></div>
+                <div class="fila"><span class="suave">Deudas</span><span class="ok">$0</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <h2 class="titulo">Meta del año</h2>
+            <div><span class="cifra-m">$2.400.000</span> <span class="de">de $9.600.000</span></div>
+            <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px" role="img" aria-label="Mes 3 de 12: septiembre, octubre y noviembre cumplidos">
+              <div class="barra"><i style="width:100%"></i></div><div class="barra"><i style="width:100%"></i></div><div class="barra"><i style="width:100%"></i></div>
+              <div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div><div class="barra"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px"><span class="nota suave">sep 2027</span><span class="nota suave">ago 2028</span></div>
+            <div class="nota"><b>25%</b> · mes 3 de 12. Vas al día<span class="solo-escritorio">: $800.000 al mes entre tu fondo y tu inversión</span>.</div>
+          </div>
+
+          <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <h2 class="titulo">Salud financiera</h2>
+            <div><span class="cifra-m">70</span> <span class="de">de 100</span></div>
+            <div class="lista" style="gap:9px">
+              <div><div class="fila"><span class="nota">Solvencia</span><span class="nota num">40/40</span></div><div class="barra" style="--c:var(--positivo);margin-top:4px"><i style="width:100%"></i></div></div>
+              <div><div class="fila"><span class="nota">Liquidez</span><span class="nota num">5/30</span></div><div class="barra" style="--c:var(--alerta);margin-top:4px"><i style="width:16.7%"></i></div></div>
+              <div><div class="fila"><span class="nota">Ahorro e inversión</span><span class="nota num">25/30</span></div><div class="barra" style="margin-top:4px"><i style="width:83.3%"></i></div></div>
+            </div>
+            <button class="link acento" data-ir="salud" style="margin-top:auto">Llena el fondo y subes a 95 →</button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Tu siguiente paso -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Tu siguiente paso</h2><span class="chip">Crecer</span></div>
+        <div><span class="cifra-l">$400.000</span> <span class="de">sin invertir</span></div>
+        <div class="nota">Son del sobre Inversión y siguen quietos en Bancolombia.<span class="solo-escritorio"> Tus otros <b>$800.000</b> ya rinden en un CDT al 11,2% E.A.</span></div>
+        <button class="btn ancho" data-ir="activos">Registrar en un CDT o fondo</button>
+        <div style="margin-top:auto;padding-top:11px;border-top:1px solid var(--hairline);display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span class="nota">Fondo blindado de noviembre: <b>$400.000</b> ya en Nu</span>
+          <span class="chip ok">Movido</span>
+        </div>
+      </section>
+
+      <!-- Avisos de tus herramientas -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Avisos de tus herramientas</h2><button class="link" data-ir="herramientas">Ver todas →</button></div>
+        <div class="lista lineas">
+          <div data-ir="suscripciones" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>Smart Fit lleva 47 días sin uso</b><div class="nota">$89.900 al mes · <span class="acento-tx">Suscripciones →</span></div></div>
+            <span class="chip mal">Fuga</span>
+          </div>
+          <div data-ir="anti-recaida" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>Netflix cobra en 5 días en tu Mastercard</b><div class="nota">$26.900 para el corte · <span class="acento-tx">Anti-recaída →</span></div></div>
+            <span class="chip ok">Apartado</span>
+          </div>
+          <div data-ir="auditor" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>El seguro deudor se sigue cobrando</b><div class="nota">$18.500 al mes · tu carta está lista · <span class="acento-tx">Auditor →</span></div></div>
+            <span class="chip aviso">Falta radicar</span>
+          </div>
+          <div class="solo-escritorio" data-ir="retos" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>Reto de las 52 semanas: aporta $24.000</b><div class="nota">Semana 12 de 52 · llevas $156.000 · <span class="acento-tx">Retos →</span></div></div>
+            <span class="chip acento">Esta semana</span>
+          </div>
+          <div class="solo-escritorio" data-ir="activos" role="link" tabindex="0" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;min-width:0"><b>Tu CDT vence el 17 abr 2028</b><div class="nota">$805.600 hoy · 11,2% E.A. · <span class="acento-tx">Activos →</span></div></div>
+            <span class="chip">En 5 meses</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Gastado en noviembre -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Gastado en noviembre</h2><span class="nota num">18,5%</span></div>
+        <svg viewBox="0 0 300 160" width="100%" role="img" aria-label="Gasto acumulado de noviembre: $412.800 de un techo de $2.230.000">
+          <defs><linearGradient id="gp-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g-stop" stop-opacity=".22"/><stop offset="1" class="g-stop" stop-opacity="0"/></linearGradient></defs>
+          <line x1="8" y1="26" x2="292" y2="26" class="g-texto-s" stroke-dasharray="4 5"/>
+          <text x="292" y="16" text-anchor="end" font-size="12" class="g-texto">techo del mes $2.230.000</text>
+          <line x1="8" y1="130" x2="292" y2="130" class="g-linea"/>
+          <path d="M8 125.8 L17.8 120.2 L27.6 112.6 L47.2 111.8 L57 110.8 L125.5 110.8 L125.5 130 L8 130 Z" fill="url(#gp-area)"/>
+          <path d="M8 125.8 L17.8 120.2 L27.6 112.6 L47.2 111.8 L57 110.8 L125.5 110.8" fill="none" class="g-acento" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="125.5" cy="110.8" r="4.5" fill="none" class="g-acento" stroke-width="2.5"/>
+          <text x="8" y="151" font-size="12" class="g-texto">1 nov</text>
+          <text x="125.5" y="151" font-size="12" text-anchor="middle" class="g-texto">hoy · 13</text>
+          <text x="292" y="151" font-size="12" text-anchor="end" class="g-texto">30 nov</text>
+        </svg>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="cifra-xl">$412.800</span> <span class="de">de $2.230.000</span></span>
+          <span class="nota">vas bien</span>
+        </div>
+        <div class="nota" style="margin-top:auto">Día 13 de 30. Te quedan <b>$1.817.200</b> para el resto del mes.</div>
+      </section>
+
+      <!-- Tus sobres resumidos -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Tus sobres</h2><button class="link" data-ir="sobres">Ver todos →</button></div>
+        <div class="lista">
+          <div><div class="fila"><span><span class="bola" style="--c:var(--neutro)"></span> Mercado</span><span>$580.000 <span class="de">disp.</span></span></div><div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:17%"></i></div></div>
+          <div><div class="fila"><span><span class="bola" style="--c:var(--neutro)"></span> Servicios</span><span>$186.000 <span class="de">disp.</span></span></div><div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:47%"></i></div></div>
+          <div><div class="fila"><span><span class="bola" style="--c:var(--neutro)"></span> Transporte</span><span>$258.000 <span class="de">disp.</span></span></div><div class="barra" style="--c:var(--neutro);margin-top:5px"><i style="width:8%"></i></div></div>
+          <div><div class="fila"><span><span class="bola" style="--c:var(--azul)"></span> Gustos</span><span>$153.100 <span class="de">disp.</span></span></div><div class="barra" style="--c:var(--azul);margin-top:5px"><i style="width:10%"></i></div></div>
+        </div>
+        <div class="nota suave" style="margin-top:auto">La barra muestra lo que ya gastaste de cada sobre.</div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- lista-compras.html -->
+<template data-id="lista-compras" data-titulo="Lista de compras">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>Mercado de quincena</h1>
+        <p>Para el 15 nov · ligada a tu sobre Mercado, que tiene <b class="num">$580.000</b> disponibles.</p>
+      </div>
+      <div class="acciones solo-escritorio"><button class="link" data-ir="sobres">Ver sobre Mercado →</button></div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1.45fr)">
+
+      <!-- Contador en vivo contra el sobre -->
+      <section class="panel destacado">
+        <div class="panel-cab"><h2 class="titulo">Cuánto llevas</h2><span class="chip acento">Disponible en Mercado $580.000</span></div>
+        <div>
+          <div class="nota">Te quedan después de comprar todo</div>
+          <div class="cifra-xl acento-tx">$274.400</div>
+        </div>
+        <div>
+          <div class="barra"><i style="width:30.4%"></i><span class="marca" style="left:52.7%"></span></div>
+          <div class="fila nota" style="margin-top:6px"><span>$0</span><span class="suave">techo $580.000</span></div>
+        </div>
+        <div class="lista lineas">
+          <div class="fila"><span><span class="bola"></span> En el carrito · 7 productos</span><span>$176.400</span></div>
+          <div class="fila"><span><span class="bola" style="--c:var(--texto-2)"></span> Total de la lista · 12 productos</span><span>$305.600</span></div>
+          <div class="fila solo-escritorio"><span class="suave">Te falta por echar al carrito</span><span class="suave">$129.200</span></div>
+        </div>
+      </section>
+
+      <!-- La lista -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Te falta · 5</h2><span class="nota num">$129.200</span></div>
+        <div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Frutas y verduras</span><span class="val">$48.000</span></div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Detergente 3 kg</span><span class="val">$32.900</span></div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Papel higiénico x12</span><span class="val">$23.900</span></div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Queso 500 g</span><span class="val">$16.900</span></div>
+          <div class="check"><span class="caja-check"></span><span class="txt">Pan tajado</span><span class="val">$7.500</span></div>
+        </div>
+        <button class="btn2 ancho">+ Agregar producto</button>
+
+        <div class="panel-cab" style="margin-top:6px"><h2 class="titulo">Ya en el carrito · 7</h2><span class="nota num">$176.400</span></div>
+        <div>
+          <div class="check hecho"><span class="caja-check"></span><span class="txt">Pechuga 2 kg</span><span class="val suave">$36.000</span></div>
+          <div class="check hecho"><span class="caja-check"></span><span class="txt">Aceite 3 L</span><span class="val suave">$29.500</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Leche x6</span><span class="val suave">$26.400</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Carne molida 1 kg</span><span class="val suave">$24.900</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Arroz 5 kg</span><span class="val suave">$21.900</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Café 500 g</span><span class="val suave">$19.800</span></div>
+          <div class="check hecho solo-escritorio"><span class="caja-check"></span><span class="txt">Huevos x30</span><span class="val suave">$17.900</span></div>
+          <div class="nota suave solo-movil" style="padding-top:8px">+5 productos más en el carrito · $110.900</div>
+        </div>
+        <div class="fila" style="margin-top:auto;padding-top:10px;border-top:1px solid var(--linea)"><span>Total de la lista</span><span class="cifra-m">$305.600</span></div>
+      </section>
+
+      <!-- Escudo anti-impulso + cierre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Escudo anti-impulso</h2><span class="chip ok">Hoy no te pasas</span></div>
+        <div class="caja">Si la lista pasa de <b class="num">$580.000</b>, el exceso se descuenta de <b>Gustos</b> (<b class="num">$153.100</b> disp.) y te avisamos antes de pagar. Tu fondo y tu inversión no se tocan.</div>
+        <div class="fila solo-escritorio"><span class="nota">Puedes agregar sin tocar Gustos</span><span>$274.400</span></div>
+        <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+          <button class="btn ancho" data-ir="lista-compras-cierre">Finalizar compra</button>
+          <div class="nota suave solo-escritorio">En caja eliges con qué cuenta pagaste y ves qué se mueve antes de confirmar.</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<template data-id="lista-compras-cierre" data-titulo="Finalizar compra" data-padre="lista-compras">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>Pagar $305.600 en caja</h1>
+        <p>Mercado de quincena · 12 productos. Elige con qué pagaste y revisa qué cambia antes de confirmar.</p>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1.25fr)">
+
+      <!-- Con qué cuenta -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">¿Con qué pagaste?</h2><span class="nota">sale de lo que está sin sobre</span></div>
+        <div>
+          <div class="check hecho">
+            <span class="caja-check"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><b>Bancolombia</b><span class="nota">$1.050.000 sin sobre · alcanza</span></span>
+            <span class="val">$1.450.000</span>
+          </div>
+          <div class="check">
+            <span class="caja-check"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><span>Nequi</span><span class="nota">$310.000 sin sobre · te quedarían $4.400</span></span>
+            <span class="val">$310.000</span>
+          </div>
+          <div class="check" style="border-bottom:0">
+            <span class="caja-check"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column"><span>Efectivo</span><span class="nota mal">$180.000 sin sobre · te faltan $125.600</span></span>
+            <span class="val">$180.000</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Imputación triple + confirmar -->
+      <section class="panel destacado alto-2">
+        <div class="panel-cab"><h2 class="titulo">Esto cambia al confirmar</h2><span class="chip">3 registros en uno</span></div>
+        <div class="lista lineas">
+          <div>
+            <div class="fila"><span class="nota">Tu cuenta Bancolombia</span><span class="mal num">−$305.600</span></div>
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:3px"><span class="suave num">$1.450.000</span><span class="suave">→</span><span class="cifra-l">$1.144.400</span></div>
+            <div class="nota suave solo-escritorio" style="margin-top:3px">Sale de los $1.050.000 sin sobre; los $400.000 de Inversión se quedan.</div>
+          </div>
+          <div>
+            <div class="fila"><span class="nota">Tu sobre Mercado</span><span class="mal num">−$305.600</span></div>
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:3px"><span class="suave num">$580.000</span><span class="suave">→</span><span class="cifra-l acento-tx">$274.400</span><span class="de">de $700.000</span></div>
+            <div class="barra solo-escritorio" style="margin-top:6px"><i style="width:39.2%"></i></div>
+          </div>
+          <div>
+            <div class="fila"><span class="nota">Comida en tus reportes</span><span class="num">+$305.600</span></div>
+            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:3px"><span class="suave num">$120.000</span><span class="suave">→</span><span class="cifra-l">$425.600</span></div>
+            <div class="nota suave solo-escritorio" style="margin-top:3px">Gasto de noviembre en Comida.</div>
+          </div>
+        </div>
+        <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
+          <button class="btn ancho">Confirmar pago de $305.600</button>
+          <div style="text-align:center"><button class="link" data-ir="lista-compras">Volver a la lista</button></div>
+          <div class="nota suave solo-escritorio">Al confirmar verás:</div>
+          <div class="caja ok lista" style="gap:6px">
+            <div><span class="bola" style="--c:var(--positivo)"></span> Se descontaron <b>$305.600</b> de Bancolombia</div>
+            <div><span class="bola" style="--c:var(--positivo)"></span> Tu sobre Mercado ahora tiene <b>$274.400</b></div>
+            <div><span class="bola" style="--c:var(--positivo)"></span> Tu fondo y tu inversión siguen intactos</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- La compra contra el techo -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Tu compra contra el techo</h2><span class="nota num">53% del sobre</span></div>
+        <div class="fila" style="align-items:flex-end"><span><span class="cifra-xl">$305.600</span> <span class="de">de $580.000</span></span></div>
+        <div class="barra"><i style="width:52.7%"></i></div>
+        <div class="lista lineas">
+          <div class="fila"><span class="nota">En el carrito cuando llegaste a caja</span><span>$176.400</span></div>
+          <div class="fila"><span class="nota">Lo que faltaba de la lista</span><span>$129.200</span></div>
+          <div class="fila"><span class="nota">Gustos</span><span class="ok">$153.100 · no se toca</span></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- mi-plan.html -->
+<template data-id="mi-plan" data-titulo="Mi plan">
+  <div class="pant">
+    <div class="rejilla llena" style="--cols: minmax(0,1.75fr) minmax(0,1fr)">
+
+      <!-- Fecha de libertad frente a solo mínimos + gráfica de extinción -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Tu fecha de libertad</h2><span class="nota num solo-escritorio">Debes $9.800.000 · pagado $0</span></div>
+
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 36px">
+          <div>
+            <div class="nota">Con tu plan sales de deudas en</div>
+            <div class="cifra-xl acento-tx">Agosto 2027</div>
+            <div class="nota">en 11 meses · <b class="num">$822.229</b> de intereses</div>
+          </div>
+          <div>
+            <div class="nota">Pagando solo mínimos</div>
+            <div class="cifra-l suave">Enero 2029</div>
+            <div class="nota">en 28 meses · <span class="num">$1.484.373</span> de intereses</div>
+          </div>
+        </div>
+
+        <div class="caja ok" style="display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px">
+          <span class="cifra-l ok">17 meses antes</span>
+          <span class="nota">y</span>
+          <span class="cifra-l ok">$662.144 menos</span>
+          <span class="nota">de intereses</span>
+        </div>
+
+        <div class="panel-cab solo-escritorio">
+          <span class="nota">Lo que debes, mes a mes</span>
+          <span class="nota" style="display:flex;align-items:center;gap:16px">
+            <span style="display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 18 6" width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" class="g-acento" stroke-width="3" stroke-linecap="round"/></svg>Tu plan</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 18 6" width="18" height="6" aria-hidden="true"><line x1="0" y1="3" x2="18" y2="3" class="g-texto-s" stroke-width="2" stroke-dasharray="4 3"/></svg>Solo mínimos</span>
+          </span>
+        </div>
+
+        <svg class="solo-escritorio" viewBox="0 0 700 380" width="100%" role="img" aria-label="Tu deuda baja de $9.800.000 hoy a $0 en agosto 2027 con tu plan; pagando solo mínimos llega a $0 en enero 2029, 17 meses después">
+          <defs><linearGradient id="mp-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="g-stop" stop-opacity=".2"/><stop offset="1" class="g-stop" stop-opacity="0"/></linearGradient></defs>
+
+          <!-- Escala -->
+          <line x1="84" y1="105.5" x2="686" y2="105.5" class="g-linea"/>
+          <line x1="84" y1="185" x2="686" y2="185" class="g-linea"/>
+          <line x1="84" y1="264.5" x2="686" y2="264.5" class="g-linea"/>
+          <line x1="84" y1="344" x2="686" y2="344" class="g-texto-s"/>
+          <text x="74" y="109.5" text-anchor="end" font-size="11" class="g-texto">$7.500.000</text>
+          <text x="74" y="189" text-anchor="end" font-size="11" class="g-texto">$5.000.000</text>
+          <text x="74" y="268.5" text-anchor="end" font-size="11" class="g-texto">$2.500.000</text>
+          <text x="74" y="348" text-anchor="end" font-size="11" class="g-texto">$0</text>
+
+          <!-- Solo mínimos: 28 meses -->
+          <path d="M84 32.4 L105.5 51.2 L127 70.4 L148.5 89.9 L170 109.8 L191.5 130 L213 150.6 L234.5 171.5 L256 187.4 L277.5 203.1 L299 219.1 L320.5 235.3 L342 251.7 L363.5 268.4 L385 285.4 L406.5 302.7 L428 305.8 L449.5 308.9 L471 312.1 L492.5 315.3 L514 318.6 L535.5 321.9 L557 325.3 L578.5 328.8 L600 332.4 L621.5 336 L643 339.8 L664.5 343.6 L686 344" fill="none" class="g-texto-s" stroke-width="2" stroke-dasharray="5 4" stroke-linejoin="round"/>
+          <circle cx="686" cy="344" r="4" class="g-texto"/>
+
+          <!-- Tu plan: 11 meses -->
+          <path d="M84 32.4 L105.5 58.4 L127 84.8 L148.5 111.8 L170 139.3 L191.5 167.3 L213 195.7 L234.5 224.8 L256 254.3 L277.5 284.3 L299 314.7 L320.5 344 L84 344 Z" fill="url(#mp-area)"/>
+          <path d="M84 32.4 L105.5 58.4 L127 84.8 L148.5 111.8 L170 139.3 L191.5 167.3 L213 195.7 L234.5 224.8 L256 254.3 L277.5 284.3 L299 314.7 L320.5 344" fill="none" class="g-acento" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="84" cy="32.4" r="4" class="g-acento-f"/>
+          <text x="96" y="20" font-size="12" class="g-texto2">hoy debes $9.800.000</text>
+
+          <!-- Traspasos -->
+          <circle cx="170" cy="139.3" r="4" class="g-acento-f"/>
+          <text x="162" y="152" text-anchor="end" font-size="11" class="g-texto2">Mastercard en $0</text>
+          <circle cx="256" cy="254.3" r="4" class="g-acento-f"/>
+          <text x="244" y="257" text-anchor="end" font-size="11" class="g-texto2">Nu en $0</text>
+          <circle cx="320.5" cy="344" r="5.5" class="g-acento-f"/>
+
+          <!-- Meses -->
+          <text x="84" y="368" font-size="12" class="g-texto">hoy · sep 2026</text>
+          <text x="320.5" y="368" text-anchor="middle" font-size="12" font-weight="700" class="g-acento-f">ago 2027</text>
+          <line x1="352" y1="364" x2="452" y2="364" class="g-texto-s"/>
+          <text x="503" y="368" text-anchor="middle" font-size="12" font-weight="700" class="g-texto2">17 meses antes</text>
+          <line x1="554" y1="364" x2="628" y2="364" class="g-texto-s"/>
+          <text x="686" y="368" text-anchor="end" font-size="12" class="g-texto">ene 2029</text>
+        </svg>
+
+        <div class="caja solo-escritorio" style="margin-top:auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 16px">
+          <span>Si te pasas <b class="num">$50.000</b> de tu techo semanal de <span class="num">$515.000</span>, tu fecha se corre <b>2 días</b>.</span>
+          <button class="link acento" data-ir="billetera">Ver Billetera →</button>
+        </div>
+      </section>
+
+      <!-- Pagos de este mes -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Pagos de septiembre</h2><span class="nota">0 de 3 pagados</span></div>
+        <div class="lista lineas">
+          <div>
+            <div class="fila"><span>Libre inversión Bancolombia</span><span>$450.000</span></div>
+            <div class="fila" style="margin-top:5px"><span class="nota">Cuota fija · vence el 15 sep</span><span class="chip aviso">En 2 días</span></div>
+          </div>
+          <div>
+            <div class="fila"><span>Mastercard Bancolombia <span class="chip ataque">Ataque</span></span><span>$400.000</span></div>
+            <div class="fila" style="margin-top:5px"><span class="nota">Vence el 3 oct</span><span class="nota">en 20 días</span></div>
+            <div class="nota suave" style="margin-top:2px">$180.000 de mínimo + $220.000 de ataque</div>
+          </div>
+          <div>
+            <div class="fila"><span>Tarjeta Nu</span><span>$120.000</span></div>
+            <div class="fila" style="margin-top:5px"><span class="nota">Solo el mínimo · vence el 10 oct</span><span class="nota">en 27 días</span></div>
+          </div>
+        </div>
+        <div class="fila" style="margin-top:auto;padding-top:11px;border-top:1px solid var(--linea)"><span>Este mes a tus deudas</span><span>$970.000</span></div>
+        <button class="btn ancho">Registrar pago</button>
+      </section>
+
+      <!-- Escalera del ataque -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Cómo crece tu ataque</h2><span class="nota num">$400.000 → $970.000</span></div>
+        <div class="pasos">
+          <div class="paso actual">
+            <div>
+              <div class="fila"><span>Mastercard <span class="chip ataque">Ataque</span></span><span>$400.000</span></div>
+              <div class="barra solo-escritorio" style="margin-top:6px"><i style="width:41%"></i></div>
+              <div class="nota suave" style="margin-top:4px">Desde hoy · en $0 en ene 2027</div>
+              <div class="nota suave solo-escritorio">$180.000 de mínimo + $220.000 de ataque</div>
+            </div>
+          </div>
+          <div class="paso">
+            <div>
+              <div class="fila"><span>Tarjeta Nu</span><span>$520.000</span></div>
+              <div class="barra solo-escritorio" style="margin-top:6px"><i style="width:54%"></i></div>
+              <div class="nota suave" style="margin-top:4px">Desde feb 2027 · en $0 en may 2027</div>
+              <div class="nota suave solo-escritorio">$120.000 de mínimo + $400.000 de Mastercard</div>
+            </div>
+          </div>
+          <div class="paso">
+            <div>
+              <div class="fila"><span>Libre inversión</span><span>$970.000</span></div>
+              <div class="barra solo-escritorio" style="margin-top:6px"><i style="width:100%"></i></div>
+              <div class="nota suave" style="margin-top:4px">Desde jun 2027 · en $0 en ago 2027</div>
+              <div class="nota suave solo-escritorio">$450.000 de cuota + $520.000 de Nu</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- mi-plata.html -->
+<template data-id="mi-plata" data-titulo="Mi plata">
+  <div class="pant">
+
+    <div class="cab">
+      <div>
+        <h1>Mi plata</h1>
+        <p><span class="solo-escritorio">Tienes <b>$3.140.000</b> en tus cuentas: <b>$1.600.000</b> ya tienen dueño en tus sobres y <b>$1.540.000</b> están sin sobre.</span><span class="solo-movil"><b>$1.600.000</b> con dueño · <b>$1.540.000</b> sin sobre</span></p>
+      </div>
+      <div class="acciones"><button class="btn">Registrar ingreso</button></div>
+    </div>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1fr) minmax(0,1.3fr)">
+
+      <!-- Tus cuentas -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Tus cuentas</h2><span class="nota">Líquido total</span></div>
+        <div class="cifra-xl">$3.140.000</div>
+        <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:7px">
+          <div class="barra" style="display:flex;gap:2px" role="img" aria-label="$1.600.000 en sobres y $1.540.000 sin sobre">
+            <i style="width:51%;--c:var(--acento)"></i><i style="width:49%;--c:var(--texto-3)"></i>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <span class="nota"><span class="bola" style="--c:var(--acento)"></span> <b>$1.600.000</b> en sobres</span>
+            <span class="nota"><span class="bola" style="--c:var(--texto-3)"></span> <b>$1.540.000</b> sin sobre</span>
+          </div>
+        </div>
+        <div class="lista lineas">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="inicial">BC</span>
+            <div style="flex:1;min-width:0"><div class="fila"><span>Bancolombia</span><span>$1.450.000</span></div><div class="nota suave">$400.000 en sobre Inversión · $1.050.000 sin sobre</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="inicial">NU</span>
+            <div style="flex:1;min-width:0"><div class="fila"><span>Nu</span><span>$1.200.000</span></div><div class="nota suave">$1.200.000 en sobre Fondo blindado · $0 sin sobre</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="inicial">NQ</span>
+            <div style="flex:1;min-width:0"><div class="fila"><span>Nequi</span><span>$310.000</span></div><div class="nota suave">$310.000 sin sobre</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="inicial">EF</span>
+            <div style="flex:1;min-width:0"><div class="fila"><span>Efectivo</span><span>$180.000</span></div><div class="nota suave">$180.000 sin sobre</div></div>
+          </div>
+        </div>
+
+        <div class="solo-escritorio" style="border-top:1px solid var(--hairline);padding-top:12px;display:flex;flex-direction:column;gap:10px">
+          <div class="panel-cab"><h2 class="titulo">Tus tarjetas, a 1 cuota</h2><button class="link" data-ir="anti-recaida">Anti-recaída →</button></div>
+          <div><div class="fila"><span>Mastercard Bancolombia</span><span>$26.900</span></div><div class="nota suave">Netflix · corte 16 · pagas el 3 dic, ya apartado</div></div>
+          <div><div class="fila"><span>Tarjeta Nu</span><span class="suave">$0</span></div><div class="nota suave">Sin compras este ciclo · corte 25</div></div>
+        </div>
+
+        <div class="caja solo-escritorio" style="margin-top:auto">Los <b>$400.000</b> del sobre Inversión siguen en Bancolombia. <button class="link acento" data-ir="activos">Registrar en un CDT o fondo →</button></div>
+      </section>
+
+      <!-- Patrimonio e inversiones -->
+      <section class="panel">
+        <div class="rejilla" style="--cols: minmax(0,1fr) minmax(0,1fr); gap:24px">
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <h2 class="titulo">Tu patrimonio neto</h2>
+            <div class="cifra-xl">$3.945.600</div>
+            <div class="lista solo-escritorio" style="gap:8px">
+              <div class="fila"><span class="nota">En tus cuentas</span><span>$3.140.000</span></div>
+              <div class="fila"><span class="nota">Invertido</span><span>+$805.600</span></div>
+              <div class="fila"><span class="nota">Deudas</span><span class="ok">$0</span></div>
+            </div>
+            <div class="nota solo-movil">Tus cuentas + <b>$805.600</b> en tu CDT · <b>$0</b> en deudas. <button class="link acento" data-ir="activos">Ver en Activos →</button></div>
+          </div>
+          <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <div class="panel-cab"><h2 class="titulo">Tus inversiones</h2><button class="link acento" data-ir="activos">Activos →</button></div>
+            <div><div class="nota">CDT digital Bancolombia</div><span class="cifra-m">$805.600</span> <span class="de">valor hoy</span></div>
+            <div class="lista" style="gap:8px">
+              <div class="fila"><span class="nota">Capital · tasa</span><span>$800.000 · 11,2% E.A.</span></div>
+              <div class="fila"><span class="nota">Vence</span><span>17 abr 2028</span></div>
+              <div class="fila"><span class="nota">Rendimiento proyectado</span><span class="ok">+$42.998</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Movimientos de noviembre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Movimientos de noviembre</h2><span class="nota solo-escritorio">Entraron <b>$1.600.000</b> · salieron <b>$412.800</b></span></div>
+        <table class="tabla">
+          <thead><tr><th>Concepto</th><th class="opc">Cuenta</th><th style="width:92px">Tipo</th><th class="opc2" style="width:56px">Fecha</th><th style="width:100px">Monto</th></tr></thead>
+          <tbody>
+            <tr><td>Transporte de la semana</td><td class="opc">Efectivo</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">6 nov</td><td class="num">−$22.000</td></tr>
+            <tr><td>Spotify</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">5 nov</td><td class="num">−$16.900</td></tr>
+            <tr><td>Luz y agua</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">3 nov</td><td class="num">−$164.000</td></tr>
+            <tr class="solo-escritorio"><td>Mercado</td><td class="opc">Efectivo</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">2 nov</td><td class="num">−$120.000</td></tr>
+            <tr class="solo-escritorio"><td>A Fondo blindado</td><td class="opc">Bancolombia → Nu</td><td><span class="pill traslado">Traslado</span></td><td class="opc2 num">1 nov</td><td class="num">$400.000</td></tr>
+            <tr class="solo-escritorio"><td>Gimnasio Smart Fit</td><td class="opc">Bancolombia</td><td><span class="pill gasto">Gasto</span></td><td class="opc2 num">1 nov</td><td class="num">−$89.900</td></tr>
+            <tr class="solo-escritorio"><td>Salario quincena</td><td class="opc">Bancolombia</td><td><span class="pill ingreso">Ingreso</span></td><td class="opc2 num">1 nov</td><td class="num ok">+$1.600.000</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- reportes.html -->
+<template data-id="reportes" data-titulo="Reportes">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>Reportes</h1>
+        <p>Cómo te fue en <b>octubre 2027</b> y cuánto tienes en limpio al 13 nov 2027.</p>
+      </div>
+      <div class="acciones">
+        <button class="btn2">Octubre 2027 ▾</button>
+        <button class="btn">Imprimir o guardar PDF</button>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.45fr) minmax(0,1fr)">
+
+      <!-- Estado de resultados de octubre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Así se repartió octubre</h2><span class="chip">Mes cerrado</span></div>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="nota">Ingresos</span> <span class="cifra-l ok">$3.200.000</span></span>
+          <span class="nota solo-escritorio">2 quincenas de $1.600.000</span>
+        </div>
+        <svg viewBox="0 0 580 24" width="100%" role="img" aria-label="De $3.200.000: lo básico $2.148.300, fondo blindado $400.000, inversión $400.000, gustos $150.000 y sobró $101.700">
+          <rect x="0" y="0" width="387.4" height="24" rx="4" class="g-texto2"/>
+          <rect x="389.4" y="0" width="70.5" height="24" rx="4" class="g-positivo-f"/>
+          <rect x="461.9" y="0" width="70.5" height="24" rx="4" class="g-acento-f"/>
+          <rect x="534.4" y="0" width="25.2" height="24" rx="4" class="g-alerta-f"/>
+          <rect x="561.6" y="0" width="18.4" height="24" rx="4" class="g-texto"/>
+        </svg>
+        <table class="tabla">
+          <thead><tr><th>Concepto</th><th class="opc">Detalle</th><th class="opc2 der" style="width:84px">Del ingreso</th><th style="width:108px">Valor</th></tr></thead>
+          <tbody>
+            <tr><td><span class="bola" style="--c:var(--texto-2)"></span> Lo básico gastado</td><td class="opc suave num">$2.148.300 de $2.230.000 · 96%</td><td class="opc2 der num">67,1%</td><td class="num">$2.148.300</td></tr>
+            <tr><td><span class="bola" style="--c:var(--positivo)"></span> Fondo blindado</td><td class="opc suave">Aporte del mes, guardado en Nu</td><td class="opc2 der num">12,5%</td><td class="num">+$400.000</td></tr>
+            <tr><td><span class="bola"></span> Inversión</td><td class="opc suave">Fue al CDT el 20 oct</td><td class="opc2 der num">12,5%</td><td class="num">+$400.000</td></tr>
+            <tr><td><span class="bola" style="--c:var(--alerta)"></span> Gustos gastado</td><td class="opc suave num">$150.000 de $170.000 · 88%</td><td class="opc2 der num">4,7%</td><td class="num">$150.000</td></tr>
+            <tr><td><span class="bola" style="--c:var(--texto-3)"></span> Sobró</td><td class="opc suave">Quedó en Bancolombia</td><td class="opc2 der num">3,2%</td><td class="num">$101.700</td></tr>
+            <tr><td><b>Total repartido</b></td><td class="opc suave">Igual a tus ingresos</td><td class="opc2 der num"><b>100%</b></td><td class="num"><b>$3.200.000</b></td></tr>
+          </tbody>
+        </table>
+        <div class="nota suave solo-escritorio">Sobró $101.700 porque de lo básico no usaste $81.700 y de Gustos $20.000.</div>
+      </section>
+
+      <!-- Balance general -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Balance general</h2><span class="nota num">al 13 nov 2027</span></div>
+        <table class="tabla">
+          <thead><tr><th>Cuenta</th><th style="width:112px">Valor</th></tr></thead>
+          <tbody>
+            <tr><td><span class="titulo">Activos</span></td><td></td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">Bancolombia</td><td class="num suave">$1.450.000</td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">Nu</td><td class="num suave">$1.200.000</td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">Nequi</td><td class="num suave">$310.000</td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">Efectivo</td><td class="num suave">$180.000</td></tr>
+            <tr><td>Activos líquidos</td><td class="num">$3.140.000</td></tr>
+            <tr class="solo-escritorio"><td class="suave" style="padding-left:12px">CDT digital Bancolombia · 11,2% E.A.</td><td class="num suave">$805.600</td></tr>
+            <tr><td>Inversiones</td><td class="num">$805.600</td></tr>
+            <tr><td><b>Total activos</b></td><td class="num"><b>$3.945.600</b></td></tr>
+            <tr><td><span class="titulo">Pasivos</span></td><td></td></tr>
+            <tr><td>Deudas</td><td class="num">$0</td></tr>
+            <tr><td><b>Total pasivos</b></td><td class="num"><b>$0</b></td></tr>
+          </tbody>
+        </table>
+        <div style="margin-top:auto;padding-top:12px;border-top:1px solid var(--linea)">
+          <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+            <span class="titulo">Patrimonio neto</span>
+            <span class="cifra-l acento-tx">$3.945.600</span>
+          </div>
+          <div class="nota suave" style="margin-top:4px">Activos $3.945.600 − pasivos $0. Sin deudas desde agosto 2027.</div>
+        </div>
+      </section>
+
+      <!-- Historial que suma -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Historial que suma</h2><button class="link acento" data-ir="auditor">Ir al auditor →</button></div>
+        <div class="par" style="gap:16px">
+          <div>
+            <div class="nota">Intereses que te ahorraste con el plan de deudas</div>
+            <div class="cifra-l ok">$662.144</div>
+            <div class="nota suave solo-escritorio">Frente a pagar solo mínimos. Saliste 17 meses antes.</div>
+          </div>
+          <div>
+            <div class="nota">Por rescatar con el auditor <span class="pill neutra">En curso</span></div>
+            <div><span class="cifra-l">$334.000</span> <span class="de">al año</span></div>
+            <div class="nota suave solo-escritorio">Seguro de vida deudor $222.000 y cuota de manejo $112.000.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- retos.html -->
+<template data-id="retos" data-titulo="Retos">
+  <div class="pant">
+    <div class="cab">
+      <div>
+        <h1>Retos</h1>
+        <p>Llevas <b>12 semanas</b> seguidas ahorrando y <b>9 días</b> sin pedir domicilios.</p>
+      </div>
+    </div>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.15fr) minmax(0,1fr) minmax(0,0.95fr)">
+
+      <!-- Reto de las 52 semanas -->
+      <section class="panel destacado ancho-2">
+        <h2 class="titulo">Reto de las 52 semanas</h2>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:14px 28px;flex-wrap:wrap">
+          <div>
+            <div class="fila"><span class="nota">Semana 12 de 52</span><span class="chip ok">Racha de 12 semanas</span></div>
+            <div style="margin-top:4px"><span class="cifra-xl">$156.000</span> <span class="de">de $2.756.000</span></div>
+            <div class="nota suave" style="margin-top:6px">Contando los $24.000 de esta semana. Cada semana sube $2.000.</div>
+          </div>
+          <div style="flex:1 1 240px;max-width:300px;display:flex;flex-direction:column;gap:6px">
+            <button class="btn ancho">Aportar $24.000 de esta semana</button>
+            <div class="nota suave" style="text-align:center">Te faltan 40 semanas · la próxima son $26.000</div>
+          </div>
+        </div>
+        <svg viewBox="0 0 520 40" width="100%" style="margin-top:auto" role="img" aria-label="52 semanas: 11 cumplidas, la 12 es esta semana y quedan 40 pendientes">
+          <rect x="2" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="22" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="42" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="62" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="82" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="102" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="122" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="142" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="162" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="182" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="202" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="222" y="2" width="16" height="16" rx="4" class="g-acento g-acento-f" fill-opacity=".28" stroke-width="2"/>
+          <rect x="242.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="262.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="282.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="302.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="322.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="342.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="362.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="382.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="402.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="422.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="442.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="462.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="482.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="502.75" y="2.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="2.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="22.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="42.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="62.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="82.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="102.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="122.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="142.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="162.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="182.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="202.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="222.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="242.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="262.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="282.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="302.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="322.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="342.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="362.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="382.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="402.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="422.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="442.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="462.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="482.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="502.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+        </svg>
+        <div class="solo-escritorio" style="display:flex;gap:6px 18px;flex-wrap:wrap">
+          <span class="nota"><span class="bola" style="--c:var(--positivo)"></span> 11 semanas cumplidas</span>
+          <span class="nota"><span class="bola" style="--c:var(--acento)"></span> Semana 12, la de hoy</span>
+          <span class="nota"><span class="bola" style="--c:var(--texto-3)"></span> 40 por delante</span>
+        </div>
+      </section>
+
+      <!-- 21 días sin domicilios -->
+      <section class="panel alto-2">
+        <h2 class="titulo">21 días sin domicilios</h2>
+        <div>
+          <div class="fila"><span class="nota">Día 9 de 21</span><span class="chip ok">Racha de 9 días</span></div>
+          <div style="margin-top:6px"><span class="cifra-xl">$54.000</span> <span class="de">sin gastar</span></div>
+          <div class="nota suave" style="margin-top:6px">$6.000 por cada día sin pedir.</div>
+        </div>
+        <svg class="solo-escritorio" viewBox="0 0 140 60" width="100%" role="img" aria-label="21 días: 8 cumplidos, el día 9 es hoy y quedan 12">
+          <rect x="2" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="22" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="42" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="62" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="82" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="102" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="122" y="2" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="2" y="22" width="16" height="16" rx="4" class="g-positivo-f"/>
+          <rect x="22" y="22" width="16" height="16" rx="4" class="g-acento g-acento-f" fill-opacity=".28" stroke-width="2"/>
+          <rect x="42.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="62.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="82.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="102.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="122.75" y="22.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="2.75" y="42.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="22.75" y="42.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="42.75" y="42.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="62.75" y="42.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="82.75" y="42.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="102.75" y="42.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+          <rect x="122.75" y="42.75" width="14.5" height="14.5" rx="3.5" fill="none" class="g-texto-s" stroke-opacity=".5" stroke-width="1.5"/>
+        </svg>
+        <div class="barra solo-movil" style="--c:var(--positivo)"><i style="width:43%"></i></div>
+        <div class="lista lineas solo-escritorio">
+          <div class="fila"><span>Faltan 12 días</span><span>+$72.000</span></div>
+          <div class="fila"><span>Terminas el 25 nov con</span><span class="ok">$126.000</span></div>
+        </div>
+        <div class="caja" style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+          <div>El día 21 te preguntamos a dónde mandas los <b class="num">$126.000</b>:</div>
+          <button class="btn2 ancho" data-ir="sobres">Al Fondo blindado</button>
+          <button class="btn2 ancho" data-ir="sobres">A Inversión</button>
+        </div>
+      </section>
+
+      <!-- Lo que suman tus retos -->
+      <section class="panel solo-escritorio">
+        <h2 class="titulo">Lo que llevas con retos</h2>
+        <div><span class="cifra-l">$210.000</span> <span class="de">ahorrados</span></div>
+        <div class="lista lineas">
+          <div class="fila"><span>Reto de las 52 semanas</span><span>$156.000</span></div>
+          <div class="fila"><span>21 días sin domicilios</span><span>$54.000</span></div>
+        </div>
+        <div class="nota" style="margin-top:auto">Si terminas los dos juntas <b class="num">$2.882.000</b>: $2.756.000 de las 52 semanas y $126.000 de los domicilios.</div>
+      </section>
+
+      <!-- Retos para empezar -->
+      <section class="panel solo-escritorio">
+        <h2 class="titulo">Retos para empezar</h2>
+        <div class="lista lineas">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div style="min-width:0">
+              <div style="font-weight:700">30 días sin compras por impulso</div>
+              <div class="nota" style="margin-top:3px">Solo compras lo que ya tiene sobre.</div>
+            </div>
+            <button class="btn-borde">Empezar</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div style="min-width:0">
+              <div style="font-weight:700">Semana sin gastos hormiga</div>
+              <div class="nota" style="margin-top:3px">Siete días sin tintos, snacks ni antojos pequeños.</div>
+            </div>
+            <button class="btn-borde">Empezar</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- salud.html -->
+<template data-id="salud" data-titulo="Salud financiera">
+  <div class="pant">
+    <div class="cab">
+      <div>
+        <h1>Salud financiera</h1>
+        <p>Tu plata aguanta bien porque no debes nada. Lo que más la frena es un <b>fondo blindado corto</b>.</p>
+      </div>
+    </div>
+
+    <div class="rejilla llena" style="--cols: minmax(0,0.9fr) minmax(0,1fr) minmax(0,1fr)">
+
+      <!-- Puntaje -->
+      <section class="panel alto-2">
+        <div class="panel-cab"><h2 class="titulo">Tu puntaje</h2><span class="nota">13 nov 2027</span></div>
+        <svg viewBox="0 0 280 166" style="width:min(100%,264px);align-self:center" role="img" aria-label="Puntaje de salud financiera: 70 de 100. Con el fondo lleno llegaría a 95">
+          <path d="M36 136 A104 104 0 0 1 244 136" fill="none" class="g-fondo" stroke-width="20"/>
+          <path d="M36 136 A104 104 0 0 1 244 136" fill="none" class="g-positivo" stroke-opacity=".3" stroke-width="20" stroke-dasharray="0 228.7 81.7 400"/>
+          <path d="M36 136 A104 104 0 0 1 244 136" fill="none" class="g-acento" stroke-width="20" stroke-dasharray="228.7 400"/>
+          <text x="140" y="112" text-anchor="middle" font-size="54" font-weight="800" class="g-tinta-f">70</text>
+          <text x="140" y="134" text-anchor="middle" font-size="13" class="g-texto2">de 100</text>
+          <text x="36" y="158" text-anchor="middle" font-size="11" class="g-texto">0</text>
+          <text x="244" y="158" text-anchor="middle" font-size="11" class="g-texto">100</text>
+        </svg>
+        <div class="solo-escritorio" style="display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:center">
+          <span class="nota"><span class="bola" style="--c:var(--acento)"></span> Hoy 70</span>
+          <span class="nota"><span class="bola" style="--c:var(--positivo)"></span> Con el fondo lleno 95</span>
+        </div>
+        <div>
+          <div class="cifra-m">Resistente, pero con poco colchón</div>
+          <div class="nota solo-escritorio" style="margin-top:6px">No debes nada y guardas el 25% de lo que ganas. Pero si mañana te falta el ingreso, tu fondo cubre medio mes de lo básico.</div>
+        </div>
+        <div class="solo-escritorio" style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:10px">
+          <h2 class="titulo">Los 30 puntos que te faltan</h2>
+          <svg viewBox="0 0 300 12" width="100%" role="img" aria-label="Solvencia 40, liquidez 5, ahorro e inversión 25 y 30 puntos por ganar">
+            <rect x="0" y="0" width="119" height="12" rx="3" class="g-positivo-f"/>
+            <rect x="120" y="0" width="14" height="12" rx="3" class="g-alerta-f"/>
+            <rect x="135" y="0" width="74" height="12" rx="3" class="g-acento-f"/>
+            <rect x="210.75" y="0.75" width="88.5" height="10.5" rx="2.5" fill="none" class="g-texto-s" stroke-dasharray="3 3" stroke-width="1.5"/>
+          </svg>
+          <div class="lista">
+            <div class="fila"><span><span class="bola" style="--c:var(--alerta)"></span> En liquidez</span><span>25</span></div>
+            <div class="fila"><span><span class="bola" style="--c:var(--acento)"></span> En ahorro e inversión</span><span>5</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Componentes -->
+      <section class="panel ancho-2">
+        <div class="panel-cab"><h2 class="titulo">De dónde salen tus 70 puntos</h2><span class="nota solo-escritorio">Solvencia vale 40 · Liquidez 30 · Ahorro 30</span></div>
+        <div class="rejilla" style="--cols: repeat(3, minmax(0,1fr));gap:18px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="fila"><span style="font-weight:700">Solvencia</span><span><span class="cifra-m">40</span> <span class="de">de 40</span></span></div>
+            <div class="barra" style="--c:var(--positivo)"><i style="width:100%"></i></div>
+            <div class="nota">Cero deudas.</div>
+            <div class="nota suave solo-escritorio">Compara lo que debes con lo que tienes: $0 frente a $3.945.600. Sin deudas te llevas los 40 puntos.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="fila"><span style="font-weight:700">Liquidez</span><span><span class="cifra-m mal">5</span> <span class="de">de 30</span></span></div>
+            <div class="barra" style="--c:var(--alerta)"><i style="width:17%"></i></div>
+            <div class="nota">Tu fondo cubre 0,5 meses; lo ideal, 3 a 6.</div>
+            <div class="nota suave solo-escritorio">Fondo $1.200.000 ÷ lo básico $2.230.000. Cada mes cubierto vale 10 puntos, hasta 30.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="fila"><span style="font-weight:700">Ahorro e inversión</span><span><span class="cifra-m">25</span> <span class="de">de 30</span></span></div>
+            <div class="barra"><i style="width:83%"></i></div>
+            <div class="nota">Guardas el 25%; lo ideal es 30% o más.</div>
+            <div class="nota suave solo-escritorio">$800.000 de tu ingreso de $3.200.000 van a fondo e inversión. Cada 1% vale 1 punto, hasta 30.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Lo que más te sube -->
+      <section class="panel destacado ancho-2">
+        <div class="rejilla" style="--cols: minmax(0,1.1fr) minmax(0,1fr);gap:28px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <h2 class="titulo">Lo que más te sube</h2>
+            <div class="solo-escritorio" style="font-weight:700;font-size:15px">Llenar tu Fondo blindado a 3 meses de lo básico</div>
+            <div><span class="cifra-xl ok">+25</span> <span class="de">puntos: de 70 a 95</span></div>
+            <div>
+              <div class="fila nota"><span>$1.200.000 de $6.690.000</span><span>17,9%</span></div>
+              <div class="barra" style="--c:var(--positivo);margin-top:6px"><i style="width:17.9%"></i></div>
+            </div>
+            <div class="nota">Te faltan <b class="num">$5.490.000</b>. Al ritmo de $400.000 al mes son <b>14 meses</b>: llegas en <b>enero 2029</b>.</div>
+            <button class="btn ancho" data-ir="sobres" style="margin-top:auto">Abonar al Fondo blindado</button>
+          </div>
+          <div class="solo-escritorio" style="display:flex;flex-direction:column;gap:10px">
+            <h2 class="titulo">Tu fondo, aporte a aporte</h2>
+            <div class="lista lineas">
+              <div class="fila"><span>Feb 2028 · cubre 1 mes</span><span>$2.400.000</span></div>
+              <div class="fila"><span>Ago 2028 · cubre 2 meses</span><span>$4.800.000</span></div>
+              <div class="fila"><span>Ene 2029 · cubre 3 meses</span><span class="ok">$6.800.000</span></div>
+            </div>
+            <div class="caja" style="margin-top:auto">La otra palanca: mandar <b class="num">$160.000</b> más al mes a fondo o inversión lleva tu ahorro al 30% y suma 5 puntos. Con las dos llegas a 100.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<!-- sobres.html -->
+<template data-id="sobres" data-titulo="Sobres">
+  <div class="pant">
+
+    <div class="cab">
+      <div>
+        <h1>Tus sobres</h1>
+        <p><span class="solo-escritorio">Tus <b>$3.200.000</b> de noviembre, con dueño antes de gastarlos: <b>$2.230.000</b> lo básico + <b>$970.000</b> lo libre · <b>$0</b> sin dueño</span><span class="solo-movil"><b>$3.200.000</b> con dueño · <b>$0</b> sin dueño</span></p>
+      </div>
+      <div class="acciones"><button class="btn2">+ Nuevo sobre</button></div>
+    </div>
+
+    <!-- LO BÁSICO -->
+    <div class="panel-cab" style="justify-content:flex-start">
+      <h2 class="titulo">Lo básico</h2><span class="nota suave num">$2.230.000 al mes</span>
+    </div>
+    <div class="rejilla llena" style="--cols: repeat(4, minmax(0,1fr))">
+
+      <section class="panel">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Mercado</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$580.000</span> <span class="de">disp.</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$700.000/mes</b></div>
+        <div class="barra" style="--c:var(--neutro)"><i style="width:17%"></i></div>
+        <div class="nota solo-escritorio">Tu lista para el 15 nov suma <b>$305.600</b></div>
+        <button class="btn2 ancho" data-ir="lista-compras" style="margin-top:auto">Abrir lista de compras →</button>
+      </section>
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Arriendo</b></span>
+          <span class="chip ok">Pagado</span>
+        </div>
+        <div class="nota suave">Asignado: <b>$900.000/mes</b></div>
+        <div class="barra" style="--c:var(--neutro)"><i style="width:100%"></i></div>
+        <div class="nota suave" style="margin-top:auto">Pagado el 1 nov · el próximo, el 1 dic</div>
+      </section>
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Servicios</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$186.000</span> <span class="de">disp.</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$350.000/mes</b></div>
+        <div class="barra" style="--c:var(--neutro)"><i style="width:47%"></i></div>
+        <div class="nota suave" style="margin-top:auto">Gastaste $164.000 en luz y agua</div>
+      </section>
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Transporte</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$258.000</span> <span class="de">disp.</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$280.000/mes</b></div>
+        <div class="barra" style="--c:var(--neutro)"><i style="width:8%"></i></div>
+        <div class="nota suave" style="margin-top:auto">Gastaste $22.000 en transporte</div>
+      </section>
+
+      <!-- Celular: lo básico compacto -->
+      <div class="solo-movil" style="display:flex;flex-direction:column;gap:10px">
+        <div class="panel" style="flex-direction:row;align-items:center;justify-content:space-between">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--neutro)"></span><b>Arriendo</b> <span class="nota suave">$900.000</span></span>
+          <span class="chip ok">Pagado el 1 nov</span>
+        </div>
+        <div class="par">
+          <div class="panel">
+            <span class="nota" style="display:flex;align-items:center;gap:6px"><span class="bola" style="--c:var(--neutro)"></span>Servicios</span>
+            <div class="cifra-m">$186.000</div>
+            <div class="barra" style="--c:var(--neutro)"><i style="width:47%"></i></div>
+          </div>
+          <div class="panel">
+            <span class="nota" style="display:flex;align-items:center;gap:6px"><span class="bola" style="--c:var(--neutro)"></span>Transporte</span>
+            <div class="cifra-m">$258.000</div>
+            <div class="barra" style="--c:var(--neutro)"><i style="width:8%"></i></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LO LIBRE -->
+    <div class="panel-cab" style="justify-content:flex-start">
+      <h2 class="titulo">Lo libre</h2><span class="nota suave num">$970.000 al mes<span class="solo-escritorio"> · lo que antes iba a deudas</span></span>
+    </div>
+    <div class="rejilla llena" style="--cols: repeat(3, minmax(0,1fr))">
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--acento)"></span><b>Fondo blindado</b></span>
+          <span class="cifra-l">$1.200.000</span>
+        </div>
+        <div class="nota suave">Asignado: <b>$400.000/mes</b> · meta $6.690.000</div>
+        <div class="barra" role="img" aria-label="17,9% de la meta; primer hito de $1.000.000 superado"><i style="width:17.9%"></i><span class="marca" style="left:14.9%"></span></div>
+        <div class="nota"><span class="ok">Primer hito de $1.000.000 superado</span> · cubre 0,5 meses de lo básico</div>
+        <div class="fila" style="margin-top:auto"><span class="nota suave">En Nu</span><button class="link acento">+ Abonar</button></div>
+        <button class="btn2 ancho" data-ir="anti-recaida">Qué hacer si compras a cuotas →</button>
+      </section>
+
+      <section class="panel">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--positivo)"></span><b>Inversión</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$400.000</span> <span class="de">sin invertir</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$400.000/mes</b> · <b>$800.000</b> ya en tu CDT</div>
+        <div class="barra" style="--c:var(--positivo)" role="img" aria-label="$1.200.000 de $4.800.000 este año"><i style="width:25%"></i></div>
+        <div class="nota solo-escritorio"><b>$1.200.000</b> de $4.800.000 este año</div>
+        <div class="fila" style="margin-top:auto"><span class="nota suave">En Bancolombia</span><button class="link acento">+ Abonar</button></div>
+        <button class="btn2 ancho" data-ir="activos">Registrar en un CDT o fondo →</button>
+      </section>
+
+      <section class="panel solo-escritorio">
+        <div class="panel-cab">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span class="bola" style="--c:var(--azul)"></span><b>Gustos</b></span>
+          <span style="white-space:nowrap"><span class="cifra-l">$153.100</span> <span class="de">disp.</span></span>
+        </div>
+        <div class="nota suave">Asignado: <b>$170.000/mes</b></div>
+        <div class="barra" style="--c:var(--azul)"><i style="width:10%"></i></div>
+        <div class="nota">Gastaste $16.900 en Spotify</div>
+        <div class="nota suave" style="margin-top:auto">Gasta sin culpa y sin endeudarte</div>
+      </section>
+
+      <!-- Celular: fondo y gustos compactos -->
+      <div class="par solo-movil">
+        <div class="panel">
+          <span class="nota" style="display:flex;align-items:center;gap:6px"><span class="bola" style="--c:var(--acento)"></span>Fondo blindado</span>
+          <div class="cifra-m">$1.200.000</div>
+          <div class="barra"><i style="width:17.9%"></i><span class="marca" style="left:14.9%"></span></div>
+        </div>
+        <div class="panel">
+          <span class="nota" style="display:flex;align-items:center;gap:6px"><span class="bola" style="--c:var(--azul)"></span>Gustos</span>
+          <div class="cifra-m">$153.100</div>
+          <div class="barra" style="--c:var(--azul)"><i style="width:10%"></i></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sobres propios -->
+    <div class="panel plano solo-escritorio" style="flex-direction:row;align-items:center;justify-content:space-between">
+      <span class="nota">Tus sobres propios · <b>0</b> · para metas tuyas, como un viaje o la matrícula</span>
+      <button class="link acento">Crear uno →</button>
+    </div>
+
+  </div>
+</template>
+
+<!-- suscripciones.html -->
+<template data-id="suscripciones" data-titulo="Suscripciones">
+  <div class="pant">
+    <header class="cab">
+      <div>
+        <h1>Suscripciones</h1>
+        <p>Te cobran solas <b class="num">$157.600 al mes</b>, $1.891.200 al año. Una de ellas no la estás usando.</p>
+      </div>
+    </header>
+
+    <div class="rejilla llena" style="--cols: minmax(0,1.25fr) minmax(0,1.1fr) minmax(0,1fr)">
+
+      <!-- Fuga activa -->
+      <section class="panel riesgo">
+        <div class="panel-cab"><h2 class="titulo">Fuga activa</h2><span class="chip mal">47 días sin uso</span></div>
+        <div>
+          <div style="font-weight:700;font-size:15px">Gimnasio Smart Fit</div>
+          <div class="nota">Último uso el 27 sep. Desde entonces te cobró el 1 oct y el 1 nov: <b class="num">$179.800</b> sin ir.</div>
+        </div>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="cifra-xl mal">$1.078.800</span> <span class="de">al año</span></span>
+          <span class="nota num">$89.900 al mes</span>
+        </div>
+        <div class="nota solo-movil">Si cancelas, esos $89.900 al mes pueden ir a Inversión.</div>
+        <div style="margin-top:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <button class="btn">Cancelar Smart Fit</button>
+          <button class="link">Sí lo uso</button>
+          <span class="nota suave solo-escritorio" style="margin-left:auto">Próximo cobro 1 dic</span>
+        </div>
+      </section>
+
+      <!-- Total al mes -->
+      <section class="panel solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Total al mes</h2><span class="nota num">4 servicios</span></div>
+        <div class="fila" style="align-items:flex-end;flex-wrap:wrap">
+          <span><span class="cifra-xl">$157.600</span> <span class="de">al mes</span></span>
+          <span class="nota num">$1.891.200 al año</span>
+        </div>
+        <svg viewBox="0 0 580 22" width="100%" role="img" aria-label="De $157.600 al mes, $89.900 son de Smart Fit sin uso y $67.700 de servicios en uso">
+          <rect x="0" y="0" width="328.8" height="22" rx="5" class="g-alerta-f"/>
+          <rect x="330.8" y="0" width="97" height="22" rx="5" class="g-acento-f"/>
+          <rect x="429.8" y="0" width="86" height="22" rx="5" class="g-acento-f"/>
+          <rect x="517.8" y="0" width="62.2" height="22" rx="5" class="g-acento-f"/>
+        </svg>
+        <div class="lista lineas" style="margin-top:auto">
+          <div class="fila"><span><span class="bola" style="--c:var(--alerta)"></span> Sin uso · Smart Fit · 57%</span><span>$89.900</span></div>
+          <div class="fila"><span><span class="bola"></span> En uso · Netflix, YouTube, Spotify · 43%</span><span>$67.700</span></div>
+        </div>
+      </section>
+
+      <!-- Lo ahorrado -->
+      <section class="panel destacado solo-escritorio">
+        <div class="panel-cab"><h2 class="titulo">Si cancelas Smart Fit</h2><button class="link acento" data-ir="activos">Ver Inversión →</button></div>
+        <div>
+          <div class="nota">Pueden ir a Inversión cada mes</div>
+          <div class="cifra-l acento-tx">$89.900</div>
+        </div>
+        <div class="lista lineas" style="margin-top:auto">
+          <div class="fila"><span class="nota">Tu aporte a Inversión</span><span><span class="suave">$400.000 →</span> $489.900</span></div>
+          <div class="fila"><span class="nota">Más invertido en un año</span><span class="ok">+$1.078.800</span></div>
+        </div>
+      </section>
+
+      <!-- Todas las suscripciones -->
+      <section class="panel ancho-2">
+        <div class="panel-cab"><h2 class="titulo">Todas tus suscripciones</h2><span class="nota num">$157.600 al mes</span></div>
+        <table class="tabla">
+          <thead><tr><th>Servicio</th><th style="width:92px">Valor</th><th class="opc2" style="width:80px">Cobra el</th><th class="opc" style="width:170px">Paga con</th><th style="width:118px">Estado</th></tr></thead>
+          <tbody>
+            <tr><td>Gimnasio Smart Fit</td><td class="num">$89.900</td><td class="opc2 num">día 1</td><td class="opc">Bancolombia débito</td><td><span class="pill gasto">Sin uso</span></td></tr>
+            <tr><td>Spotify</td><td class="num">$16.900</td><td class="opc2 num">día 5</td><td class="opc">Bancolombia débito</td><td><span class="pill neutra">En uso</span></td></tr>
+            <tr><td>Netflix</td><td class="num">$26.900</td><td class="opc2 num">día 18</td><td class="opc">Mastercard crédito</td><td><span class="pill neutra">En uso</span></td></tr>
+            <tr><td>YouTube Premium</td><td class="num">$23.900</td><td class="opc2 num">día 22</td><td class="opc">Nequi</td><td><span class="pill neutra">En uso</span></td></tr>
+          </tbody>
+        </table>
+        <div class="caja solo-escritorio" style="margin-top:auto">
+          <b>Netflix va a tu Mastercard crédito, y en Pro está bien.</b> Se paga a 1 cuota: los $26.900 de este ciclo ya están apartados para pagar el 100% el 3 dic, con $0 de intereses. Si algún día lo difieres a cuotas, vuelve la deuda.
+          <button class="link acento" data-ir="anti-recaida">Ver la regla anti-recaída →</button>
+        </div>
+        <div class="nota solo-movil">Netflix va a tu Mastercard a 1 cuota y ya está apartado para el corte: $0 de intereses. <button class="link acento" data-ir="anti-recaida">Ver regla →</button></div>
+      </section>
+
+      <!-- Cobros de noviembre -->
+      <section class="panel">
+        <div class="panel-cab"><h2 class="titulo">Cobros de noviembre</h2><span class="nota num">hoy 13 nov</span></div>
+        <div class="lista lineas">
+          <div>
+            <div class="fila"><span>Netflix · 18 nov</span><span>$26.900</span></div>
+            <div style="margin-top:4px"><span class="pill aviso">En 5 días</span> <span class="nota suave">Mastercard</span></div>
+          </div>
+          <div>
+            <div class="fila"><span>YouTube Premium · 22 nov</span><span>$23.900</span></div>
+            <div style="margin-top:4px"><span class="pill neutra">En 9 días</span> <span class="nota suave">Nequi</span></div>
+          </div>
+        </div>
+        <div class="fila nota"><span>Falta por cobrar</span><span>$50.800</span></div>
+        <div class="solo-escritorio" style="margin-top:auto;padding-top:12px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:8px">
+          <h3 class="titulo">Ya cobrados este mes</h3>
+          <div class="fila"><span class="suave">Smart Fit · 1 nov</span><span class="suave">$89.900</span></div>
+          <div class="fila"><span class="suave">Spotify · 5 nov</span><span class="suave">$16.900</span></div>
+          <div class="fila nota"><span>Cobrado</span><span>$106.800</span></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+</div>
+
+<script>
+(function () {
+  var NAV = {
+    deuda: [['inicio-deuda', 'Inicio'], ['mi-plan', 'Mi plan'], ['deudas', 'Deudas'], ['billetera', 'Billetera']],
+    pro: [['inicio-pro', 'Inicio'], ['sobres', 'Sobres'], ['mi-plata', 'Mi plata'], ['herramientas', 'Herramientas']]
+  };
+  var HERRAMIENTAS = [['lista-compras', 'Lista de compras'], ['suscripciones', 'Suscripciones'], ['anti-recaida', 'Anti-recaída'], ['auditor', 'Auditor bancario'], ['activos', 'Activos y F.I.R.E.'], ['retos', 'Retos'], ['salud', 'Salud financiera'], ['reportes', 'Reportes']];
+  var AYUDA = {
+    'inicio-deuda': 'Inicio para todos. Con deudas, el panel de abajo muestra <b>Tus deudas</b> y el siguiente paso es el pago que vence primero.',
+    'inicio-pro': 'Tablero de Pro: patrimonio, meta del año, salud y avisos de tus herramientas.'
+  };
+  var DEUDA = ['inicio-deuda', 'mi-plan', 'deudas', 'billetera'];
+  var plantillas = {};
+  document.querySelectorAll('#fragmentos template').forEach(function (t) { plantillas[t.dataset.id] = t; });
+
+  var estado = { pantalla: 'inicio-deuda', tema: 'oscuro' };
+  try { var g = localStorage.getItem('bolsillo-proto-tema'); if (g) estado.tema = g; } catch (e) {}
+  var h = decodeURIComponent(location.hash.slice(1)); if (plantillas[h]) estado.pantalla = h;
+
+  var modoDe = function (id) { return DEUDA.indexOf(id) >= 0 ? 'deuda' : 'pro'; };
+  var tituloDe = function (id) { return plantillas[id] ? plantillas[id].dataset.titulo : id; };
+
+  // Selector de pantallas
+  var sel = document.getElementById('sel-pant');
+  var grupos = [['Modo deuda', DEUDA], ['Modo Pro', NAV.pro.map(function (x) { return x[0]; })], ['Herramientas Pro', HERRAMIENTAS.map(function (x) { return x[0]; })]];
+  var vistos = {};
+  grupos.forEach(function (gr) {
+    var og = document.createElement('optgroup'); og.label = gr[0];
+    gr[1].forEach(function (id) { if (!plantillas[id]) return; vistos[id] = 1; var o = document.createElement('option'); o.value = id; o.textContent = tituloDe(id); og.appendChild(o); });
+    if (og.children.length) sel.appendChild(og);
+  });
+  var extras = Object.keys(plantillas).filter(function (id) { return !vistos[id]; });
+  if (extras.length) { var og = document.createElement('optgroup'); og.label = 'Otros estados'; extras.forEach(function (id) { var o = document.createElement('option'); o.value = id; o.textContent = tituloDe(id); og.appendChild(o); }); sel.appendChild(og); }
+  sel.addEventListener('change', function () { ir(sel.value); });
+
+  function navItem(id, etiqueta, activo, cnt) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'nav-it'; b.dataset.ir = id;
+    if (activo) b.setAttribute('aria-current', 'page');
+    b.innerHTML = '<span class="ico"></span><span>' + etiqueta + '</span>' + (cnt ? '<span class="cnt">' + cnt + '</span>' : '');
+    return b;
+  }
+
+  var contador = 0;
+  function construir(marco, id) {
+    var modo = modoDe(id);
+    var activoNav = id;
+    var enHerr = HERRAMIENTAS.some(function (x) { return x[0] === id; });
+    if (enHerr) activoNav = 'herramientas';
+    if (plantillas[id] && plantillas[id].dataset.padre) activoNav = plantillas[id].dataset.padre;
+
+    var app = document.createElement('div'); app.className = 'app';
+    var lado = document.createElement('aside'); lado.className = 'lado';
+    lado.innerHTML = '<div class="marca">Bolsillo<i>.</i></div>';
+    NAV[modo].forEach(function (x) { lado.appendChild(navItem(x[0], x[1], activoNav === x[0] && !(enHerr && x[0] === 'herramientas' && false))); });
+    if (modo === 'pro') {
+      var gtit = document.createElement('div'); gtit.className = 'grupo'; gtit.textContent = 'Herramientas'; lado.appendChild(gtit);
+      HERRAMIENTAS.forEach(function (x) { if (plantillas[x[0]]) lado.appendChild(navItem(x[0], x[1], id === x[0] || (plantillas[id] && plantillas[id].dataset.padre === x[0]))); });
+      // En escritorio la herramienta activa se marca en su propio item, no en "Herramientas"
+      if (enHerr) lado.querySelectorAll('.nav-it[data-ir="herramientas"]').forEach(function (n) { n.removeAttribute('aria-current'); });
+    }
+    var perfil = document.createElement('div'); perfil.className = 'perfil'; perfil.innerHTML = '<span class="av">MA</span>Marcela'; lado.appendChild(perfil);
+
+    var cuerpo = document.createElement('div'); cuerpo.className = 'cuerpo';
+    cuerpo.innerHTML = '<div class="barra-sup"><span class="marca-movil">Bolsillo<i>.</i></span><span class="btn-gasto">+ Gasto</span>' +
+      (modo === 'deuda' ? '' : '') + '</div>';
+    var cont = document.createElement('div'); cont.className = 'contenido';
+    if (plantillas[id]) {
+      var frag = plantillas[id].content.cloneNode(true);
+      contador++;
+      // ids únicos por marco (degradados SVG, etc.)
+      frag.querySelectorAll('[id]').forEach(function (el) {
+        var viejo = el.id, nuevo = viejo + '-m' + contador;
+        el.id = nuevo;
+        frag.querySelectorAll('*').forEach(function (n) {
+          ['fill', 'stroke', 'clip-path', 'mask', 'filter', 'href', 'xlink:href'].forEach(function (a) {
+            var v = n.getAttribute(a); if (v && v.indexOf('#' + viejo) >= 0) n.setAttribute(a, v.split('#' + viejo).join('#' + nuevo));
+          });
+        });
+      });
+      cont.appendChild(frag);
+    } else {
+      cont.innerHTML = '<div class="pant"><div class="panel"><h1 class="titulo">Pantalla pendiente</h1><p class="nota">' + id + '</p></div></div>';
+    }
+    var abajo = document.createElement('nav'); abajo.className = 'nav-abajo';
+    NAV[modo].forEach(function (x) { abajo.appendChild(navItem(x[0], x[1], activoNav === x[0] || (enHerr && x[0] === 'herramientas'))); });
+    cuerpo.appendChild(cont); cuerpo.appendChild(abajo);
+    app.appendChild(lado); app.appendChild(cuerpo);
+    marco.innerHTML = ''; marco.appendChild(app);
+  }
+
+  function ir(id) {
+    if (!id) return;
+    estado.pantalla = id;
+    construir(document.getElementById('marco-esc'), id);
+    construir(document.getElementById('marco-cel'), id);
+    sel.value = id;
+    document.querySelectorAll('[data-modo]').forEach(function (b) { if (b.tagName === 'BUTTON' && b.closest('.cromo')) b.setAttribute('aria-pressed', String(b.dataset.modo === modoDe(id))); });
+    document.getElementById('ayuda').innerHTML = AYUDA[id] || '';
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    escalar();
+  }
+
+  function tema(t) {
+    estado.tema = t;
+    document.getElementById('escenario').classList.toggle('claro', t === 'claro');
+    document.querySelectorAll('[data-tema]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.tema === t)); });
+    try { localStorage.setItem('bolsillo-proto-tema', t); } catch (e) {}
+  }
+
+  function escalar() {
+    var caja = document.getElementById('caja-esc'), marco = document.getElementById('marco-esc');
+    var ancho = caja.parentElement.clientWidth;
+    var s = Math.min(1, ancho / 1366);
+    marco.style.transform = 'scale(' + s + ')';
+    caja.style.width = Math.round(1366 * s) + 'px';
+    caja.style.height = Math.round(768 * s) + 'px';
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-ir]');
+    if (t && plantillas[t.dataset.ir]) { e.preventDefault(); ir(t.dataset.ir); return; }
+    var m = e.target.closest('.cromo [data-modo]');
+    if (m) { ir(m.dataset.modo === 'deuda' ? 'inicio-deuda' : 'inicio-pro'); return; }
+    var te = e.target.closest('[data-tema]');
+    if (te) tema(te.dataset.tema);
+  });
+  window.addEventListener('resize', escalar);
+  tema(estado.tema);
+  ir(estado.pantalla);
+})();
+</script>
