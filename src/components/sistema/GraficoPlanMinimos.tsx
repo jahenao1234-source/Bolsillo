@@ -44,7 +44,7 @@ export const GraficoPlanMinimos: React.FC<GraficoPlanMinimosProps> = ({
   const xPlanFinal = x(seriePlan.length - 1);
 
   return (
-    <svg viewBox="0 0 700 380" className="solo-escritorio" style={{ width: '100%', height: 'auto' }}>
+    <svg viewBox="0 0 700 380" className="solo-escritorio" style={{ width: '100%', height: 'auto', maxHeight: 'min(380px, 40vh)' }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" className="g-stop" stopOpacity="0.2" />
