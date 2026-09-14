@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Target, Check, AlertTriangle, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
 import { ModalSobre, ModoModal } from '../components/sobres/ModalSobre';
 import { ModalMoverSobre } from '../components/sobres/ModalMoverSobre';
-import { TarjetaSobre } from '../components/sobres/TarjetaSobre';
 import { formatearCOP } from '../utils/format';
+import { MESES_ABREV } from '../utils/fechas';
 import { Sobre, Movimiento, Deuda, PerfilFlujo, Billetera } from '../types';
 import {
   estadoBaseCero,
   gastadoDelMes,
-  fechaAporteEsteMes,
   ID_BASICO_MERCADO,
   ID_SOBRE_COLCHON,
   ID_SOBRE_INVERSION,
@@ -16,7 +14,6 @@ import {
   MODULOS_LISTOS,
   metaFondoBlindado,
   repartoDelMes,
-  COLOR_SOBRE_SISTEMA,
 } from '../logic/sistema';
 
 interface PantallaSobresBaseCeroProps {
@@ -51,30 +48,22 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   const [modal, setModal] = useState<{ modo: ModoModal; sobre: Sobre | null } | null>(null);
   const [modalMover, setModalMover] = useState<{ modo: 'abonar' | 'retirar'; sobre: Sobre } | null>(null);
   const [propiosAbiertos, setPropiosAbiertos] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const hoy = new Date();
   const estado = estadoBaseCero(perfilFlujo, sobres, deudas);
   const basicos = sobres.filter((s) => s.grupo === 'basico');
-  const libres = sobres.filter((s) => s.grupo === 'libre');
   const propios = sobres.filter((s) => !s.grupo);
   
   const totalBasicos = basicos.reduce((a, s) => a + (s.presupuestoMensual || 0), 0);
+  const gastosBasicos = perfilFlujo?.gastosBasicos || 0;
   
-  const metaFondo = perfilFlujo ? metaFondoBlindado(perfilFlujo.gastosBasicos) : 0;
+  const metaFondo = perfilFlujo ? metaFondoBlindado(gastosBasicos) : 0;
   const colchonSobre = sobres.find(s => s.id === ID_SOBRE_COLCHON);
-  const colchonApartado = colchonSobre ? colchonSobre.apartado : 0;
+  const inversionSobre = sobres.find(s => s.id === ID_SOBRE_INVERSION);
+  const gustosSobre = sobres.find(s => s.id === ID_LIBRE_GUSTOS);
   const reparto = repartoDelMes(estado.libre, sobres, metaFondo, hoy);
   
   const mesNombre = hoy.toLocaleString('es-CO', { month: 'long' }).toLowerCase();
-
-  const getColor = (s: Sobre) => COLOR_SOBRE_SISTEMA[s.id] || s.color || '#25C9BE';
 
   const handleClickSobre = (s: Sobre) => setModal({ modo: 'editar', sobre: s });
 
@@ -84,57 +73,120 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     return cuenta ? `En ${cuenta.nombre}` : 'En cuenta eliminada';
   };
 
-  const renderEncabezado = () => {
-    let frase = '';
-    let tieneBoton = false;
-    
+  const renderCabecera = () => {
+    const fraseGral = (cls: string, m1: number, m2: number, tail: string, boton: boolean) => (
+      <span className={cls}>
+        Tus <b>{formatearCOP(estado.ingreso)}</b> de {mesNombre}: <b>{formatearCOP(m1)}</b> lo básico + <b>{formatearCOP(m2)}</b> {tail}
+        {boton && (
+          <> <button className="link acento" onClick={() => onRepartirBasicos(perfilFlujo)}>Repartir de nuevo</button></>
+        )}
+      </span>
+    );
+
+    const mobileFrase = (cls: string, txt1: string, val1: string, txt2: string, boton: boolean) => (
+      <span className={cls}>
+        {txt1} <b>{val1}</b> {txt2}
+        {boton && (
+          <> <button className="link acento" onClick={() => onRepartirBasicos(perfilFlujo)}>Repartir de nuevo</button></>
+        )}
+      </span>
+    );
+
+    let desk, mov;
     if (estado.deudasActivas) {
-      frase = isMobile 
-        ? `${formatearCOP(estado.paraDeudas)} a tu plan de deudas`
-        : `Tus ${formatearCOP(estado.ingreso)} de ${mesNombre}: ${formatearCOP(perfilFlujo?.gastosBasicos || 0)} lo básico + ${formatearCOP(estado.paraDeudas)} a tu plan de deudas.`;
+      desk = fraseGral("solo-escritorio", gastosBasicos as any, estado.paraDeudas as any, "a tu plan de deudas.", false);
+      mov = mobileFrase("solo-movil", "", formatearCOP(estado.paraDeudas), "a tu plan de deudas", false);
     } else if (estado.porAsignar === 0) {
-      frase = isMobile
-        ? `${formatearCOP(estado.ingreso)} con dueño · $0 sin dueño`
-        : `Tus ${formatearCOP(estado.ingreso)} de ${mesNombre}, con dueño antes de gastarlos: ${formatearCOP(perfilFlujo?.gastosBasicos || 0)} lo básico + ${formatearCOP(estado.libre)} lo libre · $0 sin dueño.`;
+      desk = fraseGral("solo-escritorio", gastosBasicos as any, estado.libre as any, "lo libre · $0 sin dueño.", false);
+      mov = mobileFrase("solo-movil", "", formatearCOP(estado.ingreso), "con dueño · $0 sin dueño", false);
     } else if (estado.porAsignar > 0) {
-      frase = isMobile
-        ? `Te faltan ${formatearCOP(estado.porAsignar)} por asignar`
-        : `Tus ${formatearCOP(estado.ingreso)} de ${mesNombre}: ${formatearCOP(totalBasicos)} lo básico + ${formatearCOP(estado.libre)} lo libre. Te faltan ${formatearCOP(estado.porAsignar)} por asignar en lo básico.`;
-      tieneBoton = true;
+      desk = <span className="solo-escritorio">Tus <b>{formatearCOP(estado.ingreso)}</b> de {mesNombre}: <b>{formatearCOP(totalBasicos)}</b> lo básico + <b>{formatearCOP(estado.libre)}</b> lo libre. Te faltan <b>{formatearCOP(estado.porAsignar)}</b> por asignar en lo básico. <button className="link acento" onClick={() => onRepartirBasicos(perfilFlujo)}>Repartir de nuevo</button></span>;
+      mov = mobileFrase("solo-movil", "Te faltan", formatearCOP(estado.porAsignar), "por asignar", true);
     } else {
-      frase = isMobile
-        ? `Asignaste ${formatearCOP(Math.abs(estado.porAsignar))} de más en lo básico`
-        : `Tus ${formatearCOP(estado.ingreso)} de ${mesNombre}: ${formatearCOP(totalBasicos)} lo básico + ${formatearCOP(estado.libre)} lo libre. Asignaste ${formatearCOP(Math.abs(estado.porAsignar))} de más en lo básico.`;
-      tieneBoton = true;
+      desk = <span className="solo-escritorio">Tus <b>{formatearCOP(estado.ingreso)}</b> de {mesNombre}: <b>{formatearCOP(totalBasicos)}</b> lo básico + <b>{formatearCOP(estado.libre)}</b> lo libre. Asignaste <b>{formatearCOP(Math.abs(estado.porAsignar))}</b> de más en lo básico. <button className="link acento" onClick={() => onRepartirBasicos(perfilFlujo)}>Repartir de nuevo</button></span>;
+      mov = mobileFrase("solo-movil", "Asignaste", formatearCOP(Math.abs(estado.porAsignar)), "de más en lo básico", true);
     }
 
     return (
-      <div className="mb-4 md:mb-5">
-        <div className="flex justify-between items-center mb-2">
-          <h1 className="font-display font-extrabold text-[21px] xl:text-[24px] text-[color:var(--texto)]">
-            Tus sobres
-          </h1>
-          <button
-            onClick={() => setModal({ modo: 'crear', sobre: null })}
-            className="px-4 py-2.5 rounded-[10px] border border-[var(--linea)] bg-[var(--superficie-2)] text-[14px] font-bold text-[color:var(--texto)] cursor-pointer"
-          >
-            + Nuevo{isMobile ? '' : ' sobre'}
-          </button>
-        </div>
-        <div className="text-[13.5px] text-[color:var(--texto-2)]">
-          {frase.split(/(\$[0-9.,]+)/).map((part, i) => 
-            part.startsWith('$') ? <span key={i} className="font-bold text-[color:var(--texto)] tabular-nums">{part}</span> : part
-          )}
-          {tieneBoton && (
-            <>
-              {' '}
-              <button onClick={() => onRepartirBasicos(perfilFlujo)} className="text-[color:var(--acento)] font-bold cursor-pointer hover:underline">
-                Repartir de nuevo
-              </button>
-            </>
-          )}
+      <div className="cab">
+        <h1>Tus sobres</h1>
+        <p>
+          {desk}
+          {mov}
+        </p>
+        <div className="acciones">
+          <button className="btn2" onClick={() => setModal({ modo: 'crear', sobre: null })}>+ Nuevo sobre</button>
         </div>
       </div>
+    );
+  };
+
+  const getMovMes = (s: Sobre) => {
+    const mesStr = hoy.toISOString().substring(0, 7);
+    return movimientos.filter(m => 
+      m.creadoEn?.startsWith(mesStr) && 
+      (m.tipo === 'gasto' || m.tipo === 'transferencia') && 
+      (m.categoria === s.nombre || (m.tipo === 'transferencia' && m.billeteraDestinoId === 'sobre-' + s.id))
+    );
+  };
+
+  const renderBasicoDesk = (s: Sobre | undefined, colorVar: string) => {
+    if (!s) return null;
+    const pres = s.presupuestoMensual || 0;
+    const gast = gastadoDelMes(s, movimientos, hoy);
+    const disp = pres - gast;
+    const isArriendo = s.id === 'basico-arriendo';
+    const pagado = isArriendo && gast >= pres;
+    const isMercado = s.id === ID_BASICO_MERCADO;
+
+    let pieTxt = "Todavía no gastas de este sobre";
+    if (isArriendo) {
+      if (pagado) {
+        const movs = getMovMes(s);
+        let ult = hoy;
+        if (movs.length > 0) {
+          const m = movs.sort((a,b) => (b.creadoEn||'').localeCompare(a.creadoEn||''))[0];
+          if (m.creadoEn) ult = new Date(m.creadoEn);
+        }
+        const mUlt = MESES_ABREV[ult.getMonth()].toLowerCase();
+        const prox = new Date(ult); prox.setMonth(prox.getMonth() + 1);
+        const mProx = MESES_ABREV[prox.getMonth()].toLowerCase();
+        pieTxt = `Pagado el ${ult.getDate()} ${mUlt} · el próximo, el ${prox.getDate()} ${mProx}`;
+      } else {
+        pieTxt = "Se paga una vez al mes";
+      }
+    } else if (gast > 0) {
+      pieTxt = `Gastaste ${formatearCOP(gast)} este mes`;
+    }
+
+    return (
+      <section key={s.id} className={`panel ${isMercado ? '' : 'solo-escritorio'}`} onClick={() => handleClickSobre(s)} style={{ cursor: 'pointer' }}>
+        <div className="panel-cab">
+          <span style={{ display: 'flex', gap: 8 }}>
+            <span className="bola" style={{ '--c': colorVar } as any} />
+            <b>{s.nombre}</b>
+          </span>
+          {isArriendo && pagado ? (
+            <span className="chip ok">Pagado</span>
+          ) : disp < 0 ? (
+            <span className="mal">−{formatearCOP(Math.abs(disp))} pasado</span>
+          ) : (
+            <span style={{ whiteSpace: 'nowrap' }}>
+              <span className="cifra-l">{formatearCOP(disp)}</span> <span className="de">disp.</span>
+            </span>
+          )}
+        </div>
+        <div className="nota suave">Asignado: <b>{formatearCOP(pres)}/mes</b></div>
+        <div className="barra" style={{ '--c': colorVar } as any}>
+          <i style={{ width: `${Math.min(100, pres > 0 ? (gast/pres)*100 : 0)}%` }} />
+        </div>
+        <div className="nota suave" style={{ marginTop: 'auto' }}>{pieTxt}</div>
+        {isMercado && MODULOS_LISTOS && (
+          <button className="btn2 ancho" style={{ marginTop: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            Abrir lista de compras →
+          </button>
+        )}
+      </section>
     );
   };
 
@@ -143,214 +195,204 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     const arriendo = basicos.find(s => s.id === 'basico-arriendo');
     const servicios = basicos.find(s => s.id === 'basico-servicios');
     const transporte = basicos.find(s => s.id === 'basico-transporte');
-    
-    // Fallbacks if not found (for dev/tests)
-    const renderMercado = () => {
-      if (!mercado) return null;
-      const pres = mercado.presupuestoMensual || 0;
-      const gast = gastadoDelMes(mercado, movimientos, hoy);
-      return (
-        <TarjetaSobre
-          color={getColor(mercado)}
-          nombre="Mercado"
-          derecha={gast > pres ? <span className="text-[color:var(--alerta)]">-{formatearCOP(gast - pres)} pasado</span> : <><span className="text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" style={{ color: getColor(mercado) }}>{formatearCOP(pres - gast)}</span><span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1 @max-[15rem]:hidden">disp.</span></>}
-          linea={<>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
-          progreso={pres > 0 ? (gast / pres) * 100 : 0}
-          pie={!MODULOS_LISTOS && !isMobile ? "Mercado, aseo y despensa" : undefined}
-          puente={MODULOS_LISTOS ? { texto: "Abrir lista de compras", onClick: (e) => { e.stopPropagation(); } } : undefined}
-          variante="completa"
-          onClick={() => handleClickSobre(mercado)}
-        />
-      );
-    };
 
-    const renderB = (s: Sobre | undefined, pieTxt: string, mini: boolean) => {
-      if (!s) return null;
-      const pres = s.presupuestoMensual || 0;
-      const gast = gastadoDelMes(s, movimientos, hoy);
-      const isArriendo = s.id === 'basico-arriendo';
-      const pagado = isArriendo && gast >= pres;
-      const color = getColor(s);
-      
-      let pie = pieTxt;
-      if (isArriendo) {
-        if (pagado) {
-          const ultimaFecha = new Date(); // ToDo: find last movement date
-          pie = `Pagado el ${ultimaFecha.getDate()} de ${ultimaFecha.toLocaleString('es-CO', { month: 'long' })}`;
-        } else {
-          pie = "Se paga una vez al mes";
-        }
+    const presA = arriendo?.presupuestoMensual || 0;
+    const gastA = arriendo ? gastadoDelMes(arriendo, movimientos, hoy) : 0;
+    const pagadoA = gastA >= presA;
+    let fechaATxt = "";
+    if (pagadoA && arriendo) {
+      const movs = getMovMes(arriendo);
+      let ult = hoy;
+      if (movs.length > 0) {
+        const m = movs.sort((a,b) => (b.creadoEn||'').localeCompare(a.creadoEn||''))[0];
+        if (m.creadoEn) ult = new Date(m.creadoEn);
       }
+      fechaATxt = `Pagado el ${ult.getDate()} ${MESES_ABREV[ult.getMonth()].toLowerCase()}`;
+    }
 
+    const cellMin = (s: Sobre | undefined) => {
+      if (!s) return null;
+      const disp = (s.presupuestoMensual || 0) - gastadoDelMes(s, movimientos, hoy);
       return (
-        <TarjetaSobre
-          color={color}
-          nombre={s.nombre}
-          derecha={
-            pagado ? (
-              <span className="text-[12px] font-bold text-[color:var(--positivo)]">✓ Pagado</span>
-            ) : gast > pres ? (
-              <span className="text-[color:var(--alerta)]">-{formatearCOP(gast - pres)} pasado</span>
-            ) : (
-              <><span style={{ color: mini ? color : 'var(--texto)' }} className={!mini ? "text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" : ""}>{formatearCOP(pres - gast)}</span>{!mini && <span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1 @max-[15rem]:hidden">disp.</span>}</>
-            )
-          }
-          linea={mini ? undefined : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
-          progreso={pagado || gast > pres ? 100 : pres > 0 ? (gast / pres) * 100 : 0}
-          pie={mini ? undefined : pie}
-          variante={mini ? 'mini' : 'completa'}
-          onClick={() => handleClickSobre(s)}
-        />
+        <div className="panel" onClick={() => handleClickSobre(s)} style={{ cursor: 'pointer' }}>
+          <span className="nota"><span className="bola" style={{ '--c': 'var(--neutro)' } as any} />{s.nombre}</span>
+          <div className="cifra-m">{formatearCOP(Math.max(0, disp))}</div>
+          <div className="barra" style={{ '--c': 'var(--neutro)' } as any}>
+            <i style={{ width: `${Math.min(100, s.presupuestoMensual ? (gastadoDelMes(s, movimientos, hoy)/s.presupuestoMensual)*100 : 0)}%` }} />
+          </div>
+        </div>
       );
     };
 
     return (
-      <div className="mb-4 md:mb-5">
-        <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-2 md:mb-[12px]">
-          Lo básico <span className="text-[14px] text-[color:var(--texto-3)] normal-case tracking-normal ml-2 tabular-nums font-medium">{formatearCOP(perfilFlujo?.gastosBasicos || 0)} al mes</span>
-        </h2>
-        {isMobile ? (
-          <div className="flex flex-col gap-2.5">
-            {renderMercado()}
-            <div className="grid grid-cols-3 gap-2.5">
-              {renderB(arriendo, "", true)}
-              {renderB(servicios, "", true)}
-              {renderB(transporte, "", true)}
+      <>
+        <div className="panel-cab" style={{ justifyContent: 'flex-start' }}>
+          <h2 className="titulo">Lo básico</h2>
+          <span className="nota suave num">{formatearCOP(gastosBasicos)} al mes</span>
+        </div>
+        <div className="rejilla llena" style={{ '--cols': 'repeat(4, minmax(0,1fr))' } as any}>
+          {renderBasicoDesk(mercado, 'var(--neutro)')}
+          {renderBasicoDesk(arriendo, 'var(--neutro)')}
+          {renderBasicoDesk(servicios, 'var(--neutro)')}
+          {renderBasicoDesk(transporte, 'var(--neutro)')}
+        </div>
+        <div className="solo-movil" style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+          {arriendo && (
+            <div className="panel" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => handleClickSobre(arriendo)}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="bola" style={{ '--c': 'var(--neutro)' } as any} />
+                <b>Arriendo</b>
+                <span className="nota suave">{formatearCOP(presA)}</span>
+              </span>
+              {pagadoA ? (
+                <span className="chip ok">{fechaATxt}</span>
+              ) : (
+                <span className="nota">Se paga una vez al mes</span>
+              )}
             </div>
+          )}
+          <div className="par">
+            {cellMin(servicios)}
+            {cellMin(transporte)}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-            {renderMercado()}
-            {renderB(arriendo, "Se paga una vez al mes", false)}
-            {renderB(servicios, "Luz, agua, gas e internet", false)}
-            {renderB(transporte, "Para ir a trabajar", false)}
-          </div>
-        )}
-      </div>
+        </div>
+      </>
     );
   };
 
   const renderLibres = () => {
     if (estado.deudasActivas) {
       return (
-        <div className="mb-4 md:mb-5">
-          <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-2 md:mb-[12px]">
-            Lo libre <span className="text-[14px] text-[color:var(--texto-3)] normal-case tracking-normal ml-2 tabular-nums font-medium">{formatearCOP(estado.paraDeudas)} al mes<span className="max-md:hidden"> · lo que antes iba a deudas</span></span>
-          </h2>
-          <div className="rounded-[18px] border bg-[var(--superficie)] px-[18px] py-[17px] flex flex-col gap-[11px]" style={{ borderColor: 'color-mix(in srgb, #25C9BE 38%, var(--linea))' }}>
-            <div className="flex items-center gap-2">
-              <div className="w-[9px] h-[9px] rounded-full flex-shrink-0 bg-[#25C9BE]" />
-              <div className="font-bold text-[14.5px] text-[color:var(--texto)]">Lo libre empieza cuando termines tus deudas</div>
-            </div>
-            <div className="text-[12.5px] text-[color:var(--texto-3)] -mt-[5px]">
-              Tus <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(estado.paraDeudas)}</span> del mes van a tu plan
-            </div>
-            <button
-              type="button"
-              onClick={onIrAMiPlan}
-              className="w-full py-2.5 rounded-xl text-[13px] font-bold mt-1 cursor-pointer transition-colors"
-              style={{
-                color: '#25C9BE',
-                backgroundColor: `color-mix(in srgb, #25C9BE 10%, transparent)`,
-                border: `1px solid color-mix(in srgb, #25C9BE 30%, transparent)`,
-              }}
-            >
-              Ir a Mi plan →
-            </button>
+        <>
+          <div className="panel-cab" style={{ justifyContent: 'flex-start' }}>
+            <h2 className="titulo">Lo libre</h2>
+            <span className="nota suave num">{formatearCOP(estado.paraDeudas)} al mes</span>
+            <span className="solo-escritorio"> · lo que antes iba a deudas</span>
           </div>
-        </div>
+          <section className="panel destacado">
+            <b>Lo libre empieza cuando termines tus deudas</b>
+            <div className="nota">Tus {formatearCOP(estado.paraDeudas)} del mes van a tu plan</div>
+            <button className="btn2 ancho" onClick={onIrAMiPlan}>Ir a Mi plan</button>
+          </section>
+        </>
       );
     }
 
-    const colchon = libres.find(s => s.id === ID_SOBRE_COLCHON);
-    const inversion = libres.find(s => s.id === ID_SOBRE_INVERSION);
-    const gustos = libres.find(s => s.id === ID_LIBRE_GUSTOS);
-
-    const renderFondo = () => {
-      if (!colchon) return null;
-      const meta = metaFondo;
-      const lleno = colchon.apartado >= meta;
-      
-      const chip = lleno 
-        ? <span className="text-[9px] font-bold uppercase tracking-[0.08em] px-1.5 py-px rounded-full border border-[var(--positivo)]/45 text-[color:var(--positivo)]">Completo</span>
-        : <span className="text-[9px] font-bold uppercase tracking-[0.08em] px-1.5 py-px rounded-full border border-[#25C9BE]/45 text-[#25C9BE]">Primero</span>;
-
-      return (
-        <TarjetaSobre
-          color={getColor(colchon)}
-          nombre="Fondo blindado"
-          chip={chip}
-          derecha={<span className={!isMobile ? "text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" : "text-[14px] font-display font-extrabold"} style={{ color: isMobile ? getColor(colchon) : 'var(--texto)' }}>{formatearCOP(colchon.apartado)}</span>}
-          linea={lleno ? "Su parte ya pasó a inversión" : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(reparto.colchon)}/mes</span> {isMobile ? "de" : "· meta"} {formatearCOP(meta)}</>}
-          progreso={(colchon.apartado / meta) * 100}
-          marcaHito={colchon.apartado < 1000000 ? (1000000 / meta) * 100 : undefined}
-          pie={!isMobile ? (colchon.apartado < 1000000 ? "Primer hito: $1.000.000" : "Para que la próxima emergencia no sea tarjeta") : undefined}
-          puente={(!isMobile && false) ? { texto: "Qué hacer si compras a cuotas", onClick: (e) => { e.stopPropagation(); } } : undefined} // TODO: Prompt 5
-          cuenta={{ texto: getTextoCuenta(colchon), onAbonar: (e) => setModalMover({ modo: 'abonar', sobre: colchon }) }}
-          variante={isMobile ? 'mini' : 'completa'}
-          onClick={() => handleClickSobre(colchon)}
-        />
-      );
-    };
-
-    const renderInversion = () => {
-      if (!inversion) return null;
-      const metaAnual = reparto.inversion * 12;
-      return (
-        <TarjetaSobre
-          color={getColor(inversion)}
-          nombre="Inversión"
-          derecha={<span className="text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" style={{ color: isMobile ? getColor(inversion) : 'var(--texto)' }}>{formatearCOP(inversion.apartado)}</span>}
-          linea={<>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(reparto.inversion)}/mes</span> {!isMobile && `· ${formatearCOP(inversion.apartado)} de ${formatearCOP(metaAnual)} este año`}</>}
-          progreso={metaAnual > 0 ? (inversion.apartado / metaAnual) * 100 : 0}
-          pie={(!MODULOS_LISTOS && !isMobile) ? "Se invierte en Activos" : undefined}
-          puente={MODULOS_LISTOS ? { texto: "Registrar en un CDT o fondo", onClick: (e) => { e.stopPropagation(); } } : undefined}
-          cuenta={{ texto: getTextoCuenta(inversion), onAbonar: (e) => setModalMover({ modo: 'abonar', sobre: inversion }) }}
-          variante="completa" // Siempre completa, incluso en celular
-          onClick={() => handleClickSobre(inversion)}
-        />
-      );
-    };
-
-    const renderGustos = () => {
-      if (!gustos) return null;
-      const pres = reparto.gustos;
-      const gast = gastadoDelMes(gustos, movimientos, hoy);
-      return (
-        <TarjetaSobre
-          color={getColor(gustos)}
-          nombre="Gustos"
-          derecha={<><span className={!isMobile ? "text-[clamp(15px,7.4cqw,19px)] font-display font-extrabold" : "text-[14px] font-display font-extrabold"} style={{ color: isMobile ? getColor(gustos) : 'var(--texto)' }}>{formatearCOP(pres - gast)}</span>{!isMobile && <span className="text-[12.5px] text-[color:var(--texto-3)] font-medium ml-1 @max-[15rem]:hidden">disp.</span>}</>}
-          linea={isMobile ? `de ${formatearCOP(pres)}` : <>Asignado: <span className="font-semibold text-[color:var(--texto-2)]">{formatearCOP(pres)}/mes</span></>}
-          progreso={pres > 0 ? (gast / pres) * 100 : 0}
-          pie={!isMobile ? "Gasta sin culpa y sin endeudarte" : undefined}
-          variante={isMobile ? 'mini' : 'completa'}
-          onClick={() => handleClickSobre(gustos)}
-        />
-      );
-    };
+    const apC = colchonSobre?.apartado || 0;
+    const apI = inversionSobre?.apartado || 0;
+    const presG = reparto.gustos;
+    const gastG = gustosSobre ? gastadoDelMes(gustosSobre, movimientos, hoy) : 0;
+    const dispG = presG - gastG;
 
     return (
-      <div className="mb-4 md:mb-5">
-        <h2 className="text-[12px] font-bold uppercase tracking-[0.14em] text-[color:var(--texto-2)] mb-2 md:mb-[12px]">
-          Lo libre <span className="text-[14px] text-[color:var(--texto-3)] normal-case tracking-normal ml-2 tabular-nums font-medium">{formatearCOP(estado.libre)} al mes<span className="max-md:hidden"> · lo que antes iba a deudas</span></span>
-        </h2>
-        {isMobile ? (
-          <div className="flex flex-col gap-2.5">
-            {renderInversion()}
-            <div className="grid grid-cols-2 gap-2.5">
-              {renderFondo()}
-              {renderGustos()}
+      <>
+        <div className="panel-cab" style={{ justifyContent: 'flex-start' }}>
+          <h2 className="titulo">Lo libre</h2>
+          <span className="nota suave num">{formatearCOP(estado.libre)} al mes</span>
+        </div>
+        <div className="rejilla llena" style={{ '--cols': 'repeat(3, minmax(0,1fr))' } as any}>
+          {colchonSobre && (
+            <section className="panel solo-escritorio" onClick={() => handleClickSobre(colchonSobre)} style={{ cursor: 'pointer' }}>
+              <div className="panel-cab">
+                <span style={{ display: 'flex', gap: 8 }}>
+                  <span className="bola" style={{ '--c': 'var(--acento)' } as any} />
+                  <b>Fondo blindado</b>
+                </span>
+                <span className="cifra-l">{formatearCOP(apC)}</span>
+              </div>
+              <div className="nota suave">
+                {apC >= metaFondo ? "Su parte ya pasó a inversión" : <>Asignado: <b>{formatearCOP(reparto.colchon)}/mes</b> · meta {formatearCOP(metaFondo)}</>}
+              </div>
+              <div className="barra" style={{ '--c': 'var(--acento)' } as any}>
+                <i style={{ width: `${Math.min(100, metaFondo > 0 ? (apC/metaFondo)*100 : 0)}%` }} />
+                {apC < metaFondo && <span className="marca" style={{ left: `${Math.min(100, (1000000/metaFondo)*100)}%` }} />}
+              </div>
+              <div className="nota">
+                {apC >= 1000000 ? (
+                  <><span className="ok">Primer hito de $1.000.000 superado</span> · cubre {(apC / gastosBasicos).toFixed(1).replace('.',',')} meses de lo básico</>
+                ) : (
+                  "Primer hito: $1.000.000"
+                )}
+              </div>
+              <div className="fila" style={{ marginTop: 'auto' }}>
+                <span className="nota suave">{getTextoCuenta(colchonSobre)}</span>
+                <button className="link acento" onClick={(e) => { e.stopPropagation(); setModalMover({ modo: 'abonar', sobre: colchonSobre }); }}>+ Abonar</button>
+              </div>
+              {MODULOS_LISTOS && (
+                <button className="btn2 ancho" onClick={(e) => e.stopPropagation()}>Qué hacer si compras a cuotas →</button>
+              )}
+            </section>
+          )}
+          
+          {inversionSobre && (
+            <section className="panel" onClick={() => handleClickSobre(inversionSobre)} style={{ cursor: 'pointer' }}>
+              <div className="panel-cab">
+                <span style={{ display: 'flex', gap: 8 }}>
+                  <span className="bola" style={{ '--c': 'var(--positivo)' } as any} />
+                  <b>Inversión</b>
+                </span>
+                <span style={{ whiteSpace: 'nowrap' }}>
+                  <span className="cifra-l">{formatearCOP(apI)}</span> <span className="de">sin invertir</span>
+                </span>
+              </div>
+              <div className="nota suave">Asignado: <b>{formatearCOP(reparto.inversion)}/mes</b></div>
+              <div className="barra" style={{ '--c': 'var(--positivo)' } as any}>
+                <i style={{ width: `${Math.min(100, reparto.inversion > 0 ? (apI/(reparto.inversion*12))*100 : 0)}%` }} />
+              </div>
+              <div className="nota solo-escritorio"><b>{formatearCOP(apI)}</b> de {formatearCOP(reparto.inversion*12)} este año</div>
+              <div className="fila" style={{ marginTop: 'auto' }}>
+                <span className="nota suave">{getTextoCuenta(inversionSobre)}</span>
+                <button className="link acento" onClick={(e) => { e.stopPropagation(); setModalMover({ modo: 'abonar', sobre: inversionSobre }); }}>+ Abonar</button>
+              </div>
+              {MODULOS_LISTOS && (
+                <button className="btn2 ancho" onClick={(e) => e.stopPropagation()}>Registrar en un CDT o fondo →</button>
+              )}
+            </section>
+          )}
+
+          {gustosSobre && (
+            <section className="panel solo-escritorio" onClick={() => handleClickSobre(gustosSobre)} style={{ cursor: 'pointer' }}>
+              <div className="panel-cab">
+                <span style={{ display: 'flex', gap: 8 }}>
+                  <span className="bola" style={{ '--c': 'var(--azul)' } as any} />
+                  <b>Gustos</b>
+                </span>
+                <span style={{ whiteSpace: 'nowrap' }}>
+                  <span className="cifra-l">{formatearCOP(dispG)}</span> <span className="de">disp.</span>
+                </span>
+              </div>
+              <div className="nota suave">Asignado: <b>{formatearCOP(presG)}/mes</b></div>
+              <div className="barra" style={{ '--c': 'var(--azul)' } as any}>
+                <i style={{ width: `${Math.min(100, presG > 0 ? (gastG/presG)*100 : 0)}%` }} />
+              </div>
+              {gastG > 0 && <div className="nota">Gastaste {formatearCOP(gastG)} este mes</div>}
+              <div className="nota suave" style={{ marginTop: 'auto' }}>Gasta sin culpa y sin endeudarte</div>
+            </section>
+          )}
+        </div>
+        
+        <div className="par solo-movil" style={{ marginTop: 10 }}>
+          {colchonSobre && (
+            <div className="panel" onClick={() => handleClickSobre(colchonSobre)} style={{ cursor: 'pointer' }}>
+              <span className="nota"><span className="bola" style={{ '--c': 'var(--acento)' } as any} />Fondo blindado</span>
+              <div className="cifra-m">{formatearCOP(apC)}</div>
+              <div className="barra" style={{ '--c': 'var(--acento)' } as any}>
+                <i style={{ width: `${Math.min(100, metaFondo > 0 ? (apC/metaFondo)*100 : 0)}%` }} />
+                {apC < metaFondo && <span className="marca" style={{ left: `${Math.min(100, (1000000/metaFondo)*100)}%` }} />}
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
-            {renderFondo()}
-            {renderInversion()}
-            {renderGustos()}
-          </div>
-        )}
-      </div>
+          )}
+          {gustosSobre && (
+            <div className="panel" onClick={() => handleClickSobre(gustosSobre)} style={{ cursor: 'pointer' }}>
+              <span className="nota"><span className="bola" style={{ '--c': 'var(--azul)' } as any} />Gustos</span>
+              <div className="cifra-m">{formatearCOP(dispG)}</div>
+              <div className="barra" style={{ '--c': 'var(--azul)' } as any}>
+                <i style={{ width: `${Math.min(100, presG > 0 ? (gastG/presG)*100 : 0)}%` }} />
+              </div>
+            </div>
+          )}
+        </div>
+      </>
     );
   };
 
@@ -358,37 +400,41 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
     const totalPropio = propios.reduce((a, s) => a + s.apartado, 0);
 
     return (
-      <div className="mb-4 md:mb-5">
+      <div style={{ marginTop: 24 }}>
         <div 
-          className="rounded-[14px] border border-[var(--linea)] bg-[var(--superficie)] px-5 py-3.5 flex justify-between items-center cursor-pointer hover:border-[color:var(--texto-3)] transition-colors"
-          onClick={() => setPropiosAbiertos(!propiosAbiertos)}
+          className="panel plano" 
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <div className="text-[13px] text-[color:var(--texto-2)]">
-            Tus sobres propios · <span className="font-bold text-[color:var(--texto)]">{propios.length}</span>{propios.length > 0 && <> · <span className="font-bold text-[color:var(--texto)]">{formatearCOP(totalPropio)}</span> apartados</>}
-          </div>
-          <div className="text-[13px] font-bold text-[color:var(--acento)]">
+          <span className="nota">
+            Tus sobres propios · <b>{propios.length}</b> 
+            {propios.length > 0 ? (
+              <> · <b>{formatearCOP(totalPropio)}</b> apartados</>
+            ) : (
+              " · para metas tuyas, como un viaje o la matrícula"
+            )}
+          </span>
+          <button 
+            className="link acento" 
+            onClick={() => propios.length > 0 ? setPropiosAbiertos(!propiosAbiertos) : setModal({ modo: 'crear', sobre: null })}
+          >
             {propios.length > 0 ? (propiosAbiertos ? "Cerrar" : "Ver →") : "Crear uno →"}
-          </div>
+          </button>
         </div>
 
         {propiosAbiertos && propios.length > 0 && (
-          <div className="mt-4 flex flex-col gap-2 pl-2">
+          <div className="lista lineas" style={{ marginTop: 12 }}>
             {propios.map(s => (
-              <div 
-                key={s.id} 
-                className="flex items-center justify-between py-2.5 border-b border-[var(--linea)] last:border-0 group cursor-pointer"
-                onClick={() => setModal({ modo: 'editar', sobre: s })}
-              >
-                <div className="flex flex-col">
-                  <div className="font-semibold text-[13px] text-[color:var(--texto)] group-hover:text-[color:var(--acento)] transition-colors">{s.nombre}</div>
-                  {s.meta && <div className="text-[11px] text-[color:var(--texto-3)] tabular-nums mt-0.5">Meta: {formatearCOP(s.meta)}</div>}
+              <div key={s.id} className="fila" style={{ cursor: 'pointer', alignItems: 'center' }} onClick={() => handleClickSobre(s)}>
+                <div>
+                  <div>{s.nombre}</div>
+                  {s.meta && <div className="nota suave">Meta: {formatearCOP(s.meta)}</div>}
                 </div>
-                <div className="text-right flex flex-col items-end">
-                  <div className="font-bold text-[13px] tabular-nums" style={{ color: s.color || 'var(--acento)' }}>{formatearCOP(s.apartado)}</div>
-                  <div className="flex gap-2.5 mt-0.5">
-                    <span className="text-[10px] text-[color:var(--texto-3)] mt-0.5 mr-1">{getTextoCuenta(s)}</span>
-                    <button onClick={(e) => { e.stopPropagation(); setModalMover({ modo: 'abonar', sobre: s }); }} className="text-[11px] font-bold text-[color:var(--acento)] hover:underline cursor-pointer">Abonar</button>
-                  </div>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                  <span style={{ fontWeight: 'bold' }}>{formatearCOP(s.apartado)}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="nota">{getTextoCuenta(s)}</span>
+                    <button className="link acento" onClick={(e) => { e.stopPropagation(); setModalMover({ modo: 'abonar', sobre: s }); }}>Abonar</button>
+                  </span>
                 </div>
               </div>
             ))}
@@ -399,8 +445,8 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
   };
 
   return (
-    <div className="w-full min-h-full px-4 md:px-[24px] mx-auto pb-24 xl:pb-0 animate-screen-enter">
-      {renderEncabezado()}
+    <div className="pant">
+      {renderCabecera()}
       {renderBasicos()}
       {renderLibres()}
       {renderPropios()}
@@ -415,13 +461,11 @@ export const PantallaSobresBaseCero: React.FC<PantallaSobresBaseCeroProps> = ({
           onRetirar={() => { setModalMover({ modo: 'retirar', sobre: modal.sobre! }); setModal(null); }}
           onGuardar={(s) => {
             const antes = modal.sobre;
-            // Cambiar de cuenta un sobre con plata es mover esa plata entre billeteras.
             if (antes && s.billeteraId && s.billeteraId !== antes.billeteraId && antes.apartado > 0) {
               const r = onCambiarCuentaSobre(antes.id, s.billeteraId);
               if (!r.exito) { window.alert(r.error); return; }
             }
             onGuardarSobre(s);
-            // Un sobre nuevo nace en $0: si hay cuentas, se le pone plata de una vez.
             if (modal.modo === 'crear' && !modal.sobre && billeteras.length > 0) {
               setModalMover({ modo: 'abonar', sobre: { ...s, apartado: 0 } });
             }
