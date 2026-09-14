@@ -11,7 +11,7 @@ import {
   Zap,
   Wallet,
 } from 'lucide-react';
-import { Billetera, Movimiento, PromoSuscripcion, Suscripcion } from '../types';
+import { Billetera, Movimiento, PromoSuscripcion, Suscripcion, TarjetaCredito } from '../types';
 import { Tarjeta } from '../components/ui/Tarjeta';
 import { Boton } from '../components/ui/Boton';
 import { formatearCOP } from '../utils/format';
@@ -42,6 +42,7 @@ interface PantallaSuscripcionesProps {
   suscripciones: Suscripcion[];
   sangradoMensual: number;
   billeteras: Billetera[];
+  tarjetas: TarjetaCredito[];
   ingresoMensual: number;
   onGuardarSuscripcion: (sus: Suscripcion) => void;
   onEliminarSuscripcion: (id: string) => void;
@@ -111,6 +112,7 @@ const BarraCiclo: React.FC<{ sus: Suscripcion; hoy: Date }> = ({ sus, hoy }) => 
 export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
   suscripciones,
   billeteras,
+  tarjetas,
   ingresoMensual,
   onGuardarSuscripcion,
   onEliminarSuscripcion,
@@ -555,8 +557,12 @@ export const PantallaSuscripciones: React.FC<PantallaSuscripcionesProps> = ({
       {modal && (
         <ModalSuscripcion
           editando={modal.editando}
+          billeteras={billeteras}
+          tarjetas={tarjetas}
           onCerrar={() => setModal(null)}
           onGuardar={(s) => { onGuardarSuscripcion(s); setModal(null); }}
+          onEliminar={(id) => { onEliminarSuscripcion(id); setModal(null); }}
+          onCobro={(s) => { setCobrando(s); setModal(null); }}
         />
       )}
 
@@ -767,11 +773,15 @@ const CATEGORIAS_SUS = ['Streaming', 'Música', 'Salud', 'Software', 'Otro'];
 
 interface ModalSuscripcionProps {
   editando: Suscripcion | null;
+  billeteras: Billetera[];
+  tarjetas: TarjetaCredito[];
   onCerrar: () => void;
   onGuardar: (s: Suscripcion) => void;
+  onEliminar: (id: string) => void;
+  onCobro: (s: Suscripcion) => void;
 }
 
-const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, onCerrar, onGuardar }) => {
+const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, billeteras, tarjetas, onCerrar, onGuardar, onEliminar, onCobro }) => {
   const hoy = useMemo(() => {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -782,6 +792,8 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, onCerrar,
   const [dia, setDia] = useState<number>(editando?.diaCobro || 1);
   const [categoria, setCategoria] = useState(editando?.categoria || 'Streaming');
   const [color, setColor] = useState(editando?.color || COLORES[0]);
+  const [pagaCon, setPagaCon] = useState(editando?.pagaCon ? `${editando.pagaCon.tipo}_${editando.pagaCon.id}` : '');
+  const [ultimoUso, setUltimoUso] = useState(editando?.ultimoUso ? editando.ultimoUso.split('T')[0] : '');
   const [error, setError] = useState('');
 
   // --- Promoción ---
@@ -823,6 +835,12 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, onCerrar,
         ? { monto: promoMonto, desde: isoDia(desde), hasta: isoDia(hasta) }
         : undefined;
 
+    let pagaConObj = undefined;
+    if (pagaCon) {
+      const [tipo, id] = pagaCon.split('_');
+      pagaConObj = { tipo: tipo as 'billetera' | 'tarjeta', id };
+    }
+
     onGuardar({
       id: editando?.id || `sus-${Date.now()}`,
       nombre: nombre.trim(),
@@ -834,6 +852,8 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, onCerrar,
       creadoEn: editando?.creadoEn || new Date().toISOString(),
       promo,
       ultimoCobro: editando?.ultimoCobro,
+      ultimoUso: ultimoUso ? new Date(ultimoUso + 'T12:00:00').toISOString() : editando?.ultimoUso,
+      pagaCon: pagaConObj,
     });
   };
 
@@ -1002,8 +1022,37 @@ const ModalSuscripcion: React.FC<ModalSuscripcionProps> = ({ editando, onCerrar,
             </div>
           </div>
 
+          <div className="space-y-1.5">
+            <label className={etq}>Paga con</label>
+            <select value={pagaCon} onChange={(e) => setPagaCon(e.target.value)} className={`${input} appearance-none cursor-pointer`}>
+              <option value="" className="bg-[var(--superficie)]">Sin asignar</option>
+              {billeteras.map(b => (
+                <option key={`billetera_${b.id}`} value={`billetera_${b.id}`} className="bg-[var(--superficie)]">{b.nombre}</option>
+              ))}
+              {tarjetas.map(t => (
+                <option key={`tarjeta_${t.id}`} value={`tarjeta_${t.id}`} className="bg-[var(--superficie)]">{t.nombre} (crédito)</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className={etq}>Última vez que la usaste (opcional)</label>
+            <input type="date" value={ultimoUso} onChange={(e) => setUltimoUso(e.target.value)} className={input} />
+          </div>
+
+          {editando && (
+            <div className="pt-2 flex flex-wrap gap-2">
+              <button type="button" onClick={() => onCobro(editando)} className="btn2">Registrar cobro</button>
+              <button type="button" onClick={() => onGuardar({ ...editando, activa: !editando.activa })} className="btn2">
+                {editando.activa ? 'Pausar' : 'Reactivar'}
+              </button>
+              <button type="button" onClick={() => onEliminar(editando.id)} className="link mal ml-auto">Eliminar</button>
+            </div>
+          )}
+
           <div className="pt-3 border-t border-[var(--linea)] flex items-center justify-end gap-2.5">
-            <Boton variante="fantasma" tamano="md" onClick={onCerrar} type="button">Cancelar</Boton>
+            {!editando && <Boton variante="fantasma" tamano="md" onClick={onCerrar} type="button">Cancelar</Boton>}
+            {editando && <Boton variante="fantasma" tamano="md" onClick={onCerrar} type="button">Cerrar</Boton>}
             <Boton variante="primario" tamano="md" type="submit" iconoDerecha={<Check className="w-4 h-4" />}>
               {editando ? 'Guardar' : 'Agregar'}
             </Boton>

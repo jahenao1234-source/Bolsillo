@@ -168,6 +168,7 @@ export const PantallaCrecer: React.FC<PantallaCrecerProps> = (props) => {
         suscripciones={suscripciones}
         sangradoMensual={sangradoMensual}
         billeteras={billeteras}
+        tarjetas={tarjetas}
         ingresoMensual={ingresoMensual}
         onGuardarSuscripcion={onGuardarSuscripcion}
         onEliminarSuscripcion={onEliminarSuscripcion}

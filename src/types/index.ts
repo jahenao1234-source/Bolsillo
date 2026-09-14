@@ -241,6 +241,10 @@ export interface Suscripcion {
   promo?: PromoSuscripcion;
   /** Fecha del último cobro que el usuario registró (ISO). */
   ultimoCobro?: string;
+  /** Última vez que la persona dijo que la usó (ISO). Sin dato no se marca como fuga. */
+  ultimoUso?: string;
+  /** Con qué se paga: una billetera o una tarjeta de crédito. */
+  pagaCon?: { tipo: 'billetera' | 'tarjeta'; id: string };
 }
 
 /** Tarjeta de crédito con días de corte y de pago. */
